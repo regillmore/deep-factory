@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-28
 
+- Task: Attribute lethal bomb self-damage through shared death-cause telemetry.
+- Changes: Updated [src/world/playerDeathCause.ts](../src/world/playerDeathCause.ts) plus [src/world/playerDeathCause.test.ts](../src/world/playerDeathCause.test.ts) so the shared ordered death-cause helper now recognizes `bomb-blast` as a first-class lethal source and covers bomb-versus-environment ordering; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so lethal thrown-bomb self-hits now append that source through the existing pending fixed-step death-cause path and surface it in the debug HUD plus compact status strip; removed completed task `611` from [docs/NEXT.md](docs/NEXT.md), added replacement task `801`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/playerDeathCause.test.ts src/main.test.ts -t bomb` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add thrown-bomb fuse warning feedback.
 - Changes: Updated [src/gl/thrownBombPlaceholder.ts](../src/gl/thrownBombPlaceholder.ts) plus [src/gl/thrownBombPlaceholder.test.ts](../src/gl/thrownBombPlaceholder.test.ts) so thrown bombs now resolve a deterministic late-fuse warning cadence that alternates between their normal palette and a brighter warning palette with a higher minimum light floor; updated [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so in-flight bomb entities render that blink feedback through the existing placeholder path; removed completed task `605` from [docs/NEXT.md](docs/NEXT.md), added replacement task `620`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `cmd /c npx vitest run src/gl/thrownBombPlaceholder.test.ts src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

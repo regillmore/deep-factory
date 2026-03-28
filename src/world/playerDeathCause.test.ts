@@ -38,6 +38,18 @@ describe('resolvePlayerDeathCauseFromDamageSequence', () => {
     });
   });
 
+  it('resolves bomb-blast when it is the lethal follow-up after earlier environmental damage', () => {
+    expect(
+      resolvePlayerDeathCauseFromDamageSequence(25, 0, [
+        { source: 'lava', damageApplied: 5 },
+        { source: 'bomb-blast', damageApplied: 20 }
+      ])
+    ).toEqual({
+      source: 'bomb-blast',
+      damageApplied: 20
+    });
+  });
+
   it('falls back to unknown when a lethal health drop has no matching known source', () => {
     expect(resolvePlayerDeathCauseFromDamageSequence(8, 0, [])).toEqual({
       source: 'unknown',

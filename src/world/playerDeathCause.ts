@@ -2,6 +2,7 @@ export type PlayerDeathCauseSource =
   | 'fall'
   | 'drowning'
   | 'lava'
+  | 'bomb-blast'
   | 'hostile-contact'
   | 'unknown';
 

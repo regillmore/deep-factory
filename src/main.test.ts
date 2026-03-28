@@ -13645,6 +13645,17 @@ describe('main.ts shell state orchestration', () => {
     }
     runRenderFrame(1000 / 60, 1);
 
+    expect(testRuntime.latestDebugOverlayInspectState?.playerDeathCauseEvent).toEqual({
+      source: 'bomb-blast',
+      damageApplied: 20,
+      playerWorldTile: { x: 1, y: 2 }
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.playerDeathCauseEvent).toEqual({
+      source: 'bomb-blast',
+      damageApplied: 20,
+      playerWorldTile: { x: 1, y: 2 }
+    });
+
     dispatchWindowEvent('pagehide');
 
     const persistedEnvelope = readPersistedWorldSaveEnvelope();

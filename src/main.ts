@@ -3758,7 +3758,12 @@ const bootstrap = async (): Promise<void> => {
     setStandalonePlayerState(nextPlayerState, {
       resetRenderStateSnapshots: false
     });
-    replacePendingStandalonePlayerFixedStepNextState(nextPlayerState);
+    replacePendingStandalonePlayerFixedStepNextState(nextPlayerState, [
+      {
+        source: 'bomb-blast',
+        damageApplied: playerHitEvent.damage
+      }
+    ]);
   };
   const flushPendingCombatEvents = (): void => {
     if (pendingCombatEvents.length === 0) {

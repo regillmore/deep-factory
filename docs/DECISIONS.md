@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-28: Bomb self-kills reuse the ordered death-cause candidate path
+
+- Decision: Lethal thrown-bomb self-hits now append a `bomb-blast` candidate through `replacePendingStandalonePlayerFixedStepNextState` so the shared death-cause telemetry resolves them in the same ordered sequence as lava, drowning, fall, and hostile-contact damage.
+- Reason: Bomb blast resolution lands after entity stepping but before the pending standalone-player fixed-step result flushes, so routing self-hit attribution through the shared candidate sequence preserves deterministic source priority when environmental damage and bomb self-damage happen on the same tick.
+- Consequence: Future direct player-damage sources that resolve outside `stepPlayerState` should contribute ordered death-cause candidates through the same pending-result helper instead of overwriting death telemetry out-of-band.
+
 ### 2026-03-27: Bow draw cooldown stays in detached session-owned runtime state
 
 - Decision: Bow shots now start a shared fixed-step draw cooldown in `src/world/bowFiring.ts`, and the selected hotbar slot shows `DRAW` feedback while that cooldown drains instead of persisting the timer in inventory or save data.
@@ -629,7 +635,7 @@ Record only durable design decisions here. Keep each entry short: date, decision
 ### 2026-03-15: Death-location telemetry uses the lethal player world tile
 
 - Decision: Latest death-cause telemetry now records the player's world tile from the lethal fixed-step state instead of inferring location later from respawn state or from a hostile-contact source tile.
-- Reason: The death location should identify where the player actually died across fall, lava, drowning, and hostile-contact kills, while hostile-contact source telemetry already covers the attacker's tile separately.
+- Reason: The death location should identify where the player actually died across fall, lava, drowning, bomb-blast, and hostile-contact kills, while hostile-contact source telemetry already covers the attacker's tile separately.
 - Consequence: Future death-location, corpse, or checkpoint follow-ups should reuse the lethal player tile captured with the death-cause event instead of recomputing death position from later runtime state.
 
 ### 2026-03-15: Short consumable reuse cooldowns stay in session-owned runtime state
