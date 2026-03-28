@@ -11,6 +11,7 @@ import {
 import {
   buildThrownBombPlaceholderVertices,
   getThrownBombPlaceholderNearbyLightSample,
+  resolveThrownBombFuseWarningVisuals,
   THROWN_BOMB_PLACEHOLDER_VERTEX_COUNT,
   THROWN_BOMB_PLACEHOLDER_VERTEX_FLOAT_COUNT
 } from './thrownBombPlaceholder';
@@ -1621,23 +1622,24 @@ export class Renderer {
       renderPosition
     );
     const palette = getDroppedItemPlaceholderPalette(BOMB_ITEM_ID);
+    const warningVisuals = resolveThrownBombFuseWarningVisuals(state, palette);
     gl.useProgram(this.droppedItemProgram);
     gl.uniformMatrix4fv(this.uDroppedItemMatrix, false, worldToClipMatrix);
     gl.uniform1f(
       this.uDroppedItemLight,
-      Math.max(0.45, nearbyLightSample.level / MAX_LIGHT_LEVEL)
+      Math.max(warningVisuals.minimumLightFactor, nearbyLightSample.level / MAX_LIGHT_LEVEL)
     );
     gl.uniform3f(
       this.uDroppedItemBaseColor,
-      palette.baseColor[0],
-      palette.baseColor[1],
-      palette.baseColor[2]
+      warningVisuals.baseColor[0],
+      warningVisuals.baseColor[1],
+      warningVisuals.baseColor[2]
     );
     gl.uniform3f(
       this.uDroppedItemAccentColor,
-      palette.accentColor[0],
-      palette.accentColor[1],
-      palette.accentColor[2]
+      warningVisuals.accentColor[0],
+      warningVisuals.accentColor[1],
+      warningVisuals.accentColor[2]
     );
     gl.bindBuffer(gl.ARRAY_BUFFER, this.thrownBombBuffer);
     gl.bufferData(

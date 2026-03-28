@@ -6,12 +6,27 @@ export const THROWN_BOMB_PLACEHOLDER_VERTEX_STRIDE_FLOATS = 4;
 export const THROWN_BOMB_PLACEHOLDER_VERTEX_COUNT = 6;
 export const THROWN_BOMB_PLACEHOLDER_VERTEX_FLOAT_COUNT =
   THROWN_BOMB_PLACEHOLDER_VERTEX_COUNT * THROWN_BOMB_PLACEHOLDER_VERTEX_STRIDE_FLOATS;
+export const THROWN_BOMB_PLACEHOLDER_MIN_LIGHT_FACTOR = 0.45;
+export const THROWN_BOMB_PLACEHOLDER_WARNING_MIN_LIGHT_FACTOR = 0.85;
 
 const THROWN_BOMB_PLACEHOLDER_NEARBY_LIGHT_SAMPLE_PADDING_TILES = 1;
+const THROWN_BOMB_WARNING_START_SECONDS = 0.75;
+const THROWN_BOMB_WARNING_FAST_CADENCE_START_SECONDS = 0.3;
+const THROWN_BOMB_WARNING_SLOW_BLINK_INTERVAL_SECONDS = 0.15;
+const THROWN_BOMB_WARNING_FAST_BLINK_INTERVAL_SECONDS = 0.075;
+const THROWN_BOMB_WARNING_BASE_COLOR: ThrownBombPlaceholderColor = [0.52, 0.16, 0.08];
+const THROWN_BOMB_WARNING_ACCENT_COLOR: ThrownBombPlaceholderColor = [1, 0.95, 0.68];
 
 interface TileRange {
   min: number;
   max: number;
+}
+
+export type ThrownBombPlaceholderColor = [number, number, number];
+
+export interface ThrownBombPlaceholderPalette {
+  baseColor: readonly [number, number, number];
+  accentColor: readonly [number, number, number];
 }
 
 export interface ThrownBombPlaceholderNearbyLightSourceTile {
@@ -24,8 +39,27 @@ export interface ThrownBombPlaceholderNearbyLightSample {
   sourceTile: ThrownBombPlaceholderNearbyLightSourceTile | null;
 }
 
+export interface ThrownBombFuseWarningVisuals {
+  blinkActive: boolean;
+  minimumLightFactor: number;
+  baseColor: ThrownBombPlaceholderColor;
+  accentColor: ThrownBombPlaceholderColor;
+}
+
 const clampThrownBombPlaceholderLightLevel = (lightLevel: number): number =>
   Math.max(0, Math.min(MAX_LIGHT_LEVEL, Math.floor(lightLevel)));
+
+const expectNonNegativeFiniteNumber = (value: number, label: string): number => {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error(`${label} must be a non-negative finite number`);
+  }
+
+  return value;
+};
+
+const cloneThrownBombPlaceholderColor = (
+  color: readonly [number, number, number]
+): ThrownBombPlaceholderColor => [color[0], color[1], color[2]];
 
 const getOverlappingTileRange = (min: number, max: number): TileRange | null => {
   if (max <= min) {
@@ -124,4 +158,46 @@ export const getThrownBombPlaceholderNearbyLightSample = (
     level: clampThrownBombPlaceholderLightLevel(maxNearbyLightLevel),
     sourceTile: maxNearbyLightSourceTile
   };
+};
+
+export const resolveThrownBombFuseWarningVisuals = (
+  state: Pick<ThrownBombState, 'secondsRemaining'>,
+  palette: ThrownBombPlaceholderPalette
+): ThrownBombFuseWarningVisuals => {
+  const secondsRemaining = expectNonNegativeFiniteNumber(
+    state.secondsRemaining,
+    'state.secondsRemaining'
+  );
+  if (secondsRemaining > THROWN_BOMB_WARNING_START_SECONDS) {
+    return {
+      blinkActive: false,
+      minimumLightFactor: THROWN_BOMB_PLACEHOLDER_MIN_LIGHT_FACTOR,
+      baseColor: cloneThrownBombPlaceholderColor(palette.baseColor),
+      accentColor: cloneThrownBombPlaceholderColor(palette.accentColor)
+    };
+  }
+
+  const blinkIntervalSeconds =
+    secondsRemaining > THROWN_BOMB_WARNING_FAST_CADENCE_START_SECONDS
+      ? THROWN_BOMB_WARNING_SLOW_BLINK_INTERVAL_SECONDS
+      : THROWN_BOMB_WARNING_FAST_BLINK_INTERVAL_SECONDS;
+  const elapsedWarningSeconds =
+    secondsRemaining > THROWN_BOMB_WARNING_FAST_CADENCE_START_SECONDS
+      ? THROWN_BOMB_WARNING_START_SECONDS - secondsRemaining
+      : THROWN_BOMB_WARNING_FAST_CADENCE_START_SECONDS - secondsRemaining;
+  const blinkActive = Math.floor(elapsedWarningSeconds / blinkIntervalSeconds) % 2 === 0;
+
+  return blinkActive
+    ? {
+        blinkActive: true,
+        minimumLightFactor: THROWN_BOMB_PLACEHOLDER_WARNING_MIN_LIGHT_FACTOR,
+        baseColor: cloneThrownBombPlaceholderColor(THROWN_BOMB_WARNING_BASE_COLOR),
+        accentColor: cloneThrownBombPlaceholderColor(THROWN_BOMB_WARNING_ACCENT_COLOR)
+      }
+    : {
+        blinkActive: false,
+        minimumLightFactor: THROWN_BOMB_PLACEHOLDER_MIN_LIGHT_FACTOR,
+        baseColor: cloneThrownBombPlaceholderColor(palette.baseColor),
+        accentColor: cloneThrownBombPlaceholderColor(palette.accentColor)
+      };
 };

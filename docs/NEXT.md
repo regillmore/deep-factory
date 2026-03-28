@@ -55,6 +55,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bomb utility
 
-605. Add thrown-bomb fuse warning feedback after task 604: surface a visible pre-detonation blink cadence on in-flight bomb entities and cover placeholder render regressions.
 611. Attribute lethal bomb self-damage after task 603: report player-blast deaths through the shared death-cause event path and cover bomb-versus-environment priority regressions.
 618. Add thrown-bomb detonation flash after task 605: render a short-lived explosion placeholder at the blast point and cover deterministic blast-visual lifetime regressions.
+620. Surface in-flight bomb fuse feedback on the selected hotbar slot after task 605: show a shrinking fuse fill while at least one thrown bomb is active, and cover idle-versus-warning slot regressions.

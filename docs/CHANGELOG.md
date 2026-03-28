@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-28
 
+- Task: Add thrown-bomb fuse warning feedback.
+- Changes: Updated [src/gl/thrownBombPlaceholder.ts](../src/gl/thrownBombPlaceholder.ts) plus [src/gl/thrownBombPlaceholder.test.ts](../src/gl/thrownBombPlaceholder.test.ts) so thrown bombs now resolve a deterministic late-fuse warning cadence that alternates between their normal palette and a brighter warning palette with a higher minimum light floor; updated [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so in-flight bomb entities render that blink feedback through the existing placeholder path; removed completed task `605` from [docs/NEXT.md](docs/NEXT.md), added replacement task `620`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `cmd /c npx vitest run src/gl/thrownBombPlaceholder.test.ts src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add hostile-hit arrow recovery pickups.
 - Changes: Updated [src/world/bowFiring.ts](../src/world/bowFiring.ts) plus [src/world/bowFiring.test.ts](../src/world/bowFiring.test.ts) so hostile-slime arrow resolutions now carry the same deterministic impact position metadata as terrain hits; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so resolved hostile hits spend one carried `Arrow`, spawn or merge a recoverable dropped-arrow pickup at that impact point, and preserve defeat-time arrow-plus-gel drop ordering through the shared dropped-item cascade; removed completed task `616` from [docs/NEXT.md](docs/NEXT.md), added replacement task `619`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `cmd /c npx vitest run src/world/bowFiring.test.ts src/main.test.ts -t bow` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

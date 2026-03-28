@@ -76,7 +76,9 @@ vi.mock('./atlasValidation', () => ({
   collectAtlasValidationWarnings
 }));
 
+import { getDroppedItemPlaceholderPalette } from './droppedItemPlaceholder';
 import { Renderer, type RendererEntityFrameState } from './renderer';
+import { resolveThrownBombFuseWarningVisuals } from './thrownBombPlaceholder';
 
 const WATER_TILE_ID = 7;
 
@@ -3049,21 +3051,23 @@ describe('Renderer atlas telemetry', () => {
     const drawArrays = vi.mocked(gl.drawArrays);
     const bufferData = vi.mocked(gl.bufferData);
     const uniform1f = vi.mocked(gl.uniform1f);
+    const uniform3f = vi.mocked(gl.uniform3f);
     drawArrays.mockClear();
     bufferData.mockClear();
     uniform1f.mockClear();
+    uniform3f.mockClear();
 
     const currentState = createThrownBombState({
       position: { x: 80, y: 60 },
       velocity: { x: 120, y: -30 },
       radius: 6,
-      secondsRemaining: 0.4
+      secondsRemaining: 1.1
     });
     const previousState = createThrownBombState({
       position: { x: 68, y: 44 },
       velocity: { x: 120, y: -30 },
       radius: 6,
-      secondsRemaining: 0.5
+      secondsRemaining: 1.2
     });
 
     renderer.render(new Camera2D(), {
@@ -3108,9 +3112,68 @@ describe('Renderer atlas telemetry', () => {
       0,
       1
     ]);
+    const palette = getDroppedItemPlaceholderPalette('bomb');
     expect(uniform1f.mock.calls).toHaveLength(1);
     expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(0.45);
     expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
+    expect(uniform3f.mock.calls).toEqual([
+      [expect.anything(), palette.baseColor[0], palette.baseColor[1], palette.baseColor[2]],
+      [expect.anything(), palette.accentColor[0], palette.accentColor[1], palette.accentColor[2]]
+    ]);
+  });
+
+  it('switches thrown-bomb placeholders into the fuse-warning blink palette near detonation', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
+    });
+    await renderer.initialize();
+
+    const uniform1f = vi.mocked(gl.uniform1f);
+    const uniform3f = vi.mocked(gl.uniform3f);
+    uniform1f.mockClear();
+    uniform3f.mockClear();
+
+    const currentState = createThrownBombState({
+      position: { x: 80, y: 60 },
+      velocity: { x: 120, y: -30 },
+      radius: 6,
+      secondsRemaining: 0.74
+    });
+    const warningVisuals = resolveThrownBombFuseWarningVisuals(
+      currentState,
+      getDroppedItemPlaceholderPalette('bomb')
+    );
+
+    renderer.render(new Camera2D(), {
+      entities: [createThrownBombEntityFrameState(currentState, { id: 57 })],
+      renderAlpha: 1,
+      timeMs: 0
+    });
+
+    expect(warningVisuals.blinkActive).toBe(true);
+    expect(uniform1f.mock.calls).toHaveLength(1);
+    expect(uniform1f.mock.calls[0]?.[1]).toBeCloseTo(warningVisuals.minimumLightFactor, 6);
+    expect(uniform3f.mock.calls).toEqual([
+      [
+        expect.anything(),
+        warningVisuals.baseColor[0],
+        warningVisuals.baseColor[1],
+        warningVisuals.baseColor[2]
+      ],
+      [
+        expect.anything(),
+        warningVisuals.accentColor[0],
+        warningVisuals.accentColor[1],
+        warningVisuals.accentColor[2]
+      ]
+    ]);
   });
 
   it('draws bow-arrow projectile placeholders from interpolated entity snapshots', async () => {
