@@ -212,28 +212,31 @@ describe('bowFiring', () => {
       facing: 'right'
     });
 
-    expect(
-      stepArrowProjectileState(
-        createArrowProjectileStateFromBowFire(playerState, {
-          x: 48,
-          y: 8
-        }),
-        {
-          world: {
-            getTile: (worldTileX, worldTileY) => world.getTile(worldTileX, worldTileY)
-          },
-          fixedDtSeconds: 0.2
-        }
-      )
-    ).toEqual({
-      nextState: null,
-      hitEvent: {
-        kind: 'terrain',
-        worldTileX: 2,
-        worldTileY: 0,
-        tileId: 1
+    const stepResult = stepArrowProjectileState(
+      createArrowProjectileStateFromBowFire(playerState, {
+        x: 48,
+        y: 8
+      }),
+      {
+        world: {
+          getTile: (worldTileX, worldTileY) => world.getTile(worldTileX, worldTileY)
+        },
+        fixedDtSeconds: 0.2
       }
+    );
+
+    expect(stepResult.nextState).toBeNull();
+    expect(stepResult.hitEvent).toMatchObject({
+      kind: 'terrain',
+      worldTileX: 2,
+      worldTileY: 0,
+      tileId: 1
     });
+    if (stepResult.hitEvent === null || stepResult.hitEvent.kind !== 'terrain') {
+      throw new Error('expected a terrain hit event');
+    }
+    expect(stepResult.hitEvent.position.x).toBeCloseTo(29, 6);
+    expect(stepResult.hitEvent.position.y).toBeCloseTo(5.15, 6);
   });
 
   it('reports the earliest hostile-slime hit before later terrain and applies damage plus knockback', () => {

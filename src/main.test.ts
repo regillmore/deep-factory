@@ -12306,7 +12306,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toHaveLength(2);
   });
 
-  it('despawns bow arrows on first solid-terrain contact and consumes one carried arrow on resolution', async () => {
+  it('despawns bow arrows on first solid-terrain contact, spends one carried arrow, and spawns a recoverable pickup', async () => {
     const standalonePlayerState = createPlayerState({
       position: { x: 8, y: 28 },
       facing: 'right'
@@ -12314,11 +12314,37 @@ describe('main.ts shell state orchestration', () => {
     const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
     const savedWorld = new TileWorld(0);
     for (let worldTileY = -2; worldTileY <= 3; worldTileY += 1) {
-      for (let worldTileX = -2; worldTileX <= 6; worldTileX += 1) {
+      for (let worldTileX = -2; worldTileX <= 8; worldTileX += 1) {
         savedWorld.setTile(worldTileX, worldTileY, 0);
       }
     }
-    savedWorld.setTile(1, 1, PROCEDURAL_STONE_TILE_ID);
+    savedWorld.setTile(4, 0, PROCEDURAL_STONE_TILE_ID);
+    let predictedArrowState = createArrowProjectileStateFromBowFire(standalonePlayerState, {
+      x: playerFocusPoint.x + 96,
+      y: playerFocusPoint.y
+    });
+    let predictedTerrainHit:
+      | ReturnType<typeof stepArrowProjectileState>['hitEvent']
+      | null = null;
+    for (let step = 0; step < 20; step += 1) {
+      const predictedStepResult = stepArrowProjectileState(predictedArrowState, {
+        world: {
+          getTile: (worldTileX, worldTileY) => savedWorld.getTile(worldTileX, worldTileY)
+        },
+        fixedDtSeconds: 1 / 60
+      });
+      if (predictedStepResult.hitEvent?.kind === 'terrain') {
+        predictedTerrainHit = predictedStepResult.hitEvent;
+        break;
+      }
+      if (predictedStepResult.nextState === null) {
+        throw new Error('expected a terrain-hit arrow resolution');
+      }
+      predictedArrowState = predictedStepResult.nextState;
+    }
+    if (predictedTerrainHit === null || predictedTerrainHit.kind !== 'terrain') {
+      throw new Error('expected a predicted terrain-hit event');
+    }
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
       JSON.stringify(
@@ -12350,20 +12376,151 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     testRuntime.playerItemUseRequests = [
       {
-        worldTileX: 6,
-        worldTileY: 1,
-        worldX: playerFocusPoint.x + 60,
+        worldTileX: 8,
+        worldTileY: 0,
+        worldX: playerFocusPoint.x + 96,
         worldY: playerFocusPoint.y,
         pointerType: 'mouse'
       }
     ];
 
-    runFixedUpdate(1 / 60);
+    for (let step = 0; step < 20; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
     runRenderFrame(1000 / 60, 1);
 
     expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toEqual([]);
 
     dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: predictedTerrainHit.position,
+        itemId: 'arrow',
+        amount: 1
+      }
+    ]);
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'arrow',
+      amount: 11
+    });
+  });
+
+  it('cascades a recovered terrain-hit arrow into nearby matching pickups before spawning a new entity', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    for (let worldTileY = -2; worldTileY <= 3; worldTileY += 1) {
+      for (let worldTileX = -2; worldTileX <= 8; worldTileX += 1) {
+        savedWorld.setTile(worldTileX, worldTileY, 0);
+      }
+    }
+    savedWorld.setTile(4, 0, PROCEDURAL_STONE_TILE_ID);
+    let predictedArrowState = createArrowProjectileStateFromBowFire(standalonePlayerState, {
+      x: playerFocusPoint.x + 96,
+      y: playerFocusPoint.y
+    });
+    let predictedTerrainHit:
+      | ReturnType<typeof stepArrowProjectileState>['hitEvent']
+      | null = null;
+    for (let step = 0; step < 20; step += 1) {
+      const predictedStepResult = stepArrowProjectileState(predictedArrowState, {
+        world: {
+          getTile: (worldTileX, worldTileY) => savedWorld.getTile(worldTileX, worldTileY)
+        },
+        fixedDtSeconds: 1 / 60
+      });
+      if (predictedStepResult.hitEvent?.kind === 'terrain') {
+        predictedTerrainHit = predictedStepResult.hitEvent;
+        break;
+      }
+      if (predictedStepResult.nextState === null) {
+        throw new Error('expected a terrain-hit arrow resolution');
+      }
+      predictedArrowState = predictedStepResult.nextState;
+    }
+    if (predictedTerrainHit === null || predictedTerrainHit.kind !== 'terrain') {
+      throw new Error('expected a predicted terrain-hit event');
+    }
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bow', amount: 1 },
+              { itemId: 'arrow', amount: 12 },
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          }),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: predictedTerrainHit.position,
+              itemId: 'arrow',
+              amount: 999
+            }),
+            createDroppedItemState({
+              position: {
+                x: predictedTerrainHit.position.x + 4,
+                y: predictedTerrainHit.position.y
+              },
+              itemId: 'arrow',
+              amount: 998
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 8,
+        worldTileY: 0,
+        worldX: playerFocusPoint.x + 96,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse'
+      }
+    ];
+
+    for (let step = 0; step < 20; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: predictedTerrainHit.position,
+        itemId: 'arrow',
+        amount: 999
+      },
+      {
+        position: {
+          x: predictedTerrainHit.position.x + 4,
+          y: predictedTerrainHit.position.y
+        },
+        itemId: 'arrow',
+        amount: 999
+      }
+    ]);
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
       itemId: 'arrow',
       amount: 11

@@ -2781,6 +2781,25 @@ const bootstrap = async (): Promise<void> => {
       itemId: HOSTILE_SLIME_GEL_DROP_ITEM_ID,
       amount: HOSTILE_SLIME_GEL_DROP_AMOUNT
     });
+  const spawnRecoveredArrowPickupAtPosition = (
+    position: DroppedItemState['position'],
+    amount: number
+  ): void => {
+    if (amount <= 0) {
+      return;
+    }
+
+    const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(
+      createDroppedItemState({
+        position,
+        itemId: ARROW_ITEM_ID,
+        amount
+      })
+    );
+    if (remainingDroppedItemState !== null) {
+      spawnDroppedItemEntity(remainingDroppedItemState);
+    }
+  };
   const mergeDroppedItemIntoNearbyPickup = (
     droppedItemState: DroppedItemState
   ): DroppedItemState | null => {
@@ -3646,6 +3665,8 @@ const bootstrap = async (): Promise<void> => {
           });
         }
         if (stepResult.nextState === null) {
+          const terrainRecoveryPosition =
+            stepResult.hitEvent?.kind === 'terrain' ? stepResult.hitEvent.position : null;
           const removeAmmoResult = removePlayerInventoryItemAmount(
             standalonePlayerInventoryState,
             ARROW_ITEM_ID,
@@ -3653,6 +3674,12 @@ const bootstrap = async (): Promise<void> => {
           );
           if (removeAmmoResult.removedAmount > 0) {
             applyStandalonePlayerInventoryState(removeAmmoResult.state);
+            if (terrainRecoveryPosition !== null) {
+              spawnRecoveredArrowPickupAtPosition(
+                terrainRecoveryPosition,
+                removeAmmoResult.removedAmount
+              );
+            }
           }
           if (arrowProjectileEntityId !== null) {
             entityRegistry.despawn(arrowProjectileEntityId);

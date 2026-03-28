@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-28
 
+- Task: Add terrain-hit arrow recovery pickups.
+- Changes: Updated [src/world/bowFiring.ts](../src/world/bowFiring.ts) plus [src/world/bowFiring.test.ts](../src/world/bowFiring.test.ts) so terrain-hit arrow resolutions now carry a deterministic impact position beside the struck solid tile; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so resolved terrain hits spend one carried `Arrow`, spawn a recoverable dropped-arrow pickup at that impact point, and reuse the shared nearest-first dropped-item merge cascade before creating a new entity; removed completed task `613` from [docs/NEXT.md](docs/NEXT.md), refined task `615`, added replacement task `617`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `cmd /c npx vitest run src/world/bowFiring.test.ts src/main.test.ts -t bow` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add hostile-slime arrow hits.
 - Changes: Updated [src/world/bowFiring.ts](../src/world/bowFiring.ts) plus [src/world/bowFiring.test.ts](../src/world/bowFiring.test.ts) so bow arrows now resolve earliest hostile-slime-versus-terrain hits, apply deterministic damage plus directional knockback, and expose hostile-hit helpers beside the existing projectile stepping; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so arrow projectiles now route hostile-slime hits through the shared post-step combat flush, spend one carried `Arrow` on hostile-hit resolution, and despawn defeated slimes into the existing gel-drop cascade; removed completed task `577` from [docs/NEXT.md](docs/NEXT.md), added replacement task `616`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `cmd /c npx vitest run src/world/bowFiring.test.ts src/main.test.ts -t bow` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

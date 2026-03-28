@@ -46,6 +46,7 @@ export interface ArrowProjectileHostileSlimeTarget {
 
 export interface ArrowProjectileTerrainHitEvent {
   kind: 'terrain';
+  position: BowWorldPoint;
   worldTileX: number;
   worldTileY: number;
   tileId: number;
@@ -229,6 +230,18 @@ const resolveWorldTileBoundsForSegment = (
   minTileY: Math.floor((Math.min(start.y, end.y) - radius) / TILE_SIZE),
   maxTileY: Math.ceil((Math.max(start.y, end.y) + radius) / TILE_SIZE) - 1
 });
+
+const resolveSegmentPointAtTime = (
+  start: BowWorldPoint,
+  end: BowWorldPoint,
+  time: number
+): BowWorldPoint => {
+  const normalizedTime = expectFiniteNumber(time, 'time');
+  return {
+    x: start.x + (end.x - start.x) * normalizedTime,
+    y: start.y + (end.y - start.y) * normalizedTime
+  };
+};
 
 const resolveArrowProjectileTerrainHit = (
   state: ArrowProjectileState,
@@ -563,6 +576,7 @@ export const stepArrowProjectileState = (
       nextState: null,
       hitEvent: {
         kind: 'terrain',
+        position: resolveSegmentPointAtTime(state.position, nextPosition, terrainHit.time),
         worldTileX: terrainHit.worldTileX,
         worldTileY: terrainHit.worldTileY,
         tileId: terrainHit.tileId
