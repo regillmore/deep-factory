@@ -467,6 +467,7 @@ import {
   type ThrownBombState
 } from './world/bombThrowing';
 import {
+  applyArrowProjectileHitToHostileSlime,
   ARROW_ITEM_ID,
   BOW_ITEM_ID,
   createBowDrawCooldownState,
@@ -474,6 +475,7 @@ import {
   stepBowDrawCooldownState,
   stepArrowProjectileState,
   tryFireBow,
+  type ArrowProjectileHostileSlimeHitEvent,
   type ArrowProjectileState
 } from './world/bowFiring';
 import { stepPlayerManaRegeneration } from './world/playerMana';
@@ -563,6 +565,10 @@ type PendingHostileSlimeCombatEvent =
   | {
       kind: 'wand-firebolt-hit';
       event: StarterWandFireboltHitEvent;
+    }
+  | {
+      kind: 'bow-arrow-hit';
+      event: ArrowProjectileHostileSlimeHitEvent;
     }
   | {
       kind: 'bomb-blast';
@@ -3623,13 +3629,23 @@ const bootstrap = async (): Promise<void> => {
         secondsRemaining: arrowProjectileState.secondsRemaining
       }),
       fixedUpdate: (arrowProjectileState, fixedDt) => {
-        const nextState = stepArrowProjectileState(arrowProjectileState, {
+        const stepResult = stepArrowProjectileState(arrowProjectileState, {
           world: {
             getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY)
           },
+          hostileSlimes: getHostileSlimeEntityStates().map((hostileSlime) => ({
+            entityId: hostileSlime.id,
+            state: hostileSlime.state
+          })),
           fixedDtSeconds: fixedDt
         });
-        if (nextState === null) {
+        if (stepResult.hitEvent?.kind === 'hostile-slime') {
+          pendingHostileSlimeCombatEvents.push({
+            kind: 'bow-arrow-hit',
+            event: stepResult.hitEvent
+          });
+        }
+        if (stepResult.nextState === null) {
           const removeAmmoResult = removePlayerInventoryItemAmount(
             standalonePlayerInventoryState,
             ARROW_ITEM_ID,
@@ -3644,7 +3660,7 @@ const bootstrap = async (): Promise<void> => {
           return arrowProjectileState;
         }
 
-        return nextState;
+        return stepResult.nextState;
       }
     });
     arrowProjectileEntityIds.push(arrowProjectileEntityId);
@@ -3736,6 +3752,26 @@ const bootstrap = async (): Promise<void> => {
         applyResolvedHostileSlimeCombatState(
           hitEvent.entityId,
           applyStarterWandFireboltHitToHostileSlime(activeHostileSlimeState, hitEvent)
+        );
+        continue;
+      }
+
+      if (combatEvent.kind === 'bow-arrow-hit') {
+        const hitEvent = combatEvent.event;
+        if (defeatedHostileSlimeEntityIds.has(hitEvent.entityId)) {
+          continue;
+        }
+
+        const activeHostileSlimeState = entityRegistry.getEntityState<HostileSlimeState>(
+          hitEvent.entityId
+        );
+        if (activeHostileSlimeState === null) {
+          continue;
+        }
+
+        applyResolvedHostileSlimeCombatState(
+          hitEvent.entityId,
+          applyArrowProjectileHitToHostileSlime(activeHostileSlimeState, hitEvent)
         );
         continue;
       }

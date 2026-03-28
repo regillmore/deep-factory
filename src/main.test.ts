@@ -62,6 +62,9 @@ import {
   stepThrownBombState
 } from './world/bombThrowing';
 import {
+  DEFAULT_BOW_ARROW_DAMAGE,
+  DEFAULT_BOW_ARROW_KNOCKBACK_SPEED,
+  DEFAULT_BOW_ARROW_SPEED,
   DEFAULT_BOW_DRAW_COOLDOWN_SECONDS,
   createArrowProjectileStateFromBowFire,
   stepArrowProjectileState
@@ -12112,7 +12115,7 @@ describe('main.ts shell state orchestration', () => {
       {
         fixedDtSeconds: 1 / 60
       }
-    );
+    ).nextState;
     if (predictedArrowState === null) {
       throw new Error('expected an in-flight arrow state');
     }
@@ -12367,6 +12370,267 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('fires the bow from mouse aim, despawns the arrow on slime hit, carries knockback into the next slime fixed step, and spends one carried arrow', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 12, -4, 4);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bow', amount: 1 },
+              { itemId: 'arrow', amount: 12 },
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    const slimeSpawnPoint = createTestPlayerSpawnPoint({
+      x: 56,
+      y: 18,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        return slimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 4,
+        worldTileY: 0,
+        worldX: slimeSpawnPoint.x,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    const initialArrowPositions =
+      testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions ?? [];
+    expect(initialArrowPositions).toHaveLength(1);
+    expect(initialArrowPositions[0]?.position.x).toBeCloseTo(
+      playerFocusPoint.x + DEFAULT_BOW_ARROW_SPEED * (1 / 60),
+      6
+    );
+    expect(initialArrowPositions[0]?.position.y).toBeCloseTo(playerFocusPoint.y, 6);
+
+    testRuntime.rendererStepHostileSlimeStateImpl = (state, fixedDt) => {
+      const slimeState = state as {
+        position?: { x?: number; y?: number };
+        velocity?: { x?: number; y?: number };
+        grounded?: boolean;
+        facing?: 'left' | 'right';
+        hopCooldownTicksRemaining?: number;
+        launchKind?: 'standard-hop' | 'step-hop' | null;
+      };
+      const velocityX =
+        typeof slimeState.velocity?.x === 'number' ? slimeState.velocity.x : 0;
+      const velocityY =
+        typeof slimeState.velocity?.y === 'number' ? slimeState.velocity.y : 0;
+      return {
+        position: {
+          x: (slimeState.position?.x ?? 0) + velocityX * fixedDt,
+          y: (slimeState.position?.y ?? 0) + velocityY * fixedDt
+        },
+        velocity: {
+          x: velocityX,
+          y: velocityY
+        },
+        grounded: slimeState.grounded ?? false,
+        facing: slimeState.facing ?? 'right',
+        hopCooldownTicksRemaining:
+          slimeState.hopCooldownTicksRemaining ?? DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
+        launchKind: slimeState.launchKind ?? null
+      };
+    };
+    testRuntime.rendererStepHostileSlimeStateRequests = [];
+    testRuntime.playerItemUseRequests = [];
+
+    for (let step = 0; step < 10; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.rendererStepHostileSlimeStateRequests).toContainEqual({
+      state: {
+        position: { x: 56, y: 18 },
+        velocity: {
+          x: DEFAULT_BOW_ARROW_KNOCKBACK_SPEED,
+          y: 0
+        },
+        health: DEFAULT_HOSTILE_SLIME_HEALTH - DEFAULT_BOW_ARROW_DAMAGE,
+        grounded: false,
+        facing: 'right',
+        hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
+      },
+      fixedDt: 1 / 60,
+      playerPosition: { x: 8, y: 28 }
+    });
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toEqual([]);
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toHaveLength(1);
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions?.[0]?.position.x).toBeGreaterThan(
+      56
+    );
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions?.[0]?.position.y).toBeCloseTo(
+      18,
+      6
+    );
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'arrow',
+      amount: 11
+    });
+  });
+
+  it('despawns a hostile slime and leaves one gel pickup when a resolving arrow lands the defeating hit', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 12, -4, 4);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bow', amount: 1 },
+              { itemId: 'arrow', amount: 12 },
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    const slimeSpawnPoint = createTestPlayerSpawnPoint({
+      x: 56,
+      y: 18,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        return slimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+
+    testRuntime.rendererStepHostileSlimeStateImpl = () => ({
+      position: { x: slimeSpawnPoint.x, y: slimeSpawnPoint.y },
+      velocity: { x: 0, y: 0 },
+      grounded: true,
+      facing: 'right',
+      launchKind: null
+    });
+
+    const bowUseRequest = {
+      worldTileX: 4,
+      worldTileY: 0,
+      worldX: slimeSpawnPoint.x,
+      worldY: playerFocusPoint.y,
+      pointerType: 'mouse' as const
+    };
+
+    testRuntime.playerItemUseRequests = [bowUseRequest];
+    runFixedUpdate(1 / 60);
+    testRuntime.playerItemUseRequests = [];
+    for (let step = 0; step < 10; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+
+    runFixedUpdate(DEFAULT_BOW_DRAW_COOLDOWN_SECONDS);
+
+    testRuntime.playerItemUseRequests = [bowUseRequest];
+    runFixedUpdate(1 / 60);
+    testRuntime.playerItemUseRequests = [];
+    for (let step = 0; step < 10; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toEqual([]);
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 56, y: 18 - DEFAULT_HOSTILE_SLIME_HEIGHT * 0.5 },
+        itemId: 'gel',
+        amount: 1
+      }
+    ]);
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'arrow',
+      amount: 10
+    });
+  });
+
   it('fires the bow from touch aim through the shared hidden-panel item-use path while the projectile remains in flight', async () => {
     const standalonePlayerState = createPlayerState({
       position: { x: 8, y: 28 },
@@ -12389,7 +12653,7 @@ describe('main.ts shell state orchestration', () => {
       {
         fixedDtSeconds: 1 / 60
       }
-    );
+    ).nextState;
     if (predictedArrowState === null) {
       throw new Error('expected an in-flight arrow state');
     }

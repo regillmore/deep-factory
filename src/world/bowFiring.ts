@@ -1,4 +1,11 @@
 import { TILE_SIZE } from './constants';
+import {
+  applyHostileSlimeDamage,
+  cloneHostileSlimeState,
+  getHostileSlimeAabb,
+  type HostileSlimeFacing,
+  type HostileSlimeState
+} from './hostileSlimeState';
 import { getPlayerCameraFocusPoint, type PlayerState } from './playerState';
 import { isTileSolid, TILE_METADATA, type TileMetadataRegistry } from './tileMetadata';
 
@@ -8,6 +15,8 @@ export const DEFAULT_BOW_DRAW_COOLDOWN_SECONDS = 0.4;
 export const DEFAULT_BOW_ARROW_SPEED = 360;
 export const DEFAULT_BOW_ARROW_RADIUS = 3;
 export const DEFAULT_BOW_ARROW_LIFETIME_SECONDS = 1.2;
+export const DEFAULT_BOW_ARROW_DAMAGE = 10;
+export const DEFAULT_BOW_ARROW_KNOCKBACK_SPEED = 150;
 
 export interface BowWorldPoint {
   x: number;
@@ -29,6 +38,30 @@ export interface ArrowProjectileState {
   radius: number;
   secondsRemaining: number;
 }
+
+export interface ArrowProjectileHostileSlimeTarget {
+  entityId: number;
+  state: HostileSlimeState;
+}
+
+export interface ArrowProjectileTerrainHitEvent {
+  kind: 'terrain';
+  worldTileX: number;
+  worldTileY: number;
+  tileId: number;
+}
+
+export interface ArrowProjectileHostileSlimeHitEvent {
+  kind: 'hostile-slime';
+  entityId: number;
+  direction: BowVelocity;
+  damage: number;
+  knockbackSpeed: number;
+}
+
+export type ArrowProjectileHitEvent =
+  | ArrowProjectileTerrainHitEvent
+  | ArrowProjectileHostileSlimeHitEvent;
 
 export interface TryFireBowOptions extends CreateArrowProjectileStateFromBowFireOptions {
   cooldownSeconds?: number;
@@ -52,13 +85,32 @@ export interface StepArrowProjectileStateOptions {
   world?: {
     getTile: (worldTileX: number, worldTileY: number) => number;
   };
+  hostileSlimes?: readonly ArrowProjectileHostileSlimeTarget[];
+  damage?: number;
+  knockbackSpeed?: number;
   registry?: TileMetadataRegistry;
+}
+
+export interface StepArrowProjectileStateResult {
+  nextState: ArrowProjectileState | null;
+  hitEvent: ArrowProjectileHitEvent | null;
 }
 
 const DIRECTION_EPSILON = 1e-6;
 
 interface SegmentIntersectionResult {
   time: number;
+}
+
+interface TerrainHitCandidate extends SegmentIntersectionResult {
+  worldTileX: number;
+  worldTileY: number;
+  tileId: number;
+}
+
+interface HostileSlimeHitCandidate extends SegmentIntersectionResult {
+  entityId: number;
+  direction: BowVelocity;
 }
 
 const expectFiniteNumber = (value: number, label: string): number => {
@@ -96,6 +148,19 @@ const cloneBowVelocity = (velocity: BowVelocity): BowVelocity => ({
   x: expectFiniteNumber(velocity.x, 'velocity.x'),
   y: expectFiniteNumber(velocity.y, 'velocity.y')
 });
+
+const normalizeBowVelocity = (velocity: BowVelocity, label: string): BowVelocity => {
+  const normalizedVelocity = cloneBowVelocity(velocity);
+  const magnitude = Math.hypot(normalizedVelocity.x, normalizedVelocity.y);
+  if (magnitude <= DIRECTION_EPSILON) {
+    throw new Error(`${label} magnitude must be greater than 0`);
+  }
+
+  return {
+    x: normalizedVelocity.x / magnitude,
+    y: normalizedVelocity.y / magnitude
+  };
+};
 
 const expandWorldBounds = (
   minX: number,
@@ -165,13 +230,14 @@ const resolveWorldTileBoundsForSegment = (
   maxTileY: Math.ceil((Math.max(start.y, end.y) + radius) / TILE_SIZE) - 1
 });
 
-const doesArrowProjectileHitSolidTerrain = (
+const resolveArrowProjectileTerrainHit = (
   state: ArrowProjectileState,
   nextPosition: BowWorldPoint,
   world: NonNullable<StepArrowProjectileStateOptions['world']>,
   registry: TileMetadataRegistry
-): boolean => {
+): TerrainHitCandidate | null => {
   const bounds = resolveWorldTileBoundsForSegment(state.position, nextPosition, state.radius);
+  let bestHit: TerrainHitCandidate | null = null;
 
   for (let worldTileY = bounds.minTileY; worldTileY <= bounds.maxTileY; worldTileY += 1) {
     for (let worldTileX = bounds.minTileX; worldTileX <= bounds.maxTileX; worldTileX += 1) {
@@ -191,13 +257,28 @@ const doesArrowProjectileHitSolidTerrain = (
           state.radius
         )
       );
-      if (hit !== null) {
-        return true;
+      if (hit === null) {
+        continue;
+      }
+
+      if (
+        bestHit === null ||
+        hit.time < bestHit.time - DIRECTION_EPSILON ||
+        (Math.abs(hit.time - bestHit.time) <= DIRECTION_EPSILON &&
+          (worldTileY < bestHit.worldTileY ||
+            (worldTileY === bestHit.worldTileY && worldTileX < bestHit.worldTileX)))
+      ) {
+        bestHit = {
+          time: hit.time,
+          worldTileX,
+          worldTileY,
+          tileId
+        };
       }
     }
   }
 
-  return false;
+  return bestHit;
 };
 
 const createBowFacingFallbackDirection = (
@@ -229,6 +310,62 @@ const resolveBowFireDirection = (
   };
 };
 
+const resolveBowArrowHitFacing = (
+  currentFacing: HostileSlimeFacing,
+  direction: BowVelocity
+): HostileSlimeFacing => {
+  if (direction.x < -DIRECTION_EPSILON) {
+    return 'left';
+  }
+  if (direction.x > DIRECTION_EPSILON) {
+    return 'right';
+  }
+
+  return currentFacing;
+};
+
+const resolveArrowProjectileHostileSlimeHit = (
+  state: ArrowProjectileState,
+  nextPosition: BowWorldPoint,
+  hostileSlimes: readonly ArrowProjectileHostileSlimeTarget[]
+): HostileSlimeHitCandidate | null => {
+  let bestHit: HostileSlimeHitCandidate | null = null;
+  const normalizedDirection = normalizeBowVelocity(state.velocity, 'state.velocity');
+
+  for (const hostileSlime of hostileSlimes) {
+    const slimeAabb = getHostileSlimeAabb(hostileSlime.state);
+    const hit = resolveSegmentIntersectionTimeWithBounds(
+      state.position,
+      nextPosition,
+      expandWorldBounds(
+        slimeAabb.minX,
+        slimeAabb.minY,
+        slimeAabb.maxX,
+        slimeAabb.maxY,
+        state.radius
+      )
+    );
+    if (hit === null) {
+      continue;
+    }
+
+    if (
+      bestHit === null ||
+      hit.time < bestHit.time - DIRECTION_EPSILON ||
+      (Math.abs(hit.time - bestHit.time) <= DIRECTION_EPSILON &&
+        hostileSlime.entityId < bestHit.entityId)
+    ) {
+      bestHit = {
+        time: hit.time,
+        entityId: hostileSlime.entityId,
+        direction: normalizedDirection
+      };
+    }
+  }
+
+  return bestHit;
+};
+
 export const createArrowProjectileState = (
   state: ArrowProjectileState
 ): ArrowProjectileState => ({
@@ -244,6 +381,21 @@ export const createArrowProjectileState = (
 export const cloneArrowProjectileState = (
   state: ArrowProjectileState
 ): ArrowProjectileState => createArrowProjectileState(state);
+
+export const applyArrowProjectileHitToHostileSlime = (
+  slimeState: HostileSlimeState,
+  hitEvent: ArrowProjectileHostileSlimeHitEvent
+): HostileSlimeState => {
+  const nextState = cloneHostileSlimeState(slimeState);
+  nextState.velocity = {
+    x: hitEvent.direction.x * hitEvent.knockbackSpeed,
+    y: hitEvent.direction.y * hitEvent.knockbackSpeed
+  };
+  nextState.grounded = false;
+  nextState.facing = resolveBowArrowHitFacing(slimeState.facing, hitEvent.direction);
+  nextState.launchKind = null;
+  return applyHostileSlimeDamage(nextState, hitEvent.damage);
+};
 
 export const createBowDrawCooldownState = (
   secondsRemaining = 0
@@ -361,16 +513,30 @@ export const tryFireBow = (
 export const stepArrowProjectileState = (
   state: ArrowProjectileState,
   options: StepArrowProjectileStateOptions
-): ArrowProjectileState | null => {
+): StepArrowProjectileStateResult => {
   const fixedDtSeconds = expectNonNegativeFiniteNumber(
     options.fixedDtSeconds,
     'options.fixedDtSeconds'
   );
+  const damage = expectPositiveFiniteNumber(
+    options.damage ?? DEFAULT_BOW_ARROW_DAMAGE,
+    'options.damage'
+  );
+  const knockbackSpeed = expectPositiveFiniteNumber(
+    options.knockbackSpeed ?? DEFAULT_BOW_ARROW_KNOCKBACK_SPEED,
+    'options.knockbackSpeed'
+  );
   if (state.secondsRemaining <= 0) {
-    return null;
+    return {
+      nextState: null,
+      hitEvent: null
+    };
   }
   if (fixedDtSeconds <= 0) {
-    return cloneArrowProjectileState(state);
+    return {
+      nextState: cloneArrowProjectileState(state),
+      hitEvent: null
+    };
   }
 
   const stepSeconds = Math.min(state.secondsRemaining, fixedDtSeconds);
@@ -379,11 +545,42 @@ export const stepArrowProjectileState = (
     y: state.position.y + state.velocity.y * stepSeconds
   };
   const registry = options.registry ?? TILE_METADATA;
+  const terrainHit =
+    options.world === undefined
+      ? null
+      : resolveArrowProjectileTerrainHit(state, nextPosition, options.world, registry);
+  const hostileSlimeHit = resolveArrowProjectileHostileSlimeHit(
+    state,
+    nextPosition,
+    options.hostileSlimes ?? []
+  );
+
   if (
-    options.world !== undefined &&
-    doesArrowProjectileHitSolidTerrain(state, nextPosition, options.world, registry)
+    terrainHit !== null &&
+    (hostileSlimeHit === null || terrainHit.time <= hostileSlimeHit.time + DIRECTION_EPSILON)
   ) {
-    return null;
+    return {
+      nextState: null,
+      hitEvent: {
+        kind: 'terrain',
+        worldTileX: terrainHit.worldTileX,
+        worldTileY: terrainHit.worldTileY,
+        tileId: terrainHit.tileId
+      }
+    };
+  }
+
+  if (hostileSlimeHit !== null) {
+    return {
+      nextState: null,
+      hitEvent: {
+        kind: 'hostile-slime',
+        entityId: hostileSlimeHit.entityId,
+        direction: hostileSlimeHit.direction,
+        damage,
+        knockbackSpeed
+      }
+    };
   }
 
   const nextState = createArrowProjectileState({
@@ -393,5 +590,8 @@ export const stepArrowProjectileState = (
     secondsRemaining: Math.max(0, state.secondsRemaining - fixedDtSeconds)
   });
 
-  return nextState.secondsRemaining > 0 ? nextState : null;
+  return {
+    nextState: nextState.secondsRemaining > 0 ? nextState : null,
+    hitEvent: null
+  };
 };

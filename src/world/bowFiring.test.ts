@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
+import { createHostileSlimeState, DEFAULT_HOSTILE_SLIME_HEALTH } from './hostileSlimeState';
 import { createPlayerState, getPlayerCameraFocusPoint } from './playerState';
 import {
+  applyArrowProjectileHitToHostileSlime,
   cloneBowDrawCooldownState,
   createBowDrawCooldownState,
   cloneArrowProjectileState,
   createArrowProjectileState,
   createArrowProjectileStateFromBowFire,
+  DEFAULT_BOW_ARROW_DAMAGE,
+  DEFAULT_BOW_ARROW_KNOCKBACK_SPEED,
   DEFAULT_BOW_DRAW_COOLDOWN_SECONDS,
   DEFAULT_BOW_ARROW_LIFETIME_SECONDS,
   DEFAULT_BOW_ARROW_RADIUS,
@@ -171,11 +175,12 @@ describe('bowFiring', () => {
       secondsRemaining: 0.12
     });
 
-    const steppedState = stepArrowProjectileState(initialState, {
+    const steppedResult = stepArrowProjectileState(initialState, {
       fixedDtSeconds: 0.05
     });
 
-    expect(steppedState).toMatchObject({
+    expect(steppedResult.hitEvent).toBeNull();
+    expect(steppedResult.nextState).toMatchObject({
       position: {
         x: 13,
         y: 18.5
@@ -186,13 +191,16 @@ describe('bowFiring', () => {
       },
       radius: 3
     });
-    expect(steppedState?.secondsRemaining).toBeCloseTo(0.07, 8);
+    expect(steppedResult.nextState?.secondsRemaining).toBeCloseTo(0.07, 8);
     expect(cloneArrowProjectileState(initialState)).toEqual(initialState);
     expect(
       stepArrowProjectileState(initialState, {
         fixedDtSeconds: 0.2
       })
-    ).toBeNull();
+    ).toEqual({
+      nextState: null,
+      hitEvent: null
+    });
   });
 
   it('despawns arrows on the first solid-terrain hit along their travel segment', () => {
@@ -217,6 +225,80 @@ describe('bowFiring', () => {
           fixedDtSeconds: 0.2
         }
       )
-    ).toBeNull();
+    ).toEqual({
+      nextState: null,
+      hitEvent: {
+        kind: 'terrain',
+        worldTileX: 2,
+        worldTileY: 0,
+        tileId: 1
+      }
+    });
+  });
+
+  it('reports the earliest hostile-slime hit before later terrain and applies damage plus knockback', () => {
+    const world = new TileWorld(0);
+    clearTileRect(world, -1, 6, -2, 1);
+    world.setTile(6, 0, 1);
+    const playerState = createPlayerState({
+      position: { x: 8, y: 16 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(playerState);
+    const stepResult = stepArrowProjectileState(
+      createArrowProjectileStateFromBowFire(playerState, {
+        x: 96,
+        y: playerFocusPoint.y
+      }),
+      {
+        world: {
+          getTile: (worldTileX, worldTileY) => world.getTile(worldTileX, worldTileY)
+        },
+        hostileSlimes: [
+          {
+            entityId: 7,
+            state: createHostileSlimeState({
+              position: { x: 44, y: 16 }
+            })
+          }
+        ],
+        fixedDtSeconds: 0.2
+      }
+    );
+    if (stepResult.hitEvent === null || stepResult.hitEvent.kind !== 'hostile-slime') {
+      throw new Error('expected a hostile-slime hit event');
+    }
+
+    expect(stepResult.nextState).toBeNull();
+    expect(stepResult.hitEvent).toEqual({
+      kind: 'hostile-slime',
+      entityId: 7,
+      direction: {
+        x: 1,
+        y: 0
+      },
+      damage: DEFAULT_BOW_ARROW_DAMAGE,
+      knockbackSpeed: DEFAULT_BOW_ARROW_KNOCKBACK_SPEED
+    });
+    expect(
+      applyArrowProjectileHitToHostileSlime(
+        createHostileSlimeState({
+          position: { x: 44, y: 16 }
+        }),
+        stepResult.hitEvent
+      )
+    ).toEqual(
+      createHostileSlimeState({
+        position: { x: 44, y: 16 },
+        velocity: {
+          x: DEFAULT_BOW_ARROW_KNOCKBACK_SPEED,
+          y: 0
+        },
+        health: DEFAULT_HOSTILE_SLIME_HEALTH - DEFAULT_BOW_ARROW_DAMAGE,
+        grounded: false,
+        facing: 'right',
+        launchKind: null
+      })
+    );
   });
 });
