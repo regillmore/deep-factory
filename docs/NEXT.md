@@ -55,4 +55,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bomb utility
 
-602. Add bomb terrain destruction after task 601: break nearby mineable terrain, walls, and placed utility tiles through the shared refund paths, and cover deterministic blast-edit regressions.
+603. Add bomb self-damage and knockback after task 602: apply deterministic blast damage plus outward launch to the standalone player when inside the blast radius, respect death-hold sequencing, and cover player-blast regressions.
+604. Thrown bombs currently fall through the terrain and out of sight. Add bomb terrain collision and bouncing.

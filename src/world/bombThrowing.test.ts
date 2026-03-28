@@ -5,6 +5,7 @@ import {
   cloneThrownBombState,
   createThrownBombState,
   createThrownBombStateFromThrow,
+  resolveThrownBombBlastBreakTargets,
   resolveThrownBombBlastHostileSlimeHitEvents,
   stepThrownBombState
 } from './bombThrowing';
@@ -13,6 +14,8 @@ import {
   DEFAULT_HOSTILE_SLIME_HEALTH
 } from './hostileSlimeState';
 import { createPlayerState, getPlayerCameraFocusPoint } from './playerState';
+import { STARTER_ROPE_TILE_ID } from './starterRopePlacement';
+import { STARTER_DIRT_WALL_ID } from './starterWallPlacement';
 
 describe('bombThrowing', () => {
   it('creates a thrown-bomb state aimed from the player focus point toward the target', () => {
@@ -168,5 +171,63 @@ describe('bombThrowing', () => {
         launchKind: null
       })
     );
+  });
+
+  it('collects deterministic blast break targets for mineable tiles and wall-only cells', () => {
+    const tileIds = new Map<string, number>([
+      ['1,0', STARTER_ROPE_TILE_ID],
+      ['2,0', 1],
+      ['1,1', 1]
+    ]);
+    const wallIds = new Map<string, number>([
+      ['0,0', STARTER_DIRT_WALL_ID],
+      ['1,1', STARTER_DIRT_WALL_ID],
+      ['3,0', STARTER_DIRT_WALL_ID]
+    ]);
+    const world = {
+      getTile: (worldTileX: number, worldTileY: number) =>
+        tileIds.get(`${worldTileX},${worldTileY}`) ?? 0,
+      getWall: (worldTileX: number, worldTileY: number) =>
+        wallIds.get(`${worldTileX},${worldTileY}`) ?? 0
+    };
+
+    expect(
+      resolveThrownBombBlastBreakTargets(
+        {
+          position: { x: 24, y: 8 },
+          blastRadius: 20,
+          damage: 7,
+          knockbackSpeed: 90
+        },
+        {
+          world
+        }
+      )
+    ).toEqual([
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        targetLayer: 'wall',
+        targetId: STARTER_DIRT_WALL_ID
+      },
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        targetLayer: 'tile',
+        targetId: STARTER_ROPE_TILE_ID
+      },
+      {
+        worldTileX: 2,
+        worldTileY: 0,
+        targetLayer: 'tile',
+        targetId: 1
+      },
+      {
+        worldTileX: 1,
+        worldTileY: 1,
+        targetLayer: 'tile',
+        targetId: 1
+      }
+    ]);
   });
 });

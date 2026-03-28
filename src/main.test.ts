@@ -12315,6 +12315,10 @@ describe('main.ts shell state orchestration', () => {
     await flushBootstrap();
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererPersistentSetTileResult = true;
+    testRuntime.rendererSetWallResult = true;
+    testRuntime.rendererPersistentSetWallResult = true;
     testRuntime.playerItemUseRequests = [bombUseTarget];
     runFixedUpdate(1 / 60);
     runRenderFrame(1000 / 60, 1);
@@ -12331,6 +12335,145 @@ describe('main.ts shell state orchestration', () => {
 
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toBeNull();
+  });
+
+  it('breaks nearby mineable terrain, wall-only cells, and placed utility tiles through the bomb blast refund paths', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 328, y: -582 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const bombUseTargetWorldY = playerFocusPoint.y - 120;
+    const bombUseTarget = {
+      worldTileX: 20,
+      worldTileY: Math.floor(bombUseTargetWorldY / 16),
+      worldX: playerFocusPoint.x,
+      worldY: bombUseTargetWorldY,
+      pointerType: 'mouse' as const
+    };
+    let predictedBombState = createThrownBombStateFromThrow(standalonePlayerState, {
+      x: bombUseTarget.worldX,
+      y: bombUseTarget.worldY
+    });
+    let predictedBlastPosition: { x: number; y: number } | null = null;
+    let stepsUntilBlast = 0;
+    for (let step = 0; step < 120; step += 1) {
+      const stepResult = stepThrownBombState(predictedBombState, {
+        fixedDtSeconds: 1 / 60
+      });
+      if (stepResult.blastEvent !== null) {
+        predictedBlastPosition = stepResult.blastEvent.position;
+        stepsUntilBlast = step + 1;
+        break;
+      }
+      if (stepResult.nextState === null) {
+        throw new Error('expected an in-flight bomb state before the predicted blast');
+      }
+      predictedBombState = stepResult.nextState;
+    }
+    if (predictedBlastPosition === null || stepsUntilBlast <= 0) {
+      throw new Error('expected a predicted bomb blast position');
+    }
+
+    const blastWorldTileX = Math.floor(predictedBlastPosition.x / 16);
+    const blastWorldTileY = Math.floor(predictedBlastPosition.y / 16);
+    const wallWorldTileX = blastWorldTileX - 1;
+    const wallWorldTileY = blastWorldTileY;
+    const dirtWorldTileX = blastWorldTileX;
+    const dirtWorldTileY = blastWorldTileY;
+    const ropeWorldTileX = blastWorldTileX + 1;
+    const ropeWorldTileY = blastWorldTileY;
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setWall(wallWorldTileX, wallWorldTileY, STARTER_DIRT_WALL_ID)).toBe(true);
+    expect(savedWorld.setTileState(dirtWorldTileX, dirtWorldTileY, 9, 0)).toBe(true);
+    expect(savedWorld.setTileState(ropeWorldTileX, ropeWorldTileY, STARTER_ROPE_TILE_ID, 0)).toBe(
+      true
+    );
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bomb', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererPersistentSetTileResult = true;
+    testRuntime.rendererSetWallResult = true;
+    testRuntime.rendererPersistentSetWallResult = true;
+    testRuntime.playerItemUseRequests = [bombUseTarget];
+    runFixedUpdate(1 / 60);
+    testRuntime.playerItemUseRequests = [];
+    for (let step = 0; step < stepsUntilBlast - 1; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+
+    expect(testRuntime.rendererSetWallCalls).toEqual([
+      {
+        worldTileX: wallWorldTileX,
+        worldTileY: wallWorldTileY,
+        wallId: 0
+      }
+    ]);
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: dirtWorldTileX,
+        worldTileY: dirtWorldTileY,
+        tileId: 0
+      },
+      {
+        worldTileX: ropeWorldTileX,
+        worldTileY: ropeWorldTileY,
+        tileId: 0
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+
+    expect(restoredWorld.getTile(dirtWorldTileX, dirtWorldTileY)).toBe(0);
+    expect(restoredWorld.getTile(ropeWorldTileX, ropeWorldTileY)).toBe(0);
+    expect(restoredWorld.getWall(wallWorldTileX, wallWorldTileY)).toBe(0);
+    expect(persistedEnvelope?.session.droppedItemStates).toEqual([
+      {
+        position: { x: (wallWorldTileX + 0.5) * 16, y: (wallWorldTileY + 0.5) * 16 },
+        itemId: 'dirt-wall',
+        amount: 1
+      },
+      {
+        position: { x: (dirtWorldTileX + 0.5) * 16, y: (dirtWorldTileY + 0.5) * 16 },
+        itemId: 'dirt-block',
+        amount: 1
+      },
+      {
+        position: { x: (ropeWorldTileX + 0.5) * 16, y: (ropeWorldTileY + 0.5) * 16 },
+        itemId: 'rope',
+        amount: 1
+      }
+    ]);
   });
 
   it('shows a starter-spear preview line at fixed reach and flags clamped aim when the hovered world point is farther away', async () => {

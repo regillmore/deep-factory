@@ -4,9 +4,15 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-27: Bomb blast consequences resolve through queued post-step combat events
 
-- Decision: Fuse-complete thrown bombs now emit detached blast events during entity fixed updates, and `src/main.ts` applies their hostile-slime damage, knockback, and lethal-drop consequences only after entity stepping finishes for that tick through the same shared combat flush that also handles wand firebolt hits.
+- Decision: Fuse-complete thrown bombs now emit detached blast events during entity fixed updates, and `src/main.ts` applies their terrain-break plus hostile-slime damage, knockback, and lethal-drop consequences only after entity stepping finishes for that tick through the same shared combat flush that also handles wand firebolt hits.
 - Reason: Deferring blast consequences until after entity updates keeps bomb detonation deterministic relative to fixed-step movement while avoiding a second direct-combat path inside the thrown-bomb entity hook itself.
-- Consequence: Future bomb follow-ups such as terrain destruction, player self-damage, or explosion visuals should extend that queued blast-event path instead of resolving blast side effects directly inside the thrown-bomb fixed update.
+- Consequence: Future bomb follow-ups such as player self-damage or explosion visuals should extend that queued blast-event path instead of resolving blast side effects directly inside the thrown-bomb fixed update.
+
+### 2026-03-27: Bomb terrain destruction reuses pickaxe target rules and gameplay refund paths
+
+- Decision: Bomb blasts now resolve overlapping breakable tile or wall targets through the shared starter-pickaxe target evaluation helper, and `src/main.ts` routes the resulting tile or wall clears through the same gameplay edit plus pickup-refund paths already used by starter-pickaxe mining.
+- Reason: Reusing those target and refund seams keeps bomb breakability aligned with existing mineable terrain, wall-only, and placed-utility rules while preserving one authoritative source for item refunds and support-collapse cleanup.
+- Consequence: Future explosive terrain effects should extend the same blast-target scan and shared gameplay refund paths instead of hardcoding separate break lists or duplicate pickup-spawn logic.
 
 ### 2026-03-27: Paused-dashboard results no longer live in a dedicated Recent Activity section
 

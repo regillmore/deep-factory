@@ -10,6 +10,12 @@ import {
   getPlayerCameraFocusPoint,
   type PlayerState
 } from './playerState';
+import {
+  evaluateStarterPickaxeMiningTarget,
+  type StarterPickaxeMiningTargetLayer,
+  type StarterPickaxeMiningWorldView
+} from './starterPickaxeMining';
+import { TILE_METADATA, type TileMetadataRegistry } from './tileMetadata';
 
 export const BOMB_ITEM_ID = 'bomb';
 export const DEFAULT_THROWN_BOMB_SPEED = 180;
@@ -62,6 +68,13 @@ export interface ThrownBombBlastHostileSlimeHitEvent {
   knockbackSpeed: number;
 }
 
+export interface ThrownBombBlastBreakTarget {
+  worldTileX: number;
+  worldTileY: number;
+  targetLayer: StarterPickaxeMiningTargetLayer;
+  targetId: number;
+}
+
 export interface StepThrownBombStateOptions {
   fixedDtSeconds: number;
   gravity?: number;
@@ -73,6 +86,11 @@ export interface StepThrownBombStateOptions {
 export interface StepThrownBombStateResult {
   nextState: ThrownBombState | null;
   blastEvent: ThrownBombBlastEvent | null;
+}
+
+export interface ResolveThrownBombBlastBreakTargetsOptions {
+  world: StarterPickaxeMiningWorldView;
+  registry?: TileMetadataRegistry;
 }
 
 const DIRECTION_EPSILON = 1e-6;
@@ -128,6 +146,18 @@ const cloneThrownBombBlastEvent = (
 
 const clampNumber = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
+
+const doesThrownBombBlastOverlapAabb = (
+  blastPosition: ThrownBombWorldPoint,
+  blastRadius: number,
+  aabb: { minX: number; minY: number; maxX: number; maxY: number }
+): boolean => {
+  const nearestX = clampNumber(blastPosition.x, aabb.minX, aabb.maxX);
+  const nearestY = clampNumber(blastPosition.y, aabb.minY, aabb.maxY);
+  const deltaX = blastPosition.x - nearestX;
+  const deltaY = blastPosition.y - nearestY;
+  return deltaX * deltaX + deltaY * deltaY <= blastRadius * blastRadius;
+};
 
 const resolveThrownBombDirection = (
   playerState: PlayerState,
@@ -218,14 +248,16 @@ const doesThrownBombBlastOverlapHostileSlime = (
   blastPosition: ThrownBombWorldPoint,
   blastRadius: number,
   slimeState: HostileSlimeState
-): boolean => {
-  const slimeAabb = getHostileSlimeAabb(slimeState);
-  const nearestX = clampNumber(blastPosition.x, slimeAabb.minX, slimeAabb.maxX);
-  const nearestY = clampNumber(blastPosition.y, slimeAabb.minY, slimeAabb.maxY);
-  const deltaX = blastPosition.x - nearestX;
-  const deltaY = blastPosition.y - nearestY;
-  return deltaX * deltaX + deltaY * deltaY <= blastRadius * blastRadius;
-};
+): boolean => doesThrownBombBlastOverlapAabb(blastPosition, blastRadius, getHostileSlimeAabb(slimeState));
+
+const resolveThrownBombBlastTileBounds = (
+  blastEvent: ThrownBombBlastEvent
+): { minTileX: number; maxTileX: number; minTileY: number; maxTileY: number } => ({
+  minTileX: Math.floor((blastEvent.position.x - blastEvent.blastRadius) / TILE_SIZE),
+  maxTileX: Math.ceil((blastEvent.position.x + blastEvent.blastRadius) / TILE_SIZE) - 1,
+  minTileY: Math.floor((blastEvent.position.y - blastEvent.blastRadius) / TILE_SIZE),
+  maxTileY: Math.ceil((blastEvent.position.y + blastEvent.blastRadius) / TILE_SIZE) - 1
+});
 
 export const resolveThrownBombBlastHostileSlimeHitEvents = (
   blastEvent: ThrownBombBlastEvent,
@@ -257,6 +289,55 @@ export const resolveThrownBombBlastHostileSlimeHitEvents = (
   }
 
   return hitEvents;
+};
+
+export const resolveThrownBombBlastBreakTargets = (
+  blastEvent: ThrownBombBlastEvent,
+  options: ResolveThrownBombBlastBreakTargetsOptions
+): ThrownBombBlastBreakTarget[] => {
+  const normalizedBlastEvent = cloneThrownBombBlastEvent(blastEvent);
+  const registry = options.registry ?? TILE_METADATA;
+  const bounds = resolveThrownBombBlastTileBounds(normalizedBlastEvent);
+  const breakTargets: ThrownBombBlastBreakTarget[] = [];
+
+  for (let worldTileY = bounds.minTileY; worldTileY <= bounds.maxTileY; worldTileY += 1) {
+    for (let worldTileX = bounds.minTileX; worldTileX <= bounds.maxTileX; worldTileX += 1) {
+      if (
+        !doesThrownBombBlastOverlapAabb(
+          normalizedBlastEvent.position,
+          normalizedBlastEvent.blastRadius,
+          {
+            minX: worldTileX * TILE_SIZE,
+            minY: worldTileY * TILE_SIZE,
+            maxX: (worldTileX + 1) * TILE_SIZE,
+            maxY: (worldTileY + 1) * TILE_SIZE
+          }
+        )
+      ) {
+        continue;
+      }
+
+      const evaluation = evaluateStarterPickaxeMiningTarget(
+        options.world,
+        null,
+        worldTileX,
+        worldTileY,
+        registry
+      );
+      if (!evaluation.breakableTarget || evaluation.targetLayer === null) {
+        continue;
+      }
+
+      breakTargets.push({
+        worldTileX,
+        worldTileY,
+        targetLayer: evaluation.targetLayer,
+        targetId: evaluation.targetId
+      });
+    }
+  }
+
+  return breakTargets;
 };
 
 export const applyThrownBombBlastHitToHostileSlime = (

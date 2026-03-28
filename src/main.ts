@@ -459,6 +459,7 @@ import {
   applyThrownBombBlastHitToHostileSlime,
   BOMB_ITEM_ID,
   createThrownBombStateFromThrow,
+  resolveThrownBombBlastBreakTargets,
   resolveThrownBombBlastHostileSlimeHitEvents,
   stepThrownBombState,
   type ThrownBombBlastEvent,
@@ -3618,6 +3619,27 @@ const bootstrap = async (): Promise<void> => {
         continue;
       }
 
+      const bombBlastBreakTargets = resolveThrownBombBlastBreakTargets(combatEvent.event, {
+        world: {
+          getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY),
+          getWall: (worldTileX, worldTileY) => renderer.getWall(worldTileX, worldTileY)
+        }
+      });
+      for (const breakTarget of bombBlastBreakTargets) {
+        if (breakTarget.targetLayer === 'wall') {
+          destroyWorldWallThroughGameplayRefundPaths(
+            breakTarget.worldTileX,
+            breakTarget.worldTileY
+          );
+          continue;
+        }
+
+        destroyWorldTileThroughGameplayRefundPaths(
+          breakTarget.worldTileX,
+          breakTarget.worldTileY
+        );
+      }
+
       const bombBlastHitEvents = resolveThrownBombBlastHostileSlimeHitEvents(
         combatEvent.event,
         getHostileSlimeEntityStates().map((hostileSlime) => ({
@@ -3668,6 +3690,39 @@ const bootstrap = async (): Promise<void> => {
       spawnDroppedItemEntity(remainingDroppedItemState);
     }
   };
+  const destroyWorldTileThroughGameplayRefundPaths = (
+    worldTileX: number,
+    worldTileY: number
+  ): boolean => {
+    const editResult = applyWorldTileEdit(worldTileX, worldTileY, DEBUG_TILE_BREAK_ID);
+    if (!editResult.changed) {
+      return false;
+    }
+
+    const brokenTileDrop = resolveStarterPickaxeBrokenTileDrop(editResult.previousTileId);
+    if (brokenTileDrop === null) {
+      // Placeable utility tiles such as rope, torch, or workbench refund through renderer
+      // tile-edit notifications so every removal path shares the same merge-aware pickup cascade.
+      return true;
+    }
+
+    const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(
+      createDroppedItemStateFromWorldTile(
+        worldTileX,
+        worldTileY,
+        brokenTileDrop.itemId,
+        brokenTileDrop.amount
+      )
+    );
+    if (remainingDroppedItemState !== null) {
+      spawnDroppedItemEntity(remainingDroppedItemState);
+    }
+    return true;
+  };
+  const destroyWorldWallThroughGameplayRefundPaths = (
+    worldTileX: number,
+    worldTileY: number
+  ): boolean => applyWorldWallEdit(worldTileX, worldTileY, 0).changed;
   renderer.onTileEdited((event) => {
     refreshTrackedSmallTreeGrowthAnchorsAroundTileEdit(event.worldTileX, event.worldTileY);
     if (event.editOrigin !== 'gameplay') {
@@ -5185,37 +5240,17 @@ const bootstrap = async (): Promise<void> => {
     }
 
     if (stepResult.hitEvent.targetLayer === 'wall') {
-      applyWorldWallEdit(stepResult.hitEvent.tileX, stepResult.hitEvent.tileY, 0);
-      return;
-    }
-
-    const editResult = applyWorldTileEdit(
-      stepResult.hitEvent.tileX,
-      stepResult.hitEvent.tileY,
-      DEBUG_TILE_BREAK_ID
-    );
-    if (!editResult.changed) {
-      return;
-    }
-
-    const brokenTileDrop = resolveStarterPickaxeBrokenTileDrop(editResult.previousTileId);
-    if (brokenTileDrop === null) {
-      // Placeable utility tiles such as rope, torch, or workbench refund through renderer
-      // tile-edit notifications so every removal path shares the same merge-aware pickup cascade.
-      return;
-    }
-
-    const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(
-      createDroppedItemStateFromWorldTile(
+      destroyWorldWallThroughGameplayRefundPaths(
         stepResult.hitEvent.tileX,
-        stepResult.hitEvent.tileY,
-        brokenTileDrop.itemId,
-        brokenTileDrop.amount
-      )
-    );
-    if (remainingDroppedItemState !== null) {
-      spawnDroppedItemEntity(remainingDroppedItemState);
+        stepResult.hitEvent.tileY
+      );
+      return;
     }
+
+    destroyWorldTileThroughGameplayRefundPaths(
+      stepResult.hitEvent.tileX,
+      stepResult.hitEvent.tileY
+    );
   };
   const stepSmallTreeGrowthFixedUpdate = (): void => {
     syncTrackedSmallTreeGrowthAnchorsWithResidentChunks();
