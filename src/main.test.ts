@@ -69,6 +69,7 @@ import {
 import {
   DEFAULT_BOW_ARROW_DAMAGE,
   DEFAULT_BOW_ARROW_KNOCKBACK_SPEED,
+  DEFAULT_BOW_ARROW_LIFETIME_SECONDS,
   DEFAULT_BOW_ARROW_SPEED,
   DEFAULT_BOW_DRAW_COOLDOWN_SECONDS,
   createArrowProjectileStateFromBowFire,
@@ -12129,6 +12130,46 @@ describe('main.ts shell state orchestration', () => {
     );
   });
 
+  const createSelectedBowInventoryState = (arrowAmount: number) =>
+    createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        { itemId: 'heart-crystal', amount: 1 },
+        { itemId: 'bow', amount: 1 },
+        arrowAmount > 0 ? { itemId: 'arrow', amount: arrowAmount } : null,
+        null,
+        null
+      ],
+      selectedHotbarSlotIndex: 6
+    });
+
+  const seedSelectedBowTestSession = (
+    savedWorld: TileWorld,
+    standalonePlayerState: ReturnType<typeof createPlayerState>,
+    arrowAmount: number
+  ): void => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createSelectedBowInventoryState(arrowAmount)
+        })
+      )
+    );
+  };
+
+  const enterPersistedBowTestWorld = async (): Promise<void> => {
+    await import('./main');
+    await flushBootstrap();
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+  };
+
   it('fires the bow through the shared hidden-panel mouse item-use path when arrows are carried', async () => {
     const standalonePlayerState = createPlayerState({
       position: { x: 8, y: 28 },
@@ -12340,6 +12381,209 @@ describe('main.ts shell state orchestration', () => {
     runRenderFrame(1000 / 60, 1);
 
     expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toHaveLength(2);
+  });
+
+  it('blocks starting another bow shot when the only carried arrow is already reserved by an in-flight projectile', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 32, -4, 4);
+    const bowUseRequest = {
+      worldTileX: 18,
+      worldTileY: 0,
+      worldX: playerFocusPoint.x + 160,
+      worldY: playerFocusPoint.y,
+      pointerType: 'mouse' as const
+    };
+    seedSelectedBowTestSession(savedWorld, standalonePlayerState, 1);
+
+    await enterPersistedBowTestWorld();
+
+    testRuntime.playerItemUseRequests = [bowUseRequest];
+    runFixedUpdate(1 / 60);
+
+    testRuntime.playerItemUseRequests = [];
+    runFixedUpdate(DEFAULT_BOW_DRAW_COOLDOWN_SECONDS);
+
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
+    expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: 1 arrow carried');
+
+    testRuntime.playerItemUseRequests = [bowUseRequest];
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toHaveLength(1);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'arrow',
+      amount: 1
+    });
+  });
+
+  it('releases the reserved bow arrow after lifetime expiry so the remaining carried ammo can fire again', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 64, -4, 4);
+    const bowUseRequest = {
+      worldTileX: 22,
+      worldTileY: 0,
+      worldX: playerFocusPoint.x + 176,
+      worldY: playerFocusPoint.y,
+      pointerType: 'mouse' as const
+    };
+    seedSelectedBowTestSession(savedWorld, standalonePlayerState, 2);
+
+    await enterPersistedBowTestWorld();
+
+    testRuntime.playerItemUseRequests = [bowUseRequest];
+    runFixedUpdate(1 / 60);
+
+    testRuntime.playerItemUseRequests = [];
+    runFixedUpdate(DEFAULT_BOW_ARROW_LIFETIME_SECONDS);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toEqual([]);
+
+    testRuntime.playerItemUseRequests = [bowUseRequest];
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toHaveLength(1);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'arrow',
+      amount: 1
+    });
+  });
+
+  it('releases the reserved bow arrow after a terrain-hit resolution so the remaining carried ammo can fire again', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -2, 8, -2, 3);
+    savedWorld.setTile(4, 0, PROCEDURAL_STONE_TILE_ID);
+    const bowUseRequest = {
+      worldTileX: 8,
+      worldTileY: 0,
+      worldX: playerFocusPoint.x + 96,
+      worldY: playerFocusPoint.y,
+      pointerType: 'mouse' as const
+    };
+    seedSelectedBowTestSession(savedWorld, standalonePlayerState, 2);
+
+    await enterPersistedBowTestWorld();
+
+    testRuntime.playerItemUseRequests = [bowUseRequest];
+    runFixedUpdate(1 / 60);
+
+    testRuntime.playerItemUseRequests = [];
+    for (let step = 0; step < 20; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+    runFixedUpdate(DEFAULT_BOW_DRAW_COOLDOWN_SECONDS);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toEqual([]);
+
+    testRuntime.playerItemUseRequests = [bowUseRequest];
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toHaveLength(1);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'arrow',
+      amount: 1
+    });
+  });
+
+  it('releases the reserved bow arrow after a hostile-slime hit so the remaining carried ammo can fire again', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 16, -4, 4);
+    seedSelectedBowTestSession(savedWorld, standalonePlayerState, 2);
+
+    const slimeSpawnPoint = createTestPlayerSpawnPoint({
+      x: 56,
+      y: 18,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        return slimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    await enterPersistedBowTestWorld();
+
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 4,
+        worldTileY: 0,
+        worldX: slimeSpawnPoint.x,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse' as const
+      }
+    ];
+    runFixedUpdate(1 / 60);
+
+    testRuntime.playerItemUseRequests = [];
+    for (let step = 0; step < 10; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+    runFixedUpdate(DEFAULT_BOW_DRAW_COOLDOWN_SECONDS);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toEqual([]);
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 8,
+        worldTileY: 0,
+        worldX: playerFocusPoint.x + 96,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse' as const
+      }
+    ];
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toHaveLength(1);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'arrow',
+      amount: 1
+    });
   });
 
   it('despawns bow arrows on first solid-terrain contact, spends one carried arrow, and spawns a recoverable pickup', async () => {

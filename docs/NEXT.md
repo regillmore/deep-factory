@@ -10,9 +10,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bow and arrow ranged combat
 
-615. Cap unresolved bow shots to carried ammo after task 616: track reserved arrows for in-flight projectiles so one carried `Arrow` stack cannot fund multiple concurrent shots, and cover reservation-release regressions on terrain-hit, hostile-hit, or lifetime-expiry resolution.
 617. Clear bow-ammo reservations on world-session replacement after task 615: release any in-flight reserved arrows when `New World`, import, or restore replaces a session that does not persist projectile entities, and cover reservation-cleanup regressions.
 619. Surface available bow ammo after reservations on the selected hotbar slot after task 615: show remaining unreserved arrows instead of raw carried counts while in-flight projectiles hold ammo, and cover hotbar readout regressions.
+623. Prevent hotbar arrow drops from bypassing bow reservations after task 615: allow only unreserved `Arrow` items to leave inventory while arrow projectiles are still in flight, and cover single-item versus full-stack drop regressions.
 
 ## Bed checkpoint respawn
 

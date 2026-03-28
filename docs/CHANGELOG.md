@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-28
 
+- Task: Cap unresolved bow shots to carried ammo.
+- Changes: Updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so bow shot gating now treats active arrow projectiles as reserved ammo, blocks follow-up shots once unresolved arrows already claim the carried stack, and releases those reservations again on terrain-hit, hostile-hit, or lifetime-expiry resolution; removed completed task `615` from [docs/NEXT.md](docs/NEXT.md), added replacement task `623`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Fade bomb detonation flashes over their fixed-step lifetime.
 - Changes: Updated [src/gl/bombDetonationFlashPlaceholder.ts](../src/gl/bombDetonationFlashPlaceholder.ts) plus [src/gl/bombDetonationFlashPlaceholder.test.ts](../src/gl/bombDetonationFlashPlaceholder.test.ts) so bomb flashes now resolve fixed-step lifetime progress into ignition-to-ember palette and minimum-light visuals; updated [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so the renderer submits those state-driven visuals through the entity pass; removed completed task `621` from [docs/NEXT.md](docs/NEXT.md), added replacement task `622`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/gl/bombDetonationFlashPlaceholder.test.ts src/gl/renderer.test.ts -t bomb` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

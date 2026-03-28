@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-28: Bow ammo reservations follow active arrow projectiles
+
+- Decision: Bow shot availability now derives from carried `Arrow` ammo minus the current in-flight arrow projectile count, while inventory ammo still stays unchanged until each projectile resolves and spends its reserved arrow.
+- Reason: This caps unresolved shots to the carried stack without introducing a second persisted ammo counter or moving actual ammo spending away from projectile resolution.
+- Consequence: Future bow reservation follow-ups should treat active arrow projectile entities as the source of truth for reserved ammo and keep real ammo removal on the projectile-resolution seam.
+
 ### 2026-03-28: Bomb flash fade reads fixed-step lifetime progress
 
 - Decision: Bomb-detonation-flash placeholder light and palette now derive from each flash entity snapshot's `secondsRemaining` and `durationSeconds` ratio instead of a separate render-time fade timer.

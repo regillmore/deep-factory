@@ -2121,6 +2121,13 @@ const bootstrap = async (): Promise<void> => {
       carriedArrowCount: getPlayerInventoryItemAmount(standalonePlayerInventoryState, ARROW_ITEM_ID)
     };
   };
+  const resolveReservedBowArrowCount = (): number => getArrowProjectileEntityStates().length;
+  const resolveAvailableBowArrowCount = (): number =>
+    Math.max(
+      0,
+      getPlayerInventoryItemAmount(standalonePlayerInventoryState, ARROW_ITEM_ID) -
+        resolveReservedBowArrowCount()
+    );
   const resolveHotbarOverlaySelectedBowDrawCooldownFillNormalized = (): number | null => {
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
     if (selectedStack?.itemId !== BOW_ITEM_ID || bowDrawCooldownState.secondsRemaining <= 0) {
@@ -5207,7 +5214,7 @@ const bootstrap = async (): Promise<void> => {
     const fireResult = tryFireBow(
       standalonePlayerState,
       bowDrawCooldownState,
-      getPlayerInventoryItemAmount(standalonePlayerInventoryState, ARROW_ITEM_ID),
+      resolveAvailableBowArrowCount(),
       resolvePlayerItemUseTargetWorldPoint(request)
     );
     bowDrawCooldownState = fireResult.nextCooldownState;
