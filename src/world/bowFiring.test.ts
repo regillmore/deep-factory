@@ -2,12 +2,17 @@ import { describe, expect, it } from 'vitest';
 
 import { createPlayerState, getPlayerCameraFocusPoint } from './playerState';
 import {
+  cloneBowDrawCooldownState,
+  createBowDrawCooldownState,
   cloneArrowProjectileState,
   createArrowProjectileState,
   createArrowProjectileStateFromBowFire,
+  DEFAULT_BOW_DRAW_COOLDOWN_SECONDS,
   DEFAULT_BOW_ARROW_LIFETIME_SECONDS,
   DEFAULT_BOW_ARROW_RADIUS,
   DEFAULT_BOW_ARROW_SPEED,
+  stepBowDrawCooldownState,
+  tryFireBow,
   stepArrowProjectileState
 } from './bowFiring';
 import { TileWorld } from './world';
@@ -65,6 +70,96 @@ describe('bowFiring', () => {
       },
       radius: DEFAULT_BOW_ARROW_RADIUS,
       secondsRemaining: DEFAULT_BOW_ARROW_LIFETIME_SECONDS
+    });
+  });
+
+  it('starts a bow shot only when the player is alive, has ammo, and is not already drawing', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(playerState);
+    const readyCooldownState = createBowDrawCooldownState();
+
+    const firedResult = tryFireBow(
+      playerState,
+      readyCooldownState,
+      12,
+      {
+        x: playerFocusPoint.x + 48,
+        y: playerFocusPoint.y - 16
+      }
+    );
+
+    expect(firedResult.shotStarted).toBe(true);
+    expect(firedResult.blockedReason).toBeNull();
+    expect(firedResult.arrowProjectileState).not.toBeNull();
+    expect(firedResult.nextCooldownState.secondsRemaining).toBe(
+      DEFAULT_BOW_DRAW_COOLDOWN_SECONDS
+    );
+    expect(cloneBowDrawCooldownState(readyCooldownState)).toEqual(readyCooldownState);
+
+    expect(
+      tryFireBow(
+        playerState,
+        createBowDrawCooldownState(0.2),
+        12,
+        {
+          x: playerFocusPoint.x + 48,
+          y: playerFocusPoint.y
+        }
+      )
+    ).toMatchObject({
+      shotStarted: false,
+      blockedReason: 'cooldown',
+      arrowProjectileState: null,
+      nextCooldownState: { secondsRemaining: 0.2 }
+    });
+
+    expect(
+      tryFireBow(
+        playerState,
+        readyCooldownState,
+        0,
+        {
+          x: playerFocusPoint.x + 48,
+          y: playerFocusPoint.y
+        }
+      )
+    ).toMatchObject({
+      shotStarted: false,
+      blockedReason: 'no-ammo',
+      arrowProjectileState: null,
+      nextCooldownState: { secondsRemaining: 0 }
+    });
+
+    expect(
+      tryFireBow(
+        createPlayerState({
+          position: { x: 8, y: 28 },
+          health: 0
+        }),
+        readyCooldownState,
+        12,
+        {
+          x: playerFocusPoint.x + 48,
+          y: playerFocusPoint.y
+        }
+      )
+    ).toMatchObject({
+      shotStarted: false,
+      blockedReason: 'dead',
+      arrowProjectileState: null,
+      nextCooldownState: { secondsRemaining: 0 }
+    });
+  });
+
+  it('steps the detached bow draw cooldown back to zero without going negative', () => {
+    expect(
+      stepBowDrawCooldownState(createBowDrawCooldownState(0.25), 0.1).secondsRemaining
+    ).toBeCloseTo(0.15, 8);
+    expect(stepBowDrawCooldownState(createBowDrawCooldownState(0.05), 0.2)).toEqual({
+      secondsRemaining: 0
     });
   });
 

@@ -34,6 +34,7 @@ interface HotbarOverlayUpdateOptions {
         timingFillNormalized: number;
       }
     | null;
+  selectedBowDrawCooldownFillNormalized?: number | null;
   selectedBowAmmoReadout?:
     | {
         carriedArrowCount: number;
@@ -110,6 +111,11 @@ const STARTER_WAND_COOLDOWN_AMOUNT_TEXT = 'COOL';
 const STARTER_WAND_COOLDOWN_AMOUNT_COLOR = '#d8e4ff';
 const STARTER_WAND_MANA_AMOUNT_TEXT = 'MANA';
 const STARTER_WAND_MANA_AMOUNT_COLOR = '#c9f6ff';
+const SELECTED_BOW_DRAW_COOLDOWN_FILL_BACKGROUND =
+  'linear-gradient(180deg, rgba(255, 232, 187, 0.05) 0%, rgba(232, 181, 104, 0.24) 35%, rgba(173, 108, 44, 0.62) 100%)';
+const SELECTED_BOW_DRAW_COOLDOWN_TITLE_TEXT = 'draw cooldown active';
+const SELECTED_BOW_DRAW_COOLDOWN_AMOUNT_TEXT = 'DRAW';
+const SELECTED_BOW_DRAW_COOLDOWN_AMOUNT_COLOR = '#ffe5b7';
 const SELECTED_BOW_EMPTY_AMOUNT_TEXT = 'EMPTY';
 const SELECTED_BOW_EMPTY_AMOUNT_COLOR = '#ffd2d2';
 const MANA_CRYSTAL_DEAD_FILL_BACKGROUND =
@@ -425,6 +431,10 @@ export class HotbarOverlay {
 
   update(state: PlayerInventoryState, options: HotbarOverlayUpdateOptions = {}): void {
     const starterAxeSwingFeedback = options.starterAxeSwingFeedback ?? null;
+    const selectedBowDrawCooldownFillNormalized =
+      typeof options.selectedBowDrawCooldownFillNormalized === 'number'
+        ? clampUnitInterval(options.selectedBowDrawCooldownFillNormalized)
+        : null;
     const selectedBowAmmoReadout = options.selectedBowAmmoReadout ?? null;
     const healingPotionCooldownFillNormalized =
       typeof options.healingPotionCooldownFillNormalized === 'number'
@@ -478,8 +488,13 @@ export class HotbarOverlay {
                   HEART_CRYSTAL_BLOCKED_FILL_BACKGROUND[heartCrystalBlockedReason]
               }
             : null;
+      const selectedBowCoolingDown =
+        selected && stack.itemId === 'bow' && selectedBowDrawCooldownFillNormalized !== null;
       const selectedBowAmmo =
-        selected && stack.itemId === 'bow' && selectedBowAmmoReadout !== null
+        selected &&
+        stack.itemId === 'bow' &&
+        selectedBowAmmoReadout !== null &&
+        !selectedBowCoolingDown
           ? {
               carriedArrowCount: Math.max(0, Math.floor(selectedBowAmmoReadout.carriedArrowCount))
             }
@@ -542,6 +557,8 @@ export class HotbarOverlay {
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${blockedConsumable.titleText})`
         : selectedTimedItemFeedback !== null
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${selectedTimedItemFeedback.titleText})`
+        : selectedBowCoolingDown
+          ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${SELECTED_BOW_DRAW_COOLDOWN_TITLE_TEXT})`
         : selectedBowAmmo !== null
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${formatSelectedBowAmmoTitleText(
               selectedBowAmmo.carriedArrowCount
@@ -563,6 +580,8 @@ export class HotbarOverlay {
         ? blockedConsumable.amountText
         : selectedTimedItemFeedback !== null
           ? HOTBAR_TIMED_ITEM_AMOUNT_TEXT[selectedTimedItemFeedback.phase]
+          : selectedBowCoolingDown
+            ? SELECTED_BOW_DRAW_COOLDOWN_AMOUNT_TEXT
           : selectedBowAmmo !== null
             ? selectedBowAmmo.carriedArrowCount > 0
               ? String(selectedBowAmmo.carriedArrowCount)
@@ -578,6 +597,8 @@ export class HotbarOverlay {
         ? blockedConsumable.amountColor
         : selectedTimedItemFeedback !== null
           ? HOTBAR_TIMED_ITEM_AMOUNT_COLOR[selectedTimedItemFeedback.phase]
+          : selectedBowCoolingDown
+            ? SELECTED_BOW_DRAW_COOLDOWN_AMOUNT_COLOR
           : selectedBowAmmo !== null && selectedBowAmmo.carriedArrowCount <= 0
             ? SELECTED_BOW_EMPTY_AMOUNT_COLOR
           : selectedWandCoolingDown
@@ -591,6 +612,8 @@ export class HotbarOverlay {
           ? 1
           : selectedTimedItemFeedback !== null
             ? selectedTimedItemFeedback.timingFillNormalized
+            : selectedBowCoolingDown
+              ? selectedBowDrawCooldownFillNormalized
             : selectedWandCoolingDown
               ? starterWandCooldownFillNormalized
             : selectedWandShowingMana
@@ -602,6 +625,8 @@ export class HotbarOverlay {
           ? blockedConsumable.fillBackground
           : selectedTimedItemFeedback !== null
             ? HOTBAR_TIMED_ITEM_FILL_BACKGROUND[selectedTimedItemFeedback.phase]
+            : selectedBowCoolingDown
+              ? SELECTED_BOW_DRAW_COOLDOWN_FILL_BACKGROUND
             : selectedWandCoolingDown
               ? STARTER_WAND_COOLDOWN_FILL_BACKGROUND
             : selectedWandShowingMana

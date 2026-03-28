@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-27: Bow draw cooldown stays in detached session-owned runtime state
+
+- Decision: Bow shots now start a shared fixed-step draw cooldown in `src/world/bowFiring.ts`, and the selected hotbar slot shows `DRAW` feedback while that cooldown drains instead of persisting the timer in inventory or save data.
+- Reason: Bow pacing is short-lived combat state like wand or potion cooldowns, and keeping it detached preserves deterministic shot gating without coupling save/load to transient draw timers.
+- Consequence: Future bow follow-ups should reuse that shared cooldown helper and keep short draw pacing outside save-owned player or inventory state unless a later task explicitly requires persistence.
+
 ### 2026-03-27: Bow arrows spend ammo on projectile resolution instead of fire start
 
 - Decision: Hidden-panel bow use now only starts when the player carries at least one `Arrow`, while the spawned arrow projectile ends on first solid-terrain contact or lifetime expiry and removes ammo only when that projectile resolves.

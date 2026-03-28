@@ -62,6 +62,7 @@ import {
   stepThrownBombState
 } from './world/bombThrowing';
 import {
+  DEFAULT_BOW_DRAW_COOLDOWN_SECONDS,
   createArrowProjectileStateFromBowFire,
   stepArrowProjectileState
 } from './world/bowFiring';
@@ -12208,6 +12209,98 @@ describe('main.ts shell state orchestration', () => {
     expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: 12 arrows carried');
     expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('12');
     expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
+  });
+
+  it('shows selected bow draw cooldown feedback and blocks rapid follow-up shots until the timer drains', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 20, -4, 4);
+    const bowUseTarget = {
+      worldTileX: 8,
+      worldTileY: 1,
+      worldX: playerFocusPoint.x + 80,
+      worldY: playerFocusPoint.y
+    };
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bow', amount: 1 },
+              { itemId: 'arrow', amount: 12 },
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        ...bowUseTarget,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    expect(getHotbarOverlaySlotButton(6).title).toContain('draw cooldown active');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('DRAW');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(6).style.height)).toBeCloseTo(
+      ((DEFAULT_BOW_DRAW_COOLDOWN_SECONDS - 1 / 60) / DEFAULT_BOW_DRAW_COOLDOWN_SECONDS) *
+        100,
+      1
+    );
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('1');
+
+    testRuntime.playerItemUseRequests = [
+      {
+        ...bowUseTarget,
+        pointerType: 'mouse'
+      }
+    ];
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toHaveLength(1);
+
+    testRuntime.playerItemUseRequests = [];
+    runFixedUpdate(DEFAULT_BOW_DRAW_COOLDOWN_SECONDS - 2 / 60);
+
+    expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: 12 arrows carried');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('12');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('0.0%');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
+
+    testRuntime.playerItemUseRequests = [
+      {
+        ...bowUseTarget,
+        pointerType: 'mouse'
+      }
+    ];
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toHaveLength(2);
   });
 
   it('despawns bow arrows on first solid-terrain contact and consumes one carried arrow on resolution', async () => {

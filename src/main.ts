@@ -469,8 +469,11 @@ import {
 import {
   ARROW_ITEM_ID,
   BOW_ITEM_ID,
-  createArrowProjectileStateFromBowFire,
+  createBowDrawCooldownState,
+  DEFAULT_BOW_DRAW_COOLDOWN_SECONDS,
+  stepBowDrawCooldownState,
   stepArrowProjectileState,
+  tryFireBow,
   type ArrowProjectileState
 } from './world/bowFiring';
 import { stepPlayerManaRegeneration } from './world/playerMana';
@@ -1904,6 +1907,7 @@ const bootstrap = async (): Promise<void> => {
   let starterPickaxeMiningState = createStarterPickaxeMiningState();
   let starterBugNetState = createStarterBugNetState();
   let starterWandCooldownState = createStarterWandCooldownState();
+  let bowDrawCooldownState = createBowDrawCooldownState();
   let playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
   let grassGrowthState = createGrassGrowthState();
   let smallTreeGrowthState = createSmallTreeGrowthState();
@@ -2102,6 +2106,20 @@ const bootstrap = async (): Promise<void> => {
     return {
       carriedArrowCount: getPlayerInventoryItemAmount(standalonePlayerInventoryState, ARROW_ITEM_ID)
     };
+  };
+  const resolveHotbarOverlaySelectedBowDrawCooldownFillNormalized = (): number | null => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== BOW_ITEM_ID || bowDrawCooldownState.secondsRemaining <= 0) {
+      return null;
+    }
+
+    return Math.max(
+      0,
+      Math.min(
+        1,
+        bowDrawCooldownState.secondsRemaining / DEFAULT_BOW_DRAW_COOLDOWN_SECONDS
+      )
+    );
   };
   const resolveHotbarOverlayHeartCrystalBlockedReason = (): 'dead' | 'max-health-cap' | null => {
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
@@ -2303,6 +2321,8 @@ const bootstrap = async (): Promise<void> => {
   const syncHotbarOverlayState = (): void => {
     hotbarOverlay.update(standalonePlayerInventoryState, {
       starterAxeSwingFeedback: resolveHotbarOverlayStarterAxeSwingFeedback(),
+      selectedBowDrawCooldownFillNormalized:
+        resolveHotbarOverlaySelectedBowDrawCooldownFillNormalized(),
       selectedBowAmmoReadout: resolveHotbarOverlaySelectedBowAmmoReadout(),
       healingPotionCooldownFillNormalized:
         resolveHotbarOverlayHealingPotionCooldownFillNormalized(),
@@ -3316,6 +3336,7 @@ const bootstrap = async (): Promise<void> => {
     starterPickaxeMiningState = createStarterPickaxeMiningState();
     starterBugNetState = createStarterBugNetState();
     starterWandCooldownState = createStarterWandCooldownState();
+    bowDrawCooldownState = createBowDrawCooldownState();
     playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
     grassGrowthState = createGrassGrowthState();
     smallTreeGrowthState = createSmallTreeGrowthState();
@@ -5040,23 +5061,23 @@ const bootstrap = async (): Promise<void> => {
   };
   const tryFireSelectedBow = (request: PlayerItemUseRequest): boolean => {
     const standalonePlayerState = getStandalonePlayerState();
-    if (
-      standalonePlayerState === null ||
-      standalonePlayerDeathState !== null ||
-      isStandalonePlayerDead(standalonePlayerState)
-    ) {
-      return false;
-    }
-    if (getPlayerInventoryItemAmount(standalonePlayerInventoryState, ARROW_ITEM_ID) <= 0) {
+    if (standalonePlayerState === null || standalonePlayerDeathState !== null) {
       return false;
     }
 
-    spawnArrowProjectileEntity(
-      createArrowProjectileStateFromBowFire(
-        standalonePlayerState,
-        resolvePlayerItemUseTargetWorldPoint(request)
-      )
+    const fireResult = tryFireBow(
+      standalonePlayerState,
+      bowDrawCooldownState,
+      getPlayerInventoryItemAmount(standalonePlayerInventoryState, ARROW_ITEM_ID),
+      resolvePlayerItemUseTargetWorldPoint(request)
     );
+    bowDrawCooldownState = fireResult.nextCooldownState;
+    syncHotbarOverlayState();
+    if (!fireResult.shotStarted || fireResult.arrowProjectileState === null) {
+      return false;
+    }
+
+    spawnArrowProjectileEntity(fireResult.arrowProjectileState);
     return true;
   };
   const tryThrowSelectedBomb = (request: PlayerItemUseRequest): boolean => {
@@ -8194,6 +8215,16 @@ const bootstrap = async (): Promise<void> => {
         syncHotbarOverlayState();
       } else {
         starterWandCooldownState = nextStarterWandCooldownState;
+      }
+      const nextBowDrawCooldownState = stepBowDrawCooldownState(
+        bowDrawCooldownState,
+        fixedDt
+      );
+      if (nextBowDrawCooldownState.secondsRemaining !== bowDrawCooldownState.secondsRemaining) {
+        bowDrawCooldownState = nextBowDrawCooldownState;
+        syncHotbarOverlayState();
+      } else {
+        bowDrawCooldownState = nextBowDrawCooldownState;
       }
       const nextHealingPotionCooldownState = stepPlayerHealingPotionCooldownState(
         playerHealingPotionCooldownState,

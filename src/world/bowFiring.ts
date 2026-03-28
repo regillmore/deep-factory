@@ -4,6 +4,7 @@ import { isTileSolid, TILE_METADATA, type TileMetadataRegistry } from './tileMet
 
 export const BOW_ITEM_ID = 'bow';
 export const ARROW_ITEM_ID = 'arrow';
+export const DEFAULT_BOW_DRAW_COOLDOWN_SECONDS = 0.4;
 export const DEFAULT_BOW_ARROW_SPEED = 360;
 export const DEFAULT_BOW_ARROW_RADIUS = 3;
 export const DEFAULT_BOW_ARROW_LIFETIME_SECONDS = 1.2;
@@ -18,11 +19,26 @@ export interface BowVelocity {
   y: number;
 }
 
+export interface BowDrawCooldownState {
+  secondsRemaining: number;
+}
+
 export interface ArrowProjectileState {
   position: BowWorldPoint;
   velocity: BowVelocity;
   radius: number;
   secondsRemaining: number;
+}
+
+export interface TryFireBowOptions extends CreateArrowProjectileStateFromBowFireOptions {
+  cooldownSeconds?: number;
+}
+
+export interface TryFireBowResult {
+  nextCooldownState: BowDrawCooldownState;
+  arrowProjectileState: ArrowProjectileState | null;
+  shotStarted: boolean;
+  blockedReason: 'cooldown' | 'dead' | 'no-ammo' | null;
 }
 
 export interface CreateArrowProjectileStateFromBowFireOptions {
@@ -229,6 +245,31 @@ export const cloneArrowProjectileState = (
   state: ArrowProjectileState
 ): ArrowProjectileState => createArrowProjectileState(state);
 
+export const createBowDrawCooldownState = (
+  secondsRemaining = 0
+): BowDrawCooldownState => ({
+  secondsRemaining: expectNonNegativeFiniteNumber(secondsRemaining, 'secondsRemaining')
+});
+
+export const cloneBowDrawCooldownState = (
+  state: BowDrawCooldownState
+): BowDrawCooldownState => ({
+  secondsRemaining: expectNonNegativeFiniteNumber(
+    state.secondsRemaining,
+    'state.secondsRemaining'
+  )
+});
+
+export const stepBowDrawCooldownState = (
+  state: BowDrawCooldownState,
+  fixedDtSeconds: number
+): BowDrawCooldownState => ({
+  secondsRemaining: Math.max(
+    0,
+    state.secondsRemaining - expectNonNegativeFiniteNumber(fixedDtSeconds, 'fixedDtSeconds')
+  )
+});
+
 export const createArrowProjectileStateFromBowFire = (
   playerState: PlayerState,
   targetWorldPoint: BowWorldPoint,
@@ -258,6 +299,63 @@ export const createArrowProjectileStateFromBowFire = (
     radius,
     secondsRemaining: lifetimeSeconds
   });
+};
+
+export const tryFireBow = (
+  playerState: PlayerState,
+  cooldownState: BowDrawCooldownState,
+  carriedArrowCount: number,
+  targetWorldPoint: BowWorldPoint,
+  options: TryFireBowOptions = {}
+): TryFireBowResult => {
+  const normalizedCarriedArrowCount = expectNonNegativeFiniteNumber(
+    carriedArrowCount,
+    'carriedArrowCount'
+  );
+  const cooldownSeconds = expectNonNegativeFiniteNumber(
+    options.cooldownSeconds ?? DEFAULT_BOW_DRAW_COOLDOWN_SECONDS,
+    'options.cooldownSeconds'
+  );
+  const nextCooldownState = cloneBowDrawCooldownState(cooldownState);
+
+  if (playerState.health <= 0) {
+    return {
+      nextCooldownState,
+      arrowProjectileState: null,
+      shotStarted: false,
+      blockedReason: 'dead'
+    };
+  }
+
+  if (cooldownState.secondsRemaining > 0) {
+    return {
+      nextCooldownState,
+      arrowProjectileState: null,
+      shotStarted: false,
+      blockedReason: 'cooldown'
+    };
+  }
+
+  if (normalizedCarriedArrowCount <= 0) {
+    return {
+      nextCooldownState,
+      arrowProjectileState: null,
+      shotStarted: false,
+      blockedReason: 'no-ammo'
+    };
+  }
+
+  nextCooldownState.secondsRemaining = cooldownSeconds;
+  return {
+    nextCooldownState,
+    arrowProjectileState: createArrowProjectileStateFromBowFire(
+      playerState,
+      targetWorldPoint,
+      options
+    ),
+    shotStarted: true,
+    blockedReason: null
+  };
 };
 
 export const stepArrowProjectileState = (

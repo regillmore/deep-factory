@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-27
 
+- Task: Add bow draw cooldown.
+- Changes: Updated [src/world/bowFiring.ts](../src/world/bowFiring.ts) plus [src/world/bowFiring.test.ts](../src/world/bowFiring.test.ts) so bows now own a detached fixed-step draw-cooldown helper that gates rapid follow-up shots; updated [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts) plus [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts) so the selected bow slot switches from ammo readout to visible `DRAW` cooldown feedback while that timer drains; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so shared hidden-panel bow use respects that cooldown for desktop and touch firing, then removed completed task `614` from [docs/NEXT.md](docs/NEXT.md), added replacement task `615`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/bowFiring.test.ts src/ui/hotbarOverlay.test.ts src/main.test.ts -t bow` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add selected-bow ammo feedback.
 - Changes: Updated [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts) plus [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts) so the selected bow slot now surfaces carried-arrow count when ammo is available and an explicit `EMPTY` readout when none is carried; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so the shared hotbar overlay sync derives that ammo state from the live inventory and covers available-versus-empty bow readouts in runtime regressions; removed completed task `612` from [docs/NEXT.md](docs/NEXT.md), added replacement task `614`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/hotbarOverlay.test.ts src/main.test.ts -t bow` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
