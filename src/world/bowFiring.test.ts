@@ -239,7 +239,7 @@ describe('bowFiring', () => {
     expect(stepResult.hitEvent.position.y).toBeCloseTo(5.15, 6);
   });
 
-  it('reports the earliest hostile-slime hit before later terrain and applies damage plus knockback', () => {
+  it('reports the earliest hostile-slime hit before later terrain and applies damage plus knockback at the impact point', () => {
     const world = new TileWorld(0);
     clearTileRect(world, -1, 6, -2, 1);
     world.setTile(6, 0, 1);
@@ -273,7 +273,7 @@ describe('bowFiring', () => {
     }
 
     expect(stepResult.nextState).toBeNull();
-    expect(stepResult.hitEvent).toEqual({
+    expect(stepResult.hitEvent).toMatchObject({
       kind: 'hostile-slime',
       entityId: 7,
       direction: {
@@ -283,6 +283,8 @@ describe('bowFiring', () => {
       damage: DEFAULT_BOW_ARROW_DAMAGE,
       knockbackSpeed: DEFAULT_BOW_ARROW_KNOCKBACK_SPEED
     });
+    expect(stepResult.hitEvent.position.x).toBeCloseTo(31, 6);
+    expect(stepResult.hitEvent.position.y).toBeCloseTo(2, 6);
     expect(
       applyArrowProjectileHitToHostileSlime(
         createHostileSlimeState({

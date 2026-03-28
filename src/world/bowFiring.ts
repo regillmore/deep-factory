@@ -54,6 +54,7 @@ export interface ArrowProjectileTerrainHitEvent {
 
 export interface ArrowProjectileHostileSlimeHitEvent {
   kind: 'hostile-slime';
+  position: BowWorldPoint;
   entityId: number;
   direction: BowVelocity;
   damage: number;
@@ -589,6 +590,7 @@ export const stepArrowProjectileState = (
       nextState: null,
       hitEvent: {
         kind: 'hostile-slime',
+        position: resolveSegmentPointAtTime(state.position, nextPosition, hostileSlimeHit.time),
         entityId: hostileSlimeHit.entityId,
         direction: hostileSlimeHit.direction,
         damage,

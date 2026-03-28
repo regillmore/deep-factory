@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-28
 
+- Task: Add hostile-hit arrow recovery pickups.
+- Changes: Updated [src/world/bowFiring.ts](../src/world/bowFiring.ts) plus [src/world/bowFiring.test.ts](../src/world/bowFiring.test.ts) so hostile-slime arrow resolutions now carry the same deterministic impact position metadata as terrain hits; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so resolved hostile hits spend one carried `Arrow`, spawn or merge a recoverable dropped-arrow pickup at that impact point, and preserve defeat-time arrow-plus-gel drop ordering through the shared dropped-item cascade; removed completed task `616` from [docs/NEXT.md](docs/NEXT.md), added replacement task `619`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `cmd /c npx vitest run src/world/bowFiring.test.ts src/main.test.ts -t bow` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add bomb self-damage and knockback.
 - Changes: Updated [src/world/bombThrowing.ts](../src/world/bombThrowing.ts) plus [src/world/bombThrowing.test.ts](../src/world/bombThrowing.test.ts) so bomb blast helpers now resolve standalone-player overlap hits and apply outward launch plus damage beside the existing hostile-slime blast path; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so queued bomb detonation events now apply self-damage through the shared post-step combat flush while preserving death-hold sequencing for lethal self-hits; removed completed task `603` from [docs/NEXT.md](docs/NEXT.md), added replacement task `618`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `cmd /c npx vitest run src/world/bombThrowing.test.ts src/main.test.ts -t bomb` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

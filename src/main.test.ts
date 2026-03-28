@@ -159,6 +159,7 @@ import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import { DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS } from './world/hostileSlimeCombat';
 import { DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS } from './world/hostileSlimeSpawn';
 import {
+  createHostileSlimeState,
   DEFAULT_HOSTILE_SLIME_HEALTH,
   DEFAULT_HOSTILE_SLIME_HEIGHT,
   DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
@@ -12528,7 +12529,7 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
-  it('fires the bow from mouse aim, despawns the arrow on slime hit, carries knockback into the next slime fixed step, and spends one carried arrow', async () => {
+  it('fires the bow from mouse aim, despawns the arrow on slime hit, spawns a recoverable pickup, carries knockback into the next slime fixed step, and spends one carried arrow', async () => {
     const standalonePlayerState = createPlayerState({
       position: { x: 8, y: 28 },
       facing: 'right'
@@ -12568,6 +12569,37 @@ describe('main.ts shell state orchestration', () => {
       height: DEFAULT_HOSTILE_SLIME_HEIGHT,
       supportTileId: 3
     });
+    let predictedArrowState = createArrowProjectileStateFromBowFire(standalonePlayerState, {
+      x: slimeSpawnPoint.x,
+      y: playerFocusPoint.y
+    });
+    let predictedHostileHit:
+      | ReturnType<typeof stepArrowProjectileState>['hitEvent']
+      | null = null;
+    for (let step = 0; step < 20; step += 1) {
+      const predictedStepResult = stepArrowProjectileState(predictedArrowState, {
+        hostileSlimes: [
+          {
+            entityId: 1,
+            state: createHostileSlimeState({
+              position: { x: slimeSpawnPoint.x, y: slimeSpawnPoint.y }
+            })
+          }
+        ],
+        fixedDtSeconds: 1 / 60
+      });
+      if (predictedStepResult.hitEvent?.kind === 'hostile-slime') {
+        predictedHostileHit = predictedStepResult.hitEvent;
+        break;
+      }
+      if (predictedStepResult.nextState === null) {
+        throw new Error('expected a hostile-hit arrow resolution');
+      }
+      predictedArrowState = predictedStepResult.nextState;
+    }
+    if (predictedHostileHit === null || predictedHostileHit.kind !== 'hostile-slime') {
+      throw new Error('expected a predicted hostile-slime hit event');
+    }
     testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
       const search = options as { width?: number; height?: number } | undefined;
       if (
@@ -12673,13 +12705,20 @@ describe('main.ts shell state orchestration', () => {
     );
 
     dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: predictedHostileHit.position,
+        itemId: 'arrow',
+        amount: 1
+      }
+    ]);
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
       itemId: 'arrow',
       amount: 11
     });
   });
 
-  it('despawns a hostile slime and leaves one gel pickup when a resolving arrow lands the defeating hit', async () => {
+  it('despawns a hostile slime and leaves recovered arrows plus one gel pickup when resolving arrows land the defeating hit', async () => {
     const standalonePlayerState = createPlayerState({
       position: { x: 8, y: 28 },
       facing: 'right'
@@ -12719,6 +12758,37 @@ describe('main.ts shell state orchestration', () => {
       height: DEFAULT_HOSTILE_SLIME_HEIGHT,
       supportTileId: 3
     });
+    let predictedArrowState = createArrowProjectileStateFromBowFire(standalonePlayerState, {
+      x: slimeSpawnPoint.x,
+      y: playerFocusPoint.y
+    });
+    let predictedHostileHit:
+      | ReturnType<typeof stepArrowProjectileState>['hitEvent']
+      | null = null;
+    for (let step = 0; step < 20; step += 1) {
+      const predictedStepResult = stepArrowProjectileState(predictedArrowState, {
+        hostileSlimes: [
+          {
+            entityId: 1,
+            state: createHostileSlimeState({
+              position: { x: slimeSpawnPoint.x, y: slimeSpawnPoint.y }
+            })
+          }
+        ],
+        fixedDtSeconds: 1 / 60
+      });
+      if (predictedStepResult.hitEvent?.kind === 'hostile-slime') {
+        predictedHostileHit = predictedStepResult.hitEvent;
+        break;
+      }
+      if (predictedStepResult.nextState === null) {
+        throw new Error('expected a hostile-hit arrow resolution');
+      }
+      predictedArrowState = predictedStepResult.nextState;
+    }
+    if (predictedHostileHit === null || predictedHostileHit.kind !== 'hostile-slime') {
+      throw new Error('expected a predicted hostile-slime hit event');
+    }
     testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
       const search = options as { width?: number; height?: number } | undefined;
       if (
@@ -12777,6 +12847,11 @@ describe('main.ts shell state orchestration', () => {
 
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: predictedHostileHit.position,
+        itemId: 'arrow',
+        amount: 2
+      },
       {
         position: { x: 56, y: 18 - DEFAULT_HOSTILE_SLIME_HEIGHT * 0.5 },
         itemId: 'gel',

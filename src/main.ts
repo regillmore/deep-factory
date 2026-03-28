@@ -3667,8 +3667,7 @@ const bootstrap = async (): Promise<void> => {
           });
         }
         if (stepResult.nextState === null) {
-          const terrainRecoveryPosition =
-            stepResult.hitEvent?.kind === 'terrain' ? stepResult.hitEvent.position : null;
+          const recoveryPosition = stepResult.hitEvent?.position ?? null;
           const removeAmmoResult = removePlayerInventoryItemAmount(
             standalonePlayerInventoryState,
             ARROW_ITEM_ID,
@@ -3676,11 +3675,8 @@ const bootstrap = async (): Promise<void> => {
           );
           if (removeAmmoResult.removedAmount > 0) {
             applyStandalonePlayerInventoryState(removeAmmoResult.state);
-            if (terrainRecoveryPosition !== null) {
-              spawnRecoveredArrowPickupAtPosition(
-                terrainRecoveryPosition,
-                removeAmmoResult.removedAmount
-              );
+            if (recoveryPosition !== null) {
+              spawnRecoveredArrowPickupAtPosition(recoveryPosition, removeAmmoResult.removedAmount);
             }
           }
           if (arrowProjectileEntityId !== null) {
