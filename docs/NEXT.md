@@ -55,9 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bomb utility
 
-601. Add bomb explosion resolution after task 600: convert fuse-complete thrown bombs into deterministic blast events, apply hostile-slime damage plus knockback within a blast radius, and cover in-flight-versus-detonated bomb regressions.
-
-## Menu UI
-
-609. Retarget paused-menu fullscreen from the top-level document to the shared shell-owned app host after task 607: keep fullscreen support detection plus enter/exit sync, and cover host-scoped fullscreen regressions for paused-menu and in-world overlay visibility.
-610. Add inline shell-reset result feedback after task 606: surface `Reset Shell Toggles` and `Reset Telemetry` outcomes on the `Shell` page without restoring a separate pause-menu results section.
+602. Add bomb terrain destruction after task 601: break nearby mineable terrain, walls, and placed utility tiles through the shared refund paths, and cover deterministic blast-edit regressions.

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-27: Bomb blast consequences resolve through queued post-step combat events
+
+- Decision: Fuse-complete thrown bombs now emit detached blast events during entity fixed updates, and `src/main.ts` applies their hostile-slime damage, knockback, and lethal-drop consequences only after entity stepping finishes for that tick through the same shared combat flush that also handles wand firebolt hits.
+- Reason: Deferring blast consequences until after entity updates keeps bomb detonation deterministic relative to fixed-step movement while avoiding a second direct-combat path inside the thrown-bomb entity hook itself.
+- Consequence: Future bomb follow-ups such as terrain destruction, player self-damage, or explosion visuals should extend that queued blast-event path instead of resolving blast side effects directly inside the thrown-bomb fixed update.
+
 ### 2026-03-27: Paused-dashboard results no longer live in a dedicated Recent Activity section
 
 - Decision: The paused main-menu dashboard now surfaces only `Overview`, `World Save`, and `Shell`, and it no longer renders a separate `Recent Activity` section or jump-back link.

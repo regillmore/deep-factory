@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyThrownBombBlastHitToHostileSlime,
   cloneThrownBombState,
   createThrownBombState,
   createThrownBombStateFromThrow,
+  resolveThrownBombBlastHostileSlimeHitEvents,
   stepThrownBombState
 } from './bombThrowing';
+import {
+  createHostileSlimeState,
+  DEFAULT_HOSTILE_SLIME_HEALTH
+} from './hostileSlimeState';
 import { createPlayerState, getPlayerCameraFocusPoint } from './playerState';
 
 describe('bombThrowing', () => {
@@ -76,13 +82,13 @@ describe('bombThrowing', () => {
       secondsRemaining: 0.12
     });
 
-    const steppedState = stepThrownBombState(initialState, {
+    const steppedResult = stepThrownBombState(initialState, {
       fixedDtSeconds: 0.05,
       gravity: 100
     });
 
-    expect(steppedState).not.toBeNull();
-    expect(steppedState).toMatchObject({
+    expect(steppedResult.blastEvent).toBeNull();
+    expect(steppedResult.nextState).toMatchObject({
       position: {
         x: 13,
         y: 18.75
@@ -93,13 +99,74 @@ describe('bombThrowing', () => {
       },
       radius: 6
     });
-    expect(steppedState?.secondsRemaining).toBeCloseTo(0.07, 8);
+    expect(steppedResult.nextState?.secondsRemaining).toBeCloseTo(0.07, 8);
     expect(cloneThrownBombState(initialState)).toEqual(initialState);
+
     expect(
       stepThrownBombState(initialState, {
-        fixedDtSeconds: 0.12,
-        gravity: 100
+        fixedDtSeconds: 0.2,
+        gravity: 100,
+        blastRadius: 24,
+        damage: 7,
+        knockbackSpeed: 90
       })
-    ).toBeNull();
+    ).toEqual({
+      nextState: null,
+      blastEvent: {
+        position: {
+          x: 17.2,
+          y: 17.84
+        },
+        blastRadius: 24,
+        damage: 7,
+        knockbackSpeed: 90
+      }
+    });
+  });
+
+  it('resolves blast hits only for hostile slimes inside the bomb radius and applies outward knockback', () => {
+    const nearbySlime = createHostileSlimeState({
+      position: { x: 48, y: 16 }
+    });
+    const distantSlime = createHostileSlimeState({
+      position: { x: 80, y: 16 }
+    });
+    const hitEvents = resolveThrownBombBlastHostileSlimeHitEvents(
+      {
+        position: { x: 32, y: 10 },
+        blastRadius: 8,
+        damage: 7,
+        knockbackSpeed: 90
+      },
+      [
+        { entityId: 7, state: nearbySlime },
+        { entityId: 9, state: distantSlime }
+      ]
+    );
+
+    expect(hitEvents).toEqual([
+      {
+        entityId: 7,
+        direction: {
+          x: 1,
+          y: 0
+        },
+        damage: 7,
+        knockbackSpeed: 90
+      }
+    ]);
+    expect(applyThrownBombBlastHitToHostileSlime(nearbySlime, hitEvents[0]!)).toEqual(
+      createHostileSlimeState({
+        position: { x: 48, y: 16 },
+        velocity: {
+          x: 90,
+          y: 0
+        },
+        health: DEFAULT_HOSTILE_SLIME_HEALTH - 7,
+        grounded: false,
+        facing: 'right',
+        launchKind: null
+      })
+    );
   });
 });

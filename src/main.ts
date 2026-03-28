@@ -456,9 +456,12 @@ import {
   type StarterWandFireboltState
 } from './world/starterWand';
 import {
+  applyThrownBombBlastHitToHostileSlime,
   BOMB_ITEM_ID,
   createThrownBombStateFromThrow,
+  resolveThrownBombBlastHostileSlimeHitEvents,
   stepThrownBombState,
+  type ThrownBombBlastEvent,
   type ThrownBombState
 } from './world/bombThrowing';
 import { stepPlayerManaRegeneration } from './world/playerMana';
@@ -543,6 +546,15 @@ type DebugWorldHistoryChange = {
   previousId: number;
   id: number;
 };
+type PendingHostileSlimeCombatEvent =
+  | {
+      kind: 'wand-firebolt-hit';
+      event: StarterWandFireboltHitEvent;
+    }
+  | {
+      kind: 'bomb-blast';
+      event: ThrownBombBlastEvent;
+    };
 type KeyboardArmedToolShortcutAction = Extract<
   DebugEditShortcutAction,
   | { type: 'cancel-armed-tools' }
@@ -1855,7 +1867,7 @@ const bootstrap = async (): Promise<void> => {
   let passiveBunnyEntityIds: EntityId[] = [];
   let droppedItemEntityIds: EntityId[] = [];
   let fireboltEntityIds: EntityId[] = [];
-  let pendingStarterWandFireboltHitEvents: StarterWandFireboltHitEvent[] = [];
+  let pendingHostileSlimeCombatEvents: PendingHostileSlimeCombatEvent[] = [];
   let hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
   let passiveBunnySpawnerState = createPassiveBunnySpawnerState();
   let pendingStandalonePlayerFixedStepResult: StandalonePlayerFixedStepResult | null = null;
@@ -3239,7 +3251,7 @@ const bootstrap = async (): Promise<void> => {
     passiveBunnyEntityIds = [];
     droppedItemEntityIds = [];
     fireboltEntityIds = [];
-    pendingStarterWandFireboltHitEvents = [];
+    pendingHostileSlimeCombatEvents = [];
     hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
     passiveBunnySpawnerState = createPassiveBunnySpawnerState();
     pendingStandalonePlayerFixedStepResult = null;
@@ -3501,7 +3513,10 @@ const bootstrap = async (): Promise<void> => {
           fixedDtSeconds: fixedDt
         });
         if (stepResult.hitEvent !== null) {
-          pendingStarterWandFireboltHitEvents.push(stepResult.hitEvent);
+          pendingHostileSlimeCombatEvents.push({
+            kind: 'wand-firebolt-hit',
+            event: stepResult.hitEvent
+          });
         }
         if (stepResult.nextState === null) {
           if (fireboltEntityId !== null) {
@@ -3534,56 +3549,99 @@ const bootstrap = async (): Promise<void> => {
         secondsRemaining: thrownBombState.secondsRemaining
       }),
       fixedUpdate: (thrownBombState, fixedDt) => {
-        const nextState = stepThrownBombState(thrownBombState, {
+        const stepResult = stepThrownBombState(thrownBombState, {
           fixedDtSeconds: fixedDt
         });
-        if (nextState === null) {
+        if (stepResult.blastEvent !== null) {
+          pendingHostileSlimeCombatEvents.push({
+            kind: 'bomb-blast',
+            event: stepResult.blastEvent
+          });
+        }
+        if (stepResult.nextState === null) {
           if (thrownBombEntityId !== null) {
             entityRegistry.despawn(thrownBombEntityId);
           }
           return thrownBombState;
         }
 
-        return nextState;
+        return stepResult.nextState;
       }
     });
     return thrownBombEntityId;
   };
-  const flushStarterWandFireboltHitEvents = (): void => {
-    if (pendingStarterWandFireboltHitEvents.length === 0) {
+  const flushPendingHostileSlimeCombatEvents = (): void => {
+    if (pendingHostileSlimeCombatEvents.length === 0) {
       return;
     }
 
-    const hitEvents = pendingStarterWandFireboltHitEvents;
-    pendingStarterWandFireboltHitEvents = [];
+    const combatEvents = pendingHostileSlimeCombatEvents;
+    pendingHostileSlimeCombatEvents = [];
     const defeatedHostileSlimeEntityIds = new Set<EntityId>();
     const defeatedHostileSlimeDropStates: DroppedItemState[] = [];
-    for (const hitEvent of hitEvents) {
-      if (hitEvent.kind !== 'hostile-slime') {
-        continue;
-      }
-      if (defeatedHostileSlimeEntityIds.has(hitEvent.entityId)) {
-        continue;
-      }
-
-      const activeHostileSlimeState = entityRegistry.getEntityState<HostileSlimeState>(hitEvent.entityId);
-      if (activeHostileSlimeState === null) {
-        continue;
-      }
-
-      const nextHostileSlimeState = applyStarterWandFireboltHitToHostileSlime(
-        activeHostileSlimeState,
-        hitEvent
-      );
-      entityRegistry.setEntityState(hitEvent.entityId, nextHostileSlimeState);
+    const applyResolvedHostileSlimeCombatState = (
+      entityId: EntityId,
+      nextHostileSlimeState: HostileSlimeState
+    ): void => {
+      entityRegistry.setEntityState(entityId, nextHostileSlimeState);
       if (!isHostileSlimeDefeated(nextHostileSlimeState)) {
-        continue;
+        return;
       }
 
-      defeatedHostileSlimeEntityIds.add(hitEvent.entityId);
+      defeatedHostileSlimeEntityIds.add(entityId);
       defeatedHostileSlimeDropStates.push(
         createHostileSlimeDefeatDropState(nextHostileSlimeState)
       );
+    };
+
+    for (const combatEvent of combatEvents) {
+      if (combatEvent.kind === 'wand-firebolt-hit') {
+        const hitEvent = combatEvent.event;
+        if (
+          hitEvent.kind !== 'hostile-slime' ||
+          defeatedHostileSlimeEntityIds.has(hitEvent.entityId)
+        ) {
+          continue;
+        }
+
+        const activeHostileSlimeState = entityRegistry.getEntityState<HostileSlimeState>(
+          hitEvent.entityId
+        );
+        if (activeHostileSlimeState === null) {
+          continue;
+        }
+
+        applyResolvedHostileSlimeCombatState(
+          hitEvent.entityId,
+          applyStarterWandFireboltHitToHostileSlime(activeHostileSlimeState, hitEvent)
+        );
+        continue;
+      }
+
+      const bombBlastHitEvents = resolveThrownBombBlastHostileSlimeHitEvents(
+        combatEvent.event,
+        getHostileSlimeEntityStates().map((hostileSlime) => ({
+          entityId: hostileSlime.id,
+          state: hostileSlime.state
+        }))
+      );
+      for (const hitEvent of bombBlastHitEvents) {
+        if (defeatedHostileSlimeEntityIds.has(hitEvent.entityId)) {
+          continue;
+        }
+
+        const activeHostileSlimeState = entityRegistry.getEntityState<HostileSlimeState>(
+          hitEvent.entityId
+        );
+        if (activeHostileSlimeState === null) {
+          continue;
+        }
+
+        applyResolvedHostileSlimeCombatState(
+          hitEvent.entityId,
+          applyThrownBombBlastHitToHostileSlime(activeHostileSlimeState, hitEvent)
+        );
+      }
     }
 
     if (defeatedHostileSlimeEntityIds.size <= 0) {
@@ -7963,7 +8021,7 @@ const bootstrap = async (): Promise<void> => {
       enforcePeacefulModeHostileSlimeState();
       entityRegistry.fixedUpdateAll(fixedDt);
       getStarterWandFireboltEntityStates();
-      flushStarterWandFireboltHitEvents();
+      flushPendingHostileSlimeCombatEvents();
       flushStandalonePlayerFixedStepResult();
       stepStarterMeleeWeaponFixedUpdate(fixedDt);
       stepStarterSpearFixedUpdate(fixedDt);

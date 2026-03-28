@@ -56,8 +56,10 @@ import { createPlayerInventoryState } from './world/playerInventory';
 import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from './world/authoredAtlasLayout';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './world/constants';
 import {
+  createThrownBombStateFromThrow,
   DEFAULT_THROWN_BOMB_GRAVITY,
-  DEFAULT_THROWN_BOMB_SPEED
+  DEFAULT_THROWN_BOMB_SPEED,
+  stepThrownBombState
 } from './world/bombThrowing';
 import { DEFAULT_MANA_CRYSTAL_MAX_MANA_CAP } from './world/playerManaCrystal';
 import {
@@ -12246,6 +12248,89 @@ describe('main.ts shell state orchestration', () => {
       itemId: 'bomb',
       amount: 1
     });
+  });
+
+  it('detonates a fuse-complete bomb and despawns the in-flight entity after the blast step', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const bombUseTarget = {
+      worldTileX: 1,
+      worldTileY: -7,
+      worldX: playerFocusPoint.x,
+      worldY: playerFocusPoint.y - 120,
+      pointerType: 'mouse' as const
+    };
+    let predictedBombState = createThrownBombStateFromThrow(standalonePlayerState, {
+      x: bombUseTarget.worldX,
+      y: bombUseTarget.worldY
+    });
+    let predictedBlastPosition: { x: number; y: number } | null = null;
+    let stepsUntilBlast = 0;
+    for (let step = 0; step < 120; step += 1) {
+      const stepResult = stepThrownBombState(predictedBombState, {
+        fixedDtSeconds: 1 / 60
+      });
+      if (stepResult.blastEvent !== null) {
+        predictedBlastPosition = stepResult.blastEvent.position;
+        stepsUntilBlast = step + 1;
+        break;
+      }
+      if (stepResult.nextState === null) {
+        throw new Error('expected an in-flight bomb state before the predicted blast');
+      }
+      predictedBombState = stepResult.nextState;
+    }
+    if (predictedBlastPosition === null || stepsUntilBlast <= 0) {
+      throw new Error('expected a predicted bomb blast position');
+    }
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bomb', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [bombUseTarget];
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.bombCurrentPositions).toHaveLength(1);
+
+    testRuntime.playerItemUseRequests = [];
+    for (let step = 0; step < stepsUntilBlast - 1; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.bombCurrentPositions).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toBeNull();
   });
 
   it('shows a starter-spear preview line at fixed reach and flags clamped aim when the hovered world point is farther away', async () => {
