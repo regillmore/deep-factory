@@ -1,3 +1,8 @@
+import {
+  sweepAabbAlongAxis,
+  type CollisionWorldView,
+  type WorldAabb
+} from './collision';
 import { TILE_SIZE } from './constants';
 import {
   applyHostileSlimeDamage,
@@ -25,6 +30,8 @@ export const DEFAULT_THROWN_BOMB_GRAVITY = 480;
 export const DEFAULT_THROWN_BOMB_BLAST_RADIUS = TILE_SIZE * 2;
 export const DEFAULT_THROWN_BOMB_BLAST_DAMAGE = 20;
 export const DEFAULT_THROWN_BOMB_BLAST_KNOCKBACK_SPEED = 220;
+export const DEFAULT_THROWN_BOMB_BOUNCE_RESTITUTION = 0.55;
+export const DEFAULT_THROWN_BOMB_MIN_BOUNCE_SPEED = 36;
 
 export interface ThrownBombWorldPoint {
   x: number;
@@ -77,10 +84,14 @@ export interface ThrownBombBlastBreakTarget {
 
 export interface StepThrownBombStateOptions {
   fixedDtSeconds: number;
+  world?: CollisionWorldView;
   gravity?: number;
   blastRadius?: number;
   damage?: number;
   knockbackSpeed?: number;
+  bounceRestitution?: number;
+  minimumBounceSpeed?: number;
+  registry?: TileMetadataRegistry;
 }
 
 export interface StepThrownBombStateResult {
@@ -147,6 +158,13 @@ const cloneThrownBombBlastEvent = (
 const clampNumber = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
 
+const offsetWorldAabb = (aabb: WorldAabb, deltaX: number, deltaY: number): WorldAabb => ({
+  minX: aabb.minX + deltaX,
+  minY: aabb.minY + deltaY,
+  maxX: aabb.maxX + deltaX,
+  maxY: aabb.maxY + deltaY
+});
+
 const doesThrownBombBlastOverlapAabb = (
   blastPosition: ThrownBombWorldPoint,
   blastRadius: number,
@@ -157,6 +175,79 @@ const doesThrownBombBlastOverlapAabb = (
   const deltaX = blastPosition.x - nearestX;
   const deltaY = blastPosition.y - nearestY;
   return deltaX * deltaX + deltaY * deltaY <= blastRadius * blastRadius;
+};
+
+const getThrownBombAabb = (
+  state: Pick<ThrownBombState, 'position' | 'radius'>,
+  position: ThrownBombWorldPoint = state.position
+): WorldAabb => ({
+  minX: position.x - state.radius,
+  minY: position.y - state.radius,
+  maxX: position.x + state.radius,
+  maxY: position.y + state.radius
+});
+
+const resolveBouncedVelocityComponent = (
+  velocityComponent: number,
+  bounceRestitution: number,
+  minimumBounceSpeed: number
+): number => {
+  const bouncedVelocityComponent = -velocityComponent * bounceRestitution;
+  return Math.abs(bouncedVelocityComponent) <= minimumBounceSpeed ? 0 : bouncedVelocityComponent;
+};
+
+const stepThrownBombTravelWithTerrainCollision = (
+  state: ThrownBombState,
+  nextVelocity: ThrownBombVelocity,
+  travelDtSeconds: number,
+  world: CollisionWorldView,
+  registry: TileMetadataRegistry,
+  bounceRestitution: number,
+  minimumBounceSpeed: number
+): Pick<ThrownBombState, 'position' | 'velocity'> => {
+  const initialAabb = getThrownBombAabb(state);
+  const horizontalSweep = sweepAabbAlongAxis(
+    world,
+    initialAabb,
+    'x',
+    nextVelocity.x * travelDtSeconds,
+    registry
+  );
+  const positionAfterHorizontalSweep = {
+    x: state.position.x + horizontalSweep.allowedDelta,
+    y: state.position.y
+  };
+  const nextBouncedVelocity = cloneThrownBombVelocity(nextVelocity);
+  if (horizontalSweep.hit !== null) {
+    nextBouncedVelocity.x = resolveBouncedVelocityComponent(
+      nextVelocity.x,
+      bounceRestitution,
+      minimumBounceSpeed
+    );
+  }
+
+  const verticalSweep = sweepAabbAlongAxis(
+    world,
+    offsetWorldAabb(initialAabb, horizontalSweep.allowedDelta, 0),
+    'y',
+    nextVelocity.y * travelDtSeconds,
+    registry
+  );
+  if (verticalSweep.hit !== null) {
+    nextBouncedVelocity.y = resolveBouncedVelocityComponent(
+      nextVelocity.y,
+      bounceRestitution,
+      minimumBounceSpeed
+    );
+  }
+
+  return {
+    position: {
+      x: positionAfterHorizontalSweep.x,
+      y: state.position.y + verticalSweep.allowedDelta
+    },
+    velocity: nextBouncedVelocity
+  };
 };
 
 const resolveThrownBombDirection = (
@@ -413,6 +504,15 @@ export const stepThrownBombState = (
     options.knockbackSpeed ?? DEFAULT_THROWN_BOMB_BLAST_KNOCKBACK_SPEED,
     'options.knockbackSpeed'
   );
+  const bounceRestitution = expectNonNegativeFiniteNumber(
+    options.bounceRestitution ?? DEFAULT_THROWN_BOMB_BOUNCE_RESTITUTION,
+    'options.bounceRestitution'
+  );
+  const minimumBounceSpeed = expectNonNegativeFiniteNumber(
+    options.minimumBounceSpeed ?? DEFAULT_THROWN_BOMB_MIN_BOUNCE_SPEED,
+    'options.minimumBounceSpeed'
+  );
+  const registry = options.registry ?? TILE_METADATA;
 
   if (fixedDtSeconds <= 0) {
     return {
@@ -426,17 +526,31 @@ export const stepThrownBombState = (
     x: state.velocity.x,
     y: state.velocity.y + gravity * travelDtSeconds
   };
-  const nextPosition = {
-    x: state.position.x + nextVelocity.x * travelDtSeconds,
-    y: state.position.y + nextVelocity.y * travelDtSeconds
-  };
+  const steppedTravelState =
+    options.world === undefined
+      ? {
+          position: {
+            x: state.position.x + nextVelocity.x * travelDtSeconds,
+            y: state.position.y + nextVelocity.y * travelDtSeconds
+          },
+          velocity: nextVelocity
+        }
+      : stepThrownBombTravelWithTerrainCollision(
+          state,
+          nextVelocity,
+          travelDtSeconds,
+          options.world,
+          registry,
+          bounceRestitution,
+          minimumBounceSpeed
+        );
   const nextSecondsRemaining = Math.max(0, state.secondsRemaining - fixedDtSeconds);
 
   if (nextSecondsRemaining <= 0) {
     return {
       nextState: null,
       blastEvent: {
-        position: nextPosition,
+        position: steppedTravelState.position,
         blastRadius,
         damage,
         knockbackSpeed
@@ -446,8 +560,8 @@ export const stepThrownBombState = (
 
   return {
     nextState: {
-      position: nextPosition,
-      velocity: nextVelocity,
+      position: steppedTravelState.position,
+      velocity: steppedTravelState.velocity,
       radius: state.radius,
       secondsRemaining: nextSecondsRemaining
     },

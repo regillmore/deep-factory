@@ -56,4 +56,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Bomb utility
 
 603. Add bomb self-damage and knockback after task 602: apply deterministic blast damage plus outward launch to the standalone player when inside the blast radius, respect death-hold sequencing, and cover player-blast regressions.
-604. Thrown bombs currently fall through the terrain and out of sight. Add bomb terrain collision and bouncing.
+605. Add thrown-bomb fuse warning feedback after task 604: surface a visible pre-detonation blink cadence on in-flight bomb entities and cover placeholder render regressions.
+606. Bombs should no longer break wall tiles.

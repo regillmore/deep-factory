@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-27: Thrown bombs bounce through shared solid-tile sweeps before detonation
+
+- Decision: The thrown-bomb fixed-step helper now resolves pre-fuse travel against shared solid-tile AABB sweeps, clamps the projectile to the hit surface, and reflects blocked velocity components there instead of letting bombs tunnel through terrain until the fuse expires.
+- Reason: Reusing the same solid-tile collision semantics as the rest of runtime keeps bomb travel deterministic while fixing the current fall-through-world behavior.
+- Consequence: Future bomb follow-ups such as fuse visuals, self-damage, or bounce tuning should extend the shared `src/world/bombThrowing.ts` step helper instead of bypassing terrain resolution in `src/main.ts` or renderer-only code.
+
 ### 2026-03-27: Bomb blast consequences resolve through queued post-step combat events
 
 - Decision: Fuse-complete thrown bombs now emit detached blast events during entity fixed updates, and `src/main.ts` applies their terrain-break plus hostile-slime damage, knockback, and lethal-drop consequences only after entity stepping finishes for that tick through the same shared combat flush that also handles wand firebolt hits.

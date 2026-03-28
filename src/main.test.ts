@@ -12063,11 +12063,17 @@ describe('main.ts shell state orchestration', () => {
       facing: 'right'
     });
     const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    for (let worldTileY = -2; worldTileY <= 3; worldTileY += 1) {
+      for (let worldTileX = -2; worldTileX <= 6; worldTileX += 1) {
+        savedWorld.setTileState(worldTileX, worldTileY, 0, 0);
+      }
+    }
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
       JSON.stringify(
         createWorldSaveEnvelope({
-          worldSnapshot: new TileWorld(0).createSnapshot(),
+          worldSnapshot: savedWorld.createSnapshot(),
           standalonePlayerState,
           standalonePlayerInventoryState: createPlayerInventoryState({
             hotbar: [
@@ -12248,6 +12254,100 @@ describe('main.ts shell state orchestration', () => {
       itemId: 'bomb',
       amount: 1
     });
+  });
+
+  it('keeps thrown bombs in flight by bouncing them off nearby solid terrain', async () => {
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTileState(0, 2, 1, 0)).toBe(true);
+    expect(savedWorld.setTileState(1, 2, 1, 0)).toBe(true);
+    expect(savedWorld.setTileState(2, 2, 1, 0)).toBe(true);
+    expect(savedWorld.setTileState(3, 2, 1, 0)).toBe(true);
+
+    const standalonePlayerState = createPlayerState({
+      position: { x: 24, y: 32 },
+      grounded: true,
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const bombUseTarget = {
+      worldTileX: Math.floor(playerFocusPoint.x / 16),
+      worldTileY: Math.floor((playerFocusPoint.y + 64) / 16),
+      worldX: playerFocusPoint.x,
+      worldY: playerFocusPoint.y + 64,
+      pointerType: 'mouse' as const
+    };
+    let predictedBombState = createThrownBombStateFromThrow(standalonePlayerState, {
+      x: bombUseTarget.worldX,
+      y: bombUseTarget.worldY
+    });
+    let predictedBouncedBombState: typeof predictedBombState | null = null;
+    let stepsUntilBounce = 0;
+    for (let step = 0; step < 30; step += 1) {
+      const stepResult = stepThrownBombState(predictedBombState, {
+        fixedDtSeconds: 1 / 60,
+        world: {
+          getTile: (worldTileX, worldTileY) => savedWorld.getTile(worldTileX, worldTileY)
+        }
+      });
+      if (stepResult.nextState === null) {
+        throw new Error('expected the bomb to stay in flight before the first bounce');
+      }
+
+      predictedBombState = stepResult.nextState;
+      if (predictedBombState.velocity.y < 0) {
+        predictedBouncedBombState = predictedBombState;
+        stepsUntilBounce = step + 1;
+        break;
+      }
+    }
+    if (predictedBouncedBombState === null || stepsUntilBounce <= 0) {
+      throw new Error('expected a predicted bomb bounce');
+    }
+
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bomb', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [bombUseTarget];
+    runFixedUpdate(1 / 60);
+    testRuntime.playerItemUseRequests = [];
+    for (let step = 1; step < stepsUntilBounce; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+    runRenderFrame(1000 / 60, 1);
+
+    const bombPositions = testRuntime.latestRendererRenderFrameState?.bombCurrentPositions ?? [];
+    expect(bombPositions).toHaveLength(1);
+    expect(bombPositions[0]?.position.x).toBeCloseTo(predictedBouncedBombState.position.x, 6);
+    expect(bombPositions[0]?.position.y).toBeCloseTo(predictedBouncedBombState.position.y, 6);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toBeNull();
   });
 
   it('detonates a fuse-complete bomb and despawns the in-flight entity after the blast step', async () => {

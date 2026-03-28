@@ -127,6 +127,39 @@ describe('bombThrowing', () => {
     });
   });
 
+  it('bounces thrown bombs off solid terrain instead of tunneling through it', () => {
+    const initialState = createThrownBombState({
+      position: { x: 24, y: 20 },
+      velocity: { x: 0, y: 100 },
+      radius: 6,
+      secondsRemaining: 0.4
+    });
+    const steppedResult = stepThrownBombState(initialState, {
+      fixedDtSeconds: 0.1,
+      gravity: 0,
+      world: {
+        getTile: (worldTileX, worldTileY) =>
+          worldTileX === 1 && worldTileY === 2 ? 1 : 0
+      },
+      bounceRestitution: 0.5,
+      minimumBounceSpeed: 1
+    });
+
+    expect(steppedResult.blastEvent).toBeNull();
+    expect(steppedResult.nextState).toMatchObject({
+      position: {
+        x: 24,
+        y: 26
+      },
+      velocity: {
+        x: 0,
+        y: -50
+      },
+      radius: 6
+    });
+    expect(steppedResult.nextState?.secondsRemaining).toBeCloseTo(0.3, 8);
+  });
+
   it('resolves blast hits only for hostile slimes inside the bomb radius and applies outward knockback', () => {
     const nearbySlime = createHostileSlimeState({
       position: { x: 48, y: 16 }

@@ -3551,7 +3551,10 @@ const bootstrap = async (): Promise<void> => {
       }),
       fixedUpdate: (thrownBombState, fixedDt) => {
         const stepResult = stepThrownBombState(thrownBombState, {
-          fixedDtSeconds: fixedDt
+          fixedDtSeconds: fixedDt,
+          world: {
+            getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY)
+          }
         });
         if (stepResult.blastEvent !== null) {
           pendingHostileSlimeCombatEvents.push({
