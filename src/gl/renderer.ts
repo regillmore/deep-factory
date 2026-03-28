@@ -3,13 +3,11 @@ import { createStaticVertexBuffer, createVertexArray } from './buffer';
 import { createProgram } from './shader';
 import { applyAnimatedChunkMeshFrameAtElapsedMs, createAnimatedChunkMeshState } from './animatedChunkMesh';
 import {
-  BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR,
-  BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR,
-  BOMB_DETONATION_FLASH_PLACEHOLDER_MIN_LIGHT_FACTOR,
   BOMB_DETONATION_FLASH_PLACEHOLDER_VERTEX_COUNT,
   BOMB_DETONATION_FLASH_PLACEHOLDER_VERTEX_FLOAT_COUNT,
   buildBombDetonationFlashPlaceholderVertices,
-  getBombDetonationFlashPlaceholderNearbyLightSample
+  getBombDetonationFlashPlaceholderNearbyLightSample,
+  resolveBombDetonationFlashPlaceholderVisuals
 } from './bombDetonationFlashPlaceholder';
 import {
   buildFireboltPlaceholderVertices,
@@ -1692,26 +1690,24 @@ export class Renderer {
       state,
       renderPosition
     );
+    const flashVisuals = resolveBombDetonationFlashPlaceholderVisuals(state);
     gl.useProgram(this.droppedItemProgram);
     gl.uniformMatrix4fv(this.uDroppedItemMatrix, false, worldToClipMatrix);
     gl.uniform1f(
       this.uDroppedItemLight,
-      Math.max(
-        BOMB_DETONATION_FLASH_PLACEHOLDER_MIN_LIGHT_FACTOR,
-        nearbyLightSample.level / MAX_LIGHT_LEVEL
-      )
+      Math.max(flashVisuals.minimumLightFactor, nearbyLightSample.level / MAX_LIGHT_LEVEL)
     );
     gl.uniform3f(
       this.uDroppedItemBaseColor,
-      BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR[0],
-      BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR[1],
-      BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR[2]
+      flashVisuals.baseColor[0],
+      flashVisuals.baseColor[1],
+      flashVisuals.baseColor[2]
     );
     gl.uniform3f(
       this.uDroppedItemAccentColor,
-      BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR[0],
-      BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR[1],
-      BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR[2]
+      flashVisuals.accentColor[0],
+      flashVisuals.accentColor[1],
+      flashVisuals.accentColor[2]
     );
     gl.bindBuffer(gl.ARRAY_BUFFER, this.bombDetonationFlashBuffer);
     gl.bufferData(

@@ -10,6 +10,9 @@ export const BOMB_DETONATION_FLASH_PLACEHOLDER_VERTEX_FLOAT_COUNT =
 export const BOMB_DETONATION_FLASH_PLACEHOLDER_MIN_LIGHT_FACTOR = 0.8;
 export const BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR = [1, 0.56, 0.18] as const;
 export const BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR = [1, 0.94, 0.7] as const;
+export const BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_MIN_LIGHT_FACTOR = 0.35;
+export const BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_BASE_COLOR = [0.4, 0.1, 0.02] as const;
+export const BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_ACCENT_COLOR = [1, 0.42, 0.12] as const;
 
 const BOMB_DETONATION_FLASH_PLACEHOLDER_NEARBY_LIGHT_SAMPLE_PADDING_TILES = 1;
 
@@ -17,6 +20,8 @@ interface TileRange {
   min: number;
   max: number;
 }
+
+export type BombDetonationFlashPlaceholderColor = [number, number, number];
 
 export interface BombDetonationFlashPlaceholderNearbyLightSourceTile {
   x: number;
@@ -28,8 +33,44 @@ export interface BombDetonationFlashPlaceholderNearbyLightSample {
   sourceTile: BombDetonationFlashPlaceholderNearbyLightSourceTile | null;
 }
 
+export interface BombDetonationFlashPlaceholderVisuals {
+  progressNormalized: number;
+  minimumLightFactor: number;
+  baseColor: BombDetonationFlashPlaceholderColor;
+  accentColor: BombDetonationFlashPlaceholderColor;
+}
+
 const clampBombDetonationFlashPlaceholderLightLevel = (lightLevel: number): number =>
   Math.max(0, Math.min(MAX_LIGHT_LEVEL, Math.floor(lightLevel)));
+
+const expectNonNegativeFiniteNumber = (value: number, label: string): number => {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error(`${label} must be a non-negative finite number`);
+  }
+
+  return value;
+};
+
+const expectPositiveFiniteNumber = (value: number, label: string): number => {
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`${label} must be a positive finite number`);
+  }
+
+  return value;
+};
+
+const lerpNumber = (start: number, end: number, progressNormalized: number): number =>
+  start + (end - start) * progressNormalized;
+
+const lerpColor = (
+  start: readonly [number, number, number],
+  end: readonly [number, number, number],
+  progressNormalized: number
+): BombDetonationFlashPlaceholderColor => [
+  lerpNumber(start[0], end[0], progressNormalized),
+  lerpNumber(start[1], end[1], progressNormalized),
+  lerpNumber(start[2], end[2], progressNormalized)
+];
 
 const getOverlappingTileRange = (min: number, max: number): TileRange | null => {
   if (max <= min) {
@@ -84,6 +125,36 @@ export const buildBombDetonationFlashPlaceholderVertices = (
     0,
     1
   ]);
+};
+
+export const resolveBombDetonationFlashPlaceholderVisuals = (
+  state: Pick<BombDetonationFlashState, 'secondsRemaining' | 'durationSeconds'>
+): BombDetonationFlashPlaceholderVisuals => {
+  const durationSeconds = expectPositiveFiniteNumber(state.durationSeconds, 'state.durationSeconds');
+  const secondsRemaining = Math.min(
+    expectNonNegativeFiniteNumber(state.secondsRemaining, 'state.secondsRemaining'),
+    durationSeconds
+  );
+  const progressNormalized = 1 - secondsRemaining / durationSeconds;
+
+  return {
+    progressNormalized,
+    minimumLightFactor: lerpNumber(
+      BOMB_DETONATION_FLASH_PLACEHOLDER_MIN_LIGHT_FACTOR,
+      BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_MIN_LIGHT_FACTOR,
+      progressNormalized
+    ),
+    baseColor: lerpColor(
+      BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR,
+      BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_BASE_COLOR,
+      progressNormalized
+    ),
+    accentColor: lerpColor(
+      BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR,
+      BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_ACCENT_COLOR,
+      progressNormalized
+    )
+  };
 };
 
 export const getBombDetonationFlashPlaceholderNearbyLightSample = (

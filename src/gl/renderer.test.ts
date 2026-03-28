@@ -82,9 +82,7 @@ vi.mock('./atlasValidation', () => ({
 
 import { getDroppedItemPlaceholderPalette } from './droppedItemPlaceholder';
 import {
-  BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR,
-  BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR,
-  BOMB_DETONATION_FLASH_PLACEHOLDER_MIN_LIGHT_FACTOR
+  resolveBombDetonationFlashPlaceholderVisuals
 } from './bombDetonationFlashPlaceholder';
 import { Renderer, type RendererEntityFrameState } from './renderer';
 import { resolveThrownBombFuseWarningVisuals } from './thrownBombPlaceholder';
@@ -3224,12 +3222,17 @@ describe('Renderer atlas telemetry', () => {
 
     const currentState = createBombDetonationFlashState({
       position: { x: 80, y: 60 },
-      radius: 32
+      radius: 32,
+      durationSeconds: 0.18,
+      secondsRemaining: 0.045
     });
     const previousState = createBombDetonationFlashState({
       position: { x: 64, y: 44 },
-      radius: 32
+      radius: 32,
+      durationSeconds: 0.18,
+      secondsRemaining: 0.09
     });
+    const expectedVisuals = resolveBombDetonationFlashPlaceholderVisuals(currentState);
 
     renderer.render(new Camera2D(), {
       entities: [
@@ -3274,22 +3277,20 @@ describe('Renderer atlas telemetry', () => {
       1
     ]);
     expect(uniform1f.mock.calls).toHaveLength(1);
-    expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(
-      BOMB_DETONATION_FLASH_PLACEHOLDER_MIN_LIGHT_FACTOR
-    );
+    expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(expectedVisuals.minimumLightFactor);
     expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
     expect(uniform3f.mock.calls).toEqual([
       [
         expect.anything(),
-        BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR[0],
-        BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR[1],
-        BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR[2]
+        expectedVisuals.baseColor[0],
+        expectedVisuals.baseColor[1],
+        expectedVisuals.baseColor[2]
       ],
       [
         expect.anything(),
-        BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR[0],
-        BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR[1],
-        BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR[2]
+        expectedVisuals.accentColor[0],
+        expectedVisuals.accentColor[1],
+        expectedVisuals.accentColor[2]
       ]
     ]);
   });

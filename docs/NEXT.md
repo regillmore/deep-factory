@@ -55,5 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bomb utility
 
-620. Surface in-flight bomb fuse feedback as an integer countdown overlay on the bomb mesh.
-621. Fade bomb detonation flashes over their fixed-step lifetime after task 618: ramp the placeholder light or palette from ignition to ember before despawn, and cover progress-to-visual regressions.
+622. Shrink bomb detonation flash quads over their fixed-step lifetime after task 621: contract the placeholder radius from full blast size toward a smaller ember core before despawn, and cover progress-to-geometry regressions.

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-28: Bomb flash fade reads fixed-step lifetime progress
+
+- Decision: Bomb-detonation-flash placeholder light and palette now derive from each flash entity snapshot's `secondsRemaining` and `durationSeconds` ratio instead of a separate render-time fade timer.
+- Reason: The flash should cool from ignition to ember in lockstep with the same fixed-step lifetime that decides when the entity despawns, so render cadence cannot drift the effect ahead of or behind gameplay state.
+- Consequence: Future bomb-flash visual tuning should extend the shared placeholder lifetime-progress resolver rather than introducing a second render-owned fade timer or per-frame effect state.
+
 ### 2026-03-28: Bomb detonation flashes stay on the fixed-step entity path
 
 - Decision: Fuse-complete bomb blasts now spawn short-lived `bomb-detonation-flash` entities through the shared entity registry and renderer entity pass instead of timing the effect only in render code.
