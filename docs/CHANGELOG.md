@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-28
 
+- Task: Clear active grappling-hook traversal state on world-session replacement.
+- Changes: Updated [src/main.ts](../src/main.ts) so fresh-world and paused restore replacement paths now reuse the shared grappling-hook clear helper before resetting session-owned entity registries, instead of zeroing hook state through a separate reset path; updated [src/main.test.ts](../src/main.test.ts) with paused-menu `New World` and import regressions that clear latched and in-flight hook traversal when a replacement session takes over; removed completed task `624` from [docs/NEXT.md](docs/NEXT.md), added replacement task `627`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts -t grappling` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add grappling-hook pull-and-release traversal.
 - Changes: Updated [src/world/grapplingHook.ts](../src/world/grapplingHook.ts), [src/world/playerState.ts](../src/world/playerState.ts), and [src/world/grapplingHook.test.ts](../src/world/grapplingHook.test.ts) so latched hooks now pull the player through shared collision sweeps, auto-detach once the player reaches release range, and cover deterministic pull-versus-detach regressions; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so fixed-step player updates now consume that latched traversal, follow-up hidden-panel grappling-hook use from mouse or touch cancels the active hook cleanly, and hook entities clean themselves up after release; removed completed task `573` from [docs/NEXT.md](docs/NEXT.md), added replacement task `626`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json`, `cmd /c npx vitest run src/main.test.ts -t grappling`, and `cmd /c npx vitest run src/world/grapplingHook.test.ts`.

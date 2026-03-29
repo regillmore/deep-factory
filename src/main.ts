@@ -3431,6 +3431,9 @@ const bootstrap = async (): Promise<void> => {
     return entityFrameStates;
   };
   const replaceWorldSessionEntityRegistry = (): void => {
+    // Replacement sessions do not persist hook traversal, so reuse the shared
+    // detach seam before swapping the rest of the session-owned entity state.
+    clearActiveGrapplingHookTraversal(false);
     entityRegistry = new EntityRegistry();
     standalonePlayerEntityId = null;
     standalonePlayerDeathState = null;
@@ -3440,7 +3443,6 @@ const bootstrap = async (): Promise<void> => {
     droppedItemEntityIds = [];
     fireboltEntityIds = [];
     arrowProjectileEntityIds = [];
-    grapplingHookEntityId = null;
     pendingCombatEvents = [];
     hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
     passiveBunnySpawnerState = createPassiveBunnySpawnerState();
@@ -3454,7 +3456,6 @@ const bootstrap = async (): Promise<void> => {
     starterBugNetState = createStarterBugNetState();
     starterWandCooldownState = createStarterWandCooldownState();
     bowDrawCooldownState = createBowDrawCooldownState();
-    grapplingHookState = createIdleGrapplingHookState();
     playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
     grassGrowthState = createGrassGrowthState();
     smallTreeGrowthState = createSmallTreeGrowthState();
@@ -3468,7 +3469,6 @@ const bootstrap = async (): Promise<void> => {
     resetStandalonePlayerTransitionState();
     lastAppliedPlayerFollowCameraPosition = null;
     standalonePlayerDeathState = deathState;
-    grapplingHookState = createIdleGrapplingHookState();
     latestStandalonePlayerDeathHoldStatus = deathState === null ? 'none' : 'holding';
     if (playerState === null) {
       return;

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-28: World-session replacement reuses shared grappling-hook cleanup
+
+- Decision: Fresh-world and paused restore replacement paths now clear any active grappling-hook traversal through the same `clearActiveGrapplingHookTraversal(...)` helper used by death and same-item cancel before session-owned entity registries reset.
+- Reason: Grappling-hook flight and pull state are runtime-only and do not persist through `New World` or imported-session replacement, so replacement should reuse the existing detach seam instead of zeroing hook state through a second ad hoc path.
+- Consequence: Future grappling-hook replacement or restore cleanup should extend that shared clear helper rather than resetting hook entity ids or fired-state fields directly inside world-session replacement code.
+
 ### 2026-03-28: Grappling-hook pull reuses shared collision sweeps and the same item-use path releases it
 
 - Decision: Once a grappling hook reaches the `latched` phase, later fixed steps now pull the player toward that anchor through the shared player collision helper, auto-detach when release range is reached, and treat a follow-up grappling-hook use from mouse or touch as an explicit cancel.
