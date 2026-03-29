@@ -4,8 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Grappling hook traversal
 
-698. Surface selected-hook range-block feedback after task 697: show a temporary blocked readout on the selected grappling-hook slot while the hovered preview target is beyond maximum range, and cover preview-versus-active-hook feedback regressions.
 700. Distinguish solid-versus-empty in-range grappling-hook previews after task 698: show hovered solid tiles as latch-ready while leaving empty-air in-range aims neutral, and cover solid-target preview regressions.
+701. Surface selected-hook latch-ready hotbar feedback after task 700: show a temporary ready readout on the selected grappling-hook slot while the hovered preview target is an in-range solid latch candidate, and cover solid-preview-versus-active-hook slot regressions.
 
 ## Bow and arrow ranged combat
 

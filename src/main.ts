@@ -2167,8 +2167,10 @@ const bootstrap = async (): Promise<void> => {
       )
     );
   };
-  const resolveHotbarOverlaySelectedGrapplingHookReadout = (): {
-    status: 'active' | 'dead';
+  const resolveHotbarOverlaySelectedGrapplingHookReadout = (
+    selectedGrapplingHookPreview: PlayerItemGrapplingHookPreviewState | null = null
+  ): {
+    status: 'active' | 'dead' | 'range-blocked';
   } | null => {
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
     if (selectedStack?.itemId !== GRAPPLING_HOOK_ITEM_ID) {
@@ -2190,7 +2192,11 @@ const bootstrap = async (): Promise<void> => {
     }
 
     if (!isGrapplingHookActive(grapplingHookState)) {
-      return null;
+      return selectedGrapplingHookPreview !== null && !selectedGrapplingHookPreview.withinRange
+        ? {
+            status: 'range-blocked'
+          }
+        : null;
     }
 
     return {
@@ -2394,13 +2400,16 @@ const bootstrap = async (): Promise<void> => {
       )
     };
   };
-  const syncHotbarOverlayState = (): void => {
+  const syncHotbarOverlayState = (
+    selectedGrapplingHookPreview: PlayerItemGrapplingHookPreviewState | null = null
+  ): void => {
     hotbarOverlay.update(standalonePlayerInventoryState, {
       starterAxeSwingFeedback: resolveHotbarOverlayStarterAxeSwingFeedback(),
       selectedBowDrawCooldownFillNormalized:
         resolveHotbarOverlaySelectedBowDrawCooldownFillNormalized(),
       selectedBowAmmoReadout: resolveHotbarOverlaySelectedBowAmmoReadout(),
-      selectedGrapplingHookReadout: resolveHotbarOverlaySelectedGrapplingHookReadout(),
+      selectedGrapplingHookReadout:
+        resolveHotbarOverlaySelectedGrapplingHookReadout(selectedGrapplingHookPreview),
       healingPotionCooldownFillNormalized:
         resolveHotbarOverlayHealingPotionCooldownFillNormalized(),
       starterWandManaReadout: resolveHotbarOverlayStarterWandManaReadout(),
@@ -7950,6 +7959,7 @@ const bootstrap = async (): Promise<void> => {
     const selectedPlayerItemMiningPreview = !debugEditControlsVisible
       ? getSelectedStandalonePlayerItemMiningPreview(pointerInspect)
       : null;
+    syncHotbarOverlayState(selectedPlayerItemGrapplingHookPreview);
     syncCraftingPanelState();
     syncItemCatalogPanelState();
     const hoveredDebugTileStatus = getHoveredDebugTileStatus(pointerInspect, renderTimeMs);

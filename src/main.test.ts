@@ -13689,6 +13689,30 @@ describe('main.ts shell state orchestration', () => {
       tileY: 0,
       withinRange: false
     });
+    expect(getHotbarOverlaySlotButton(6).title).toContain('maximum range');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('RANGE');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('100.0%');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('1');
+
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 10, y: 0 },
+      world: {
+        x: playerFocusPoint.x + DEFAULT_GRAPPLING_HOOK_MAX_RANGE - 16,
+        y: playerFocusPoint.y
+      }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemGrapplingHookPreviewState).toEqual({
+      tileX: 10,
+      tileY: 0,
+      withinRange: true
+    });
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('');
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('maximum range');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
   });
 
   it('shows the same blocked grappling-hook preview from touch aim when the target exceeds maximum range', async () => {
@@ -13742,6 +13766,74 @@ describe('main.ts shell state orchestration', () => {
       tileY: -4,
       withinRange: false
     });
+  });
+
+  it('keeps active grappling-hook hotbar feedback even when the current hover aim is out of range', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 40, -4, 1);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'grappling-hook', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 10,
+        worldTileY: 0,
+        worldX: playerFocusPoint.x + 96,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    testRuntime.playerItemUseRequests = [];
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 30, y: 0 },
+      world: {
+        x: playerFocusPoint.x + DEFAULT_GRAPPLING_HOOK_MAX_RANGE + 16,
+        y: playerFocusPoint.y
+      }
+    };
+
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestPlayerItemGrapplingHookPreviewState).toBeNull();
+    expect(getHotbarOverlaySlotButton(6).title).toContain('hook active');
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('maximum range');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('HOOK');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('100.0%');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('1');
   });
 
   it('pulls the standalone player toward a latched grappling-hook anchor and clears it after release', async () => {

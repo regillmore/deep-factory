@@ -27,6 +27,8 @@ interface HotbarOverlayOptions {
   onDropSelectedStack?: () => void;
 }
 
+type SelectedGrapplingHookReadoutStatus = 'active' | 'dead' | 'range-blocked';
+
 interface HotbarOverlayUpdateOptions {
   starterAxeSwingFeedback?:
     | {
@@ -42,7 +44,7 @@ interface HotbarOverlayUpdateOptions {
     | null;
   selectedGrapplingHookReadout?:
     | {
-        status: 'active' | 'dead';
+        status: SelectedGrapplingHookReadoutStatus;
       }
     | null;
   healingPotionCooldownFillNormalized?: number | null;
@@ -133,6 +135,34 @@ const SELECTED_GRAPPLING_HOOK_DEAD_FILL_BACKGROUND =
 const SELECTED_GRAPPLING_HOOK_DEAD_TITLE_TEXT = 'blocked: player is dead';
 const SELECTED_GRAPPLING_HOOK_DEAD_AMOUNT_TEXT = 'DEAD';
 const SELECTED_GRAPPLING_HOOK_DEAD_AMOUNT_COLOR = '#ffd2d2';
+const SELECTED_GRAPPLING_HOOK_RANGE_BLOCK_FILL_BACKGROUND =
+  'linear-gradient(180deg, rgba(255, 224, 173, 0.06) 0%, rgba(255, 181, 102, 0.28) 35%, rgba(214, 122, 52, 0.64) 100%)';
+const SELECTED_GRAPPLING_HOOK_RANGE_BLOCK_TITLE_TEXT = 'blocked: beyond maximum range';
+const SELECTED_GRAPPLING_HOOK_RANGE_BLOCK_AMOUNT_TEXT = 'RANGE';
+const SELECTED_GRAPPLING_HOOK_RANGE_BLOCK_AMOUNT_COLOR = '#ffd7a6';
+const SELECTED_GRAPPLING_HOOK_TITLE_TEXT: Record<SelectedGrapplingHookReadoutStatus, string> = {
+  active: SELECTED_GRAPPLING_HOOK_ACTIVE_TITLE_TEXT,
+  dead: SELECTED_GRAPPLING_HOOK_DEAD_TITLE_TEXT,
+  'range-blocked': SELECTED_GRAPPLING_HOOK_RANGE_BLOCK_TITLE_TEXT
+};
+const SELECTED_GRAPPLING_HOOK_AMOUNT_TEXT: Record<SelectedGrapplingHookReadoutStatus, string> = {
+  active: SELECTED_GRAPPLING_HOOK_ACTIVE_AMOUNT_TEXT,
+  dead: SELECTED_GRAPPLING_HOOK_DEAD_AMOUNT_TEXT,
+  'range-blocked': SELECTED_GRAPPLING_HOOK_RANGE_BLOCK_AMOUNT_TEXT
+};
+const SELECTED_GRAPPLING_HOOK_AMOUNT_COLOR: Record<SelectedGrapplingHookReadoutStatus, string> = {
+  active: SELECTED_GRAPPLING_HOOK_ACTIVE_AMOUNT_COLOR,
+  dead: SELECTED_GRAPPLING_HOOK_DEAD_AMOUNT_COLOR,
+  'range-blocked': SELECTED_GRAPPLING_HOOK_RANGE_BLOCK_AMOUNT_COLOR
+};
+const SELECTED_GRAPPLING_HOOK_FILL_BACKGROUND: Record<
+  SelectedGrapplingHookReadoutStatus,
+  string
+> = {
+  active: SELECTED_GRAPPLING_HOOK_ACTIVE_FILL_BACKGROUND,
+  dead: SELECTED_GRAPPLING_HOOK_DEAD_FILL_BACKGROUND,
+  'range-blocked': SELECTED_GRAPPLING_HOOK_RANGE_BLOCK_FILL_BACKGROUND
+};
 const MANA_CRYSTAL_DEAD_FILL_BACKGROUND =
   'linear-gradient(180deg, rgba(255, 170, 170, 0.08) 0%, rgba(255, 112, 112, 0.3) 35%, rgba(204, 52, 52, 0.68) 100%)';
 const MANA_CRYSTAL_MAX_MANA_CAP_FILL_BACKGROUND =
@@ -578,11 +608,7 @@ export class HotbarOverlay {
         : selectedTimedItemFeedback !== null
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${selectedTimedItemFeedback.titleText})`
         : selectedGrapplingHookState !== null
-          ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${
-              selectedGrapplingHookState.status === 'active'
-                ? SELECTED_GRAPPLING_HOOK_ACTIVE_TITLE_TEXT
-                : SELECTED_GRAPPLING_HOOK_DEAD_TITLE_TEXT
-            })`
+          ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${SELECTED_GRAPPLING_HOOK_TITLE_TEXT[selectedGrapplingHookState.status]})`
         : selectedBowCoolingDown
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${SELECTED_BOW_DRAW_COOLDOWN_TITLE_TEXT})`
         : selectedBowAmmo !== null
@@ -607,9 +633,7 @@ export class HotbarOverlay {
         : selectedTimedItemFeedback !== null
           ? HOTBAR_TIMED_ITEM_AMOUNT_TEXT[selectedTimedItemFeedback.phase]
           : selectedGrapplingHookState !== null
-            ? selectedGrapplingHookState.status === 'active'
-              ? SELECTED_GRAPPLING_HOOK_ACTIVE_AMOUNT_TEXT
-              : SELECTED_GRAPPLING_HOOK_DEAD_AMOUNT_TEXT
+            ? SELECTED_GRAPPLING_HOOK_AMOUNT_TEXT[selectedGrapplingHookState.status]
           : selectedBowCoolingDown
             ? SELECTED_BOW_DRAW_COOLDOWN_AMOUNT_TEXT
           : selectedBowAmmo !== null
@@ -628,9 +652,7 @@ export class HotbarOverlay {
         : selectedTimedItemFeedback !== null
           ? HOTBAR_TIMED_ITEM_AMOUNT_COLOR[selectedTimedItemFeedback.phase]
           : selectedGrapplingHookState !== null
-            ? selectedGrapplingHookState.status === 'active'
-              ? SELECTED_GRAPPLING_HOOK_ACTIVE_AMOUNT_COLOR
-              : SELECTED_GRAPPLING_HOOK_DEAD_AMOUNT_COLOR
+            ? SELECTED_GRAPPLING_HOOK_AMOUNT_COLOR[selectedGrapplingHookState.status]
           : selectedBowCoolingDown
             ? SELECTED_BOW_DRAW_COOLDOWN_AMOUNT_COLOR
           : selectedBowAmmo !== null && selectedBowAmmo.carriedArrowCount <= 0
@@ -662,9 +684,7 @@ export class HotbarOverlay {
           : selectedTimedItemFeedback !== null
             ? HOTBAR_TIMED_ITEM_FILL_BACKGROUND[selectedTimedItemFeedback.phase]
             : selectedGrapplingHookState !== null
-              ? selectedGrapplingHookState.status === 'active'
-                ? SELECTED_GRAPPLING_HOOK_ACTIVE_FILL_BACKGROUND
-                : SELECTED_GRAPPLING_HOOK_DEAD_FILL_BACKGROUND
+              ? SELECTED_GRAPPLING_HOOK_FILL_BACKGROUND[selectedGrapplingHookState.status]
             : selectedBowCoolingDown
               ? SELECTED_BOW_DRAW_COOLDOWN_FILL_BACKGROUND
             : selectedWandCoolingDown

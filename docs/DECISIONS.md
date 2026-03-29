@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-29: Selected grappling-hook range-block slot feedback follows the inactive preview without overriding live hook states
+
+- Decision: The selected grappling-hook slot now shows temporary `RANGE` blocked feedback only when the inactive hover preview is beyond maximum range, while live hook traversal and dead-player states still keep their existing `HOOK` and `DEAD` readouts.
+- Reason: The hotbar should mirror the same blocked hover feedback the world preview already shows without hiding the more important active-hook cancel state or dead-use failure state.
+- Consequence: Future grappling-hook slot-feedback work should extend that shared inactive-preview evaluation and preserve active/dead precedence instead of recomputing hover range separately or replacing live traversal feedback.
+
 ### 2026-03-29: Grappling-hook range preview follows the requested world aim only while no hook is active
 
 - Decision: Selected grappling-hook range preview now evaluates the live requested world aim point against maximum range only while the hook is inactive, instead of using tile-center distance alone or overriding active-hook cancel behavior.

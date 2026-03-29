@@ -415,7 +415,7 @@ describe('HotbarOverlay', () => {
     expect(getSlotRow(overlay).children[6]!.title).not.toContain('ammo:');
   });
 
-  it('shows selected grappling-hook active and dead feedback states', () => {
+  it('shows selected grappling-hook active, range-blocked, and dead feedback states', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });
 
@@ -433,6 +433,21 @@ describe('HotbarOverlay', () => {
     expect(getSlotCooldownFill(overlay, 6).style.height).toBe('100.0%');
     expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('1');
     expect(getSlotRow(overlay).children[6]!.title).toContain('hook active');
+
+    overlay.update(
+      createHotbarState([[6, createPlayerInventoryItemStack('grappling-hook', 1)]], 6),
+      {
+        selectedGrapplingHookReadout: {
+          status: 'range-blocked'
+        }
+      }
+    );
+
+    expect(getSlotAmountLabel(overlay, 6).textContent).toBe('RANGE');
+    expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#ffd7a6');
+    expect(getSlotCooldownFill(overlay, 6).style.height).toBe('100.0%');
+    expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('1');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('maximum range');
 
     overlay.update(
       createHotbarState([[6, createPlayerInventoryItemStack('grappling-hook', 1)]], 6),
