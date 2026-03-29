@@ -30,6 +30,12 @@ import {
   DROPPED_ITEM_PLACEHOLDER_VERTEX_FLOAT_COUNT
 } from './droppedItemPlaceholder';
 import {
+  buildGrapplingHookTetherPlaceholderVertices,
+  getGrapplingHookTetherPlaceholderNearbyLightSample,
+  GRAPPLING_HOOK_TETHER_PLACEHOLDER_VERTEX_COUNT,
+  resolveInterpolatedGrapplingHookTetherPlaceholderEndpoints
+} from './grapplingHookTetherPlaceholder';
+import {
   buildHostileSlimePlaceholderVertices,
   getHostileSlimePlaceholderFacingSign,
   getHostileSlimePlaceholderNearbyLightSample,
@@ -293,6 +299,7 @@ export class Renderer {
   private slimeProgram: WebGLProgram;
   private bunnyProgram: WebGLProgram;
   private droppedItemProgram: WebGLProgram;
+  private grapplingHookTetherProgram: WebGLProgram;
   private world!: TileWorld;
   private detachWorldTileEditListener: (() => void) | null = null;
   private detachWorldWallEditListener: (() => void) | null = null;
@@ -315,6 +322,10 @@ export class Renderer {
   private uDroppedItemLight: WebGLUniformLocation;
   private uDroppedItemBaseColor: WebGLUniformLocation;
   private uDroppedItemAccentColor: WebGLUniformLocation;
+  private uGrapplingHookTetherMatrix: WebGLUniformLocation;
+  private uGrapplingHookTetherLight: WebGLUniformLocation;
+  private uGrapplingHookTetherBaseColor: WebGLUniformLocation;
+  private uGrapplingHookTetherAccentColor: WebGLUniformLocation;
   private texture: WebGLTexture | null = null;
   private standalonePlayerBuffer: WebGLBuffer;
   private standalonePlayerVao: WebGLVertexArrayObject;
@@ -849,6 +860,70 @@ export class Renderer {
     const droppedItemAccentColor = gl.getUniformLocation(this.droppedItemProgram, 'u_accentColor');
     if (!droppedItemAccentColor) throw new Error('Missing uniform u_accentColor');
     this.uDroppedItemAccentColor = droppedItemAccentColor;
+
+    this.grapplingHookTetherProgram = createProgram(
+      gl,
+      `#version 300 es
+      precision mediump float;
+      layout(location = 0) in vec2 a_position;
+      layout(location = 1) in vec2 a_uv;
+      uniform mat4 u_matrix;
+      out vec2 v_uv;
+      void main() {
+        v_uv = a_uv;
+        gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
+      }`,
+      `#version 300 es
+      precision mediump float;
+      in vec2 v_uv;
+      uniform float u_light;
+      uniform vec3 u_baseColor;
+      uniform vec3 u_accentColor;
+      out vec4 outColor;
+
+      void main() {
+        float edgeDistance = abs(v_uv.y - 0.5);
+        float centerMix = 1.0 - smoothstep(0.12, 0.5, edgeDistance);
+        float strandAlpha = 1.0 - smoothstep(0.36, 0.5, edgeDistance);
+        float endFade =
+          smoothstep(0.0, 0.08, v_uv.x) * (1.0 - smoothstep(0.92, 1.0, v_uv.x));
+        float alpha = strandAlpha * endFade;
+        if (alpha <= 0.0) {
+          discard;
+        }
+
+        vec3 color = mix(u_baseColor, u_accentColor, centerMix);
+        outColor = vec4(color * clamp(u_light, 0.0, 1.0), alpha);
+      }`
+    );
+
+    const grapplingHookTetherMatrix = gl.getUniformLocation(
+      this.grapplingHookTetherProgram,
+      'u_matrix'
+    );
+    if (!grapplingHookTetherMatrix) throw new Error('Missing uniform u_matrix');
+    this.uGrapplingHookTetherMatrix = grapplingHookTetherMatrix;
+
+    const grapplingHookTetherLight = gl.getUniformLocation(
+      this.grapplingHookTetherProgram,
+      'u_light'
+    );
+    if (!grapplingHookTetherLight) throw new Error('Missing uniform u_light');
+    this.uGrapplingHookTetherLight = grapplingHookTetherLight;
+
+    const grapplingHookTetherBaseColor = gl.getUniformLocation(
+      this.grapplingHookTetherProgram,
+      'u_baseColor'
+    );
+    if (!grapplingHookTetherBaseColor) throw new Error('Missing uniform u_baseColor');
+    this.uGrapplingHookTetherBaseColor = grapplingHookTetherBaseColor;
+
+    const grapplingHookTetherAccentColor = gl.getUniformLocation(
+      this.grapplingHookTetherProgram,
+      'u_accentColor'
+    );
+    if (!grapplingHookTetherAccentColor) throw new Error('Missing uniform u_accentColor');
+    this.uGrapplingHookTetherAccentColor = grapplingHookTetherAccentColor;
 
     this.standalonePlayerBuffer = createDynamicVertexBuffer(
       gl,
@@ -1426,6 +1501,23 @@ export class Renderer {
     worldToClipMatrix: Float32Array,
     timeMs: number
   ): void {
+    const standalonePlayerEntity =
+      entities.find(
+        (entity): entity is StandalonePlayerEntityFrameState => entity.kind === 'standalone-player'
+      ) ?? null;
+    if (standalonePlayerEntity !== null) {
+      for (const entity of entities) {
+        if (entity.kind === 'grappling-hook') {
+          this.drawGrapplingHookTether(
+            standalonePlayerEntity,
+            entity,
+            renderAlpha,
+            worldToClipMatrix
+          );
+        }
+      }
+    }
+
     for (const entity of entities) {
       switch (entity.kind) {
         case 'standalone-player':
@@ -1609,6 +1701,52 @@ export class Renderer {
     );
     gl.bindVertexArray(this.droppedItemVao);
     gl.drawArrays(gl.TRIANGLES, 0, DROPPED_ITEM_PLACEHOLDER_VERTEX_COUNT);
+    this.telemetry.drawCalls += 1;
+  }
+
+  private drawGrapplingHookTether(
+    standalonePlayerEntity: StandalonePlayerEntityFrameState,
+    grapplingHookEntity: GrapplingHookEntityFrameState,
+    renderAlpha: number,
+    worldToClipMatrix: Float32Array
+  ): void {
+    const endpoints = resolveInterpolatedGrapplingHookTetherPlaceholderEndpoints(
+      standalonePlayerEntity.snapshot,
+      grapplingHookEntity.snapshot,
+      renderAlpha
+    );
+    const nearbyLightSample = getGrapplingHookTetherPlaceholderNearbyLightSample(
+      this.world,
+      endpoints
+    );
+    const palette = getDroppedItemPlaceholderPalette(GRAPPLING_HOOK_ITEM_ID);
+    const gl = this.gl;
+    gl.useProgram(this.grapplingHookTetherProgram);
+    gl.uniformMatrix4fv(this.uGrapplingHookTetherMatrix, false, worldToClipMatrix);
+    gl.uniform1f(
+      this.uGrapplingHookTetherLight,
+      Math.max(0.35, nearbyLightSample.level / MAX_LIGHT_LEVEL)
+    );
+    gl.uniform3f(
+      this.uGrapplingHookTetherBaseColor,
+      palette.baseColor[0],
+      palette.baseColor[1],
+      palette.baseColor[2]
+    );
+    gl.uniform3f(
+      this.uGrapplingHookTetherAccentColor,
+      palette.accentColor[0],
+      palette.accentColor[1],
+      palette.accentColor[2]
+    );
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.droppedItemBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      buildGrapplingHookTetherPlaceholderVertices(endpoints),
+      gl.DYNAMIC_DRAW
+    );
+    gl.bindVertexArray(this.droppedItemVao);
+    gl.drawArrays(gl.TRIANGLES, 0, GRAPPLING_HOOK_TETHER_PLACEHOLDER_VERTEX_COUNT);
     this.telemetry.drawCalls += 1;
   }
 

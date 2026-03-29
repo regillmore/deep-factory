@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-28
 
+- Task: Draw a grappling-hook tether.
+- Changes: Added [src/gl/grapplingHookTetherPlaceholder.ts](../src/gl/grapplingHookTetherPlaceholder.ts) plus [src/gl/grapplingHookTetherPlaceholder.test.ts](../src/gl/grapplingHookTetherPlaceholder.test.ts) so the renderer now resolves interpolated player-focus and hook-head endpoints into deterministic tether strip geometry with nearby-light sampling; updated [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so active grappling hooks draw that live tether before the existing hook-head placeholder whenever a standalone-player snapshot is present; removed completed task `625` from [docs/NEXT.md](docs/NEXT.md), added replacement task `696`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/gl/grapplingHookTetherPlaceholder.test.ts src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Clear active grappling-hook traversal state on world-session replacement.
 - Changes: Updated [src/main.ts](../src/main.ts) so fresh-world and paused restore replacement paths now reuse the shared grappling-hook clear helper before resetting session-owned entity registries, instead of zeroing hook state through a separate reset path; updated [src/main.test.ts](../src/main.test.ts) with paused-menu `New World` and import regressions that clear latched and in-flight hook traversal when a replacement session takes over; removed completed task `624` from [docs/NEXT.md](docs/NEXT.md), added replacement task `627`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts -t grappling` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

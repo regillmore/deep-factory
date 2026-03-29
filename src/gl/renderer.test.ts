@@ -3244,6 +3244,141 @@ describe('Renderer atlas telemetry', () => {
     ]);
   });
 
+  it('draws a live grappling-hook tether from the interpolated player focus to the hook head', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
+    });
+    await renderer.initialize();
+
+    const drawArrays = vi.mocked(gl.drawArrays);
+    const bufferData = vi.mocked(gl.bufferData);
+    drawArrays.mockClear();
+    bufferData.mockClear();
+
+    const currentPlayerState = createPlayerState({
+      position: { x: 16, y: 28 }
+    });
+    const previousPlayerState = createPlayerState({
+      position: { x: 8, y: 28 }
+    });
+    const currentHookState = createDroppedItemState({
+      position: { x: 28, y: 14 },
+      itemId: 'grappling-hook',
+      amount: 1
+    });
+    const previousHookState = createDroppedItemState({
+      position: { x: 20, y: 14 },
+      itemId: 'grappling-hook',
+      amount: 1
+    });
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        createStandalonePlayerEntityFrameState(currentPlayerState, {
+          id: 7,
+          previousState: previousPlayerState
+        }),
+        createGrapplingHookEntityFrameState(currentHookState, {
+          id: 61,
+          previousState: previousHookState
+        })
+      ],
+      renderAlpha: 0.5,
+      timeMs: 0
+    });
+
+    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 3);
+
+    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+    expect(dynamicUploads).toHaveLength(3);
+    expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      12,
+      13,
+      0,
+      0,
+      12,
+      15,
+      0,
+      1,
+      24,
+      15,
+      1,
+      1,
+      12,
+      13,
+      0,
+      0,
+      24,
+      15,
+      1,
+      1,
+      24,
+      13,
+      1,
+      0
+    ]);
+    expect(Array.from((dynamicUploads[1]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      6,
+      0,
+      0,
+      0,
+      18,
+      0,
+      1,
+      0,
+      18,
+      28,
+      1,
+      1,
+      6,
+      0,
+      0,
+      0,
+      18,
+      28,
+      1,
+      1,
+      6,
+      28,
+      0,
+      1
+    ]);
+    expect(Array.from((dynamicUploads[2]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      19,
+      9,
+      0,
+      0,
+      29,
+      9,
+      1,
+      0,
+      29,
+      19,
+      1,
+      1,
+      19,
+      9,
+      0,
+      0,
+      29,
+      19,
+      1,
+      1,
+      19,
+      19,
+      0,
+      1
+    ]);
+  });
+
   it('switches thrown-bomb placeholders into the fuse-warning blink palette near detonation', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));

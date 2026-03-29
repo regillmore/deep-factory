@@ -4,8 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Grappling hook traversal
 
-625. Draw a grappling-hook tether after task 573: render a live line from the player to the active hook head or latched anchor, and cover interpolated tether geometry regressions.
 626. Clear active grappling-hook traversal when the latched anchor tile is removed after task 573: detach the current hook when gameplay or debug terrain edits remove its supporting solid tile, and cover anchor-loss cleanup regressions.
+696. Offset the grappling-hook tether origin to a facing-aware hand hold after task 625: start the tether from a small player-side hold point instead of the camera-focus center, and cover facing-plus-interpolation regressions.
 
 ## Bow and arrow ranged combat
 

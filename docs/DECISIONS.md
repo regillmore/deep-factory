@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-28: Grappling-hook tether visuals derive from interpolated player and hook snapshots
+
+- Decision: The grappling-hook tether now renders by pairing the standalone player's interpolated focus point with the grappling-hook entity's interpolated head position inside the renderer, rather than storing separate tether endpoint state or timing.
+- Reason: Hook visuals should stay aligned with the same fixed-step snapshots that already drive the player and hook head, so tether geometry cannot drift from traversal state or invent render-only latch timing.
+- Consequence: Future grappling-hook tether follow-ups should extend that shared snapshot-derived render path instead of persisting duplicate tether endpoints or adding a second hook-visual timer outside the entity pass.
+
 ### 2026-03-28: World-session replacement reuses shared grappling-hook cleanup
 
 - Decision: Fresh-world and paused restore replacement paths now clear any active grappling-hook traversal through the same `clearActiveGrapplingHookTraversal(...)` helper used by death and same-item cancel before session-owned entity registries reset.
