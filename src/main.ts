@@ -488,6 +488,9 @@ import {
 import {
   clearGrapplingHookState,
   createIdleGrapplingHookState,
+  createGrapplingHookState,
+  stepGrapplingHookState,
+  type FiredGrapplingHookState,
   GRAPPLING_HOOK_ITEM_ID,
   isGrapplingHookActive,
   tryFireGrapplingHook
@@ -558,6 +561,7 @@ const PASSIVE_BUNNY_ENTITY_KIND = 'bunny';
 const DROPPED_ITEM_ENTITY_KIND = 'dropped-item';
 const STARTER_WAND_FIREBOLT_ENTITY_KIND = 'wand-firebolt';
 const ARROW_PROJECTILE_ENTITY_KIND = 'arrow-projectile';
+const GRAPPLING_HOOK_ENTITY_KIND = 'grappling-hook';
 const THROWN_BOMB_ENTITY_KIND = 'thrown-bomb';
 const BOMB_DETONATION_FLASH_ENTITY_KIND = 'bomb-detonation-flash';
 const HOSTILE_SLIME_GEL_DROP_ITEM_ID: DroppedItemState['itemId'] = 'gel';
@@ -1902,6 +1906,7 @@ const bootstrap = async (): Promise<void> => {
   let droppedItemEntityIds: EntityId[] = [];
   let fireboltEntityIds: EntityId[] = [];
   let arrowProjectileEntityIds: EntityId[] = [];
+  let grapplingHookEntityId: EntityId | null = null;
   let pendingCombatEvents: PendingCombatEvent[] = [];
   let hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
   let passiveBunnySpawnerState = createPassiveBunnySpawnerState();
@@ -2396,6 +2401,16 @@ const bootstrap = async (): Promise<void> => {
       starterSpearThrustFeedback: resolveHotbarOverlayStarterSpearThrustFeedback(),
       starterBugNetSwingFeedback: resolveHotbarOverlayStarterBugNetSwingFeedback()
     });
+  };
+  const clearActiveGrapplingHookTraversal = (syncOverlay = true): void => {
+    grapplingHookState = clearGrapplingHookState();
+    if (grapplingHookEntityId !== null) {
+      entityRegistry.despawn(grapplingHookEntityId);
+      grapplingHookEntityId = null;
+    }
+    if (syncOverlay) {
+      syncHotbarOverlayState();
+    }
   };
   const resolveCraftingMissingIngredientsLabel = (
     recipeEvaluation: ReturnType<typeof evaluatePlayerCraftingRecipe>
@@ -3379,6 +3394,16 @@ const bootstrap = async (): Promise<void> => {
             }
           });
           break;
+        case GRAPPLING_HOOK_ENTITY_KIND:
+          entityFrameStates.push({
+            id: snapshotEntry.id,
+            kind: GRAPPLING_HOOK_ENTITY_KIND,
+            snapshot: {
+              previous: snapshotEntry.previous as DroppedItemState,
+              current: snapshotEntry.current as DroppedItemState
+            }
+          });
+          break;
         case THROWN_BOMB_ENTITY_KIND:
           entityFrameStates.push({
             id: snapshotEntry.id,
@@ -3413,6 +3438,7 @@ const bootstrap = async (): Promise<void> => {
     droppedItemEntityIds = [];
     fireboltEntityIds = [];
     arrowProjectileEntityIds = [];
+    grapplingHookEntityId = null;
     pendingCombatEvents = [];
     hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
     passiveBunnySpawnerState = createPassiveBunnySpawnerState();
@@ -3451,7 +3477,7 @@ const bootstrap = async (): Promise<void> => {
   const setStandalonePlayerDeathState = (nextDeathState: PlayerDeathState | null): void => {
     standalonePlayerDeathState = nextDeathState;
     if (nextDeathState !== null) {
-      grapplingHookState = clearGrapplingHookState();
+      clearActiveGrapplingHookTraversal(false);
       latestStandalonePlayerDeathHoldStatus = 'holding';
     }
   };
@@ -3755,6 +3781,56 @@ const bootstrap = async (): Promise<void> => {
     });
     arrowProjectileEntityIds.push(arrowProjectileEntityId);
     return arrowProjectileEntityId;
+  };
+  const spawnGrapplingHookEntity = (
+    initialGrapplingHookState: FiredGrapplingHookState
+  ): EntityId => {
+    if (grapplingHookEntityId !== null) {
+      entityRegistry.despawn(grapplingHookEntityId);
+      grapplingHookEntityId = null;
+    }
+
+    let nextGrapplingHookEntityId: EntityId | null = null;
+    nextGrapplingHookEntityId = entityRegistry.spawn({
+      kind: GRAPPLING_HOOK_ENTITY_KIND,
+      initialState: createGrapplingHookState(initialGrapplingHookState) as FiredGrapplingHookState,
+      captureRenderState: (hookState) =>
+        createDroppedItemState({
+          position: {
+            x: hookState.hookWorldPoint.x,
+            y: hookState.hookWorldPoint.y
+          },
+          itemId: GRAPPLING_HOOK_ITEM_ID,
+          amount: 1
+        }),
+      fixedUpdate: (hookState, fixedDt) => {
+        const stepResult = stepGrapplingHookState(hookState, {
+          fixedDtSeconds: fixedDt,
+          world: {
+            getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY)
+          }
+        });
+        if (stepResult.nextState.kind !== 'fired') {
+          grapplingHookState = stepResult.nextState;
+          if (nextGrapplingHookEntityId !== null) {
+            entityRegistry.despawn(nextGrapplingHookEntityId);
+            if (grapplingHookEntityId === nextGrapplingHookEntityId) {
+              grapplingHookEntityId = null;
+            }
+          }
+          syncHotbarOverlayState();
+          return hookState;
+        }
+
+        grapplingHookState = stepResult.nextState;
+        if (stepResult.nextState.phase !== hookState.phase) {
+          syncHotbarOverlayState();
+        }
+        return stepResult.nextState;
+      }
+    });
+    grapplingHookEntityId = nextGrapplingHookEntityId;
+    return nextGrapplingHookEntityId;
   };
   const spawnThrownBombEntity = (initialThrownBombState: ThrownBombState): EntityId => {
     let thrownBombEntityId: EntityId | null = null;
@@ -5281,7 +5357,12 @@ const bootstrap = async (): Promise<void> => {
     );
     grapplingHookState = fireResult.nextState;
     syncHotbarOverlayState();
-    return fireResult.hookFired;
+    if (!fireResult.hookFired || fireResult.nextState.kind !== 'fired') {
+      return false;
+    }
+
+    spawnGrapplingHookEntity(fireResult.nextState);
+    return true;
   };
   const tryThrowSelectedBomb = (request: PlayerItemUseRequest): boolean => {
     const standalonePlayerState = getStandalonePlayerState();

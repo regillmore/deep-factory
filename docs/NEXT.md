@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Grappling hook traversal
 
-572. Add grappling-hook projectile flight after task 571: spawn a fixed-step hook entity toward the requested world point, stop it on range failure or the first solid-tile latch, and cover deterministic in-flight versus latched state transitions.
 573. Add grappling-hook pull-and-release traversal after task 572: pull the player toward a latched anchor, support mixed-device cancel or release cleanup, and cover fixed-step hook-state regressions through latch, pull, and detach.
 624. Clear active grappling-hook traversal state on world-session replacement after task 573: drop any in-flight or latched hook state when `New World`, import, or restore replaces the current session, and cover replacement-cleanup regressions.
+625. Draw a grappling-hook tether after task 573: render a live line from the player to the active hook head or latched anchor, and cover interpolated tether geometry regressions.
 
 ## Bow and arrow ranged combat
 

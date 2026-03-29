@@ -353,6 +353,21 @@ const createArrowProjectileEntityFrameState = (
   }
 });
 
+const createGrapplingHookEntityFrameState = (
+  currentState: DroppedItemState,
+  options: {
+    id?: number;
+    previousState?: DroppedItemState;
+  } = {}
+): RendererEntityFrameState => ({
+  id: options.id ?? 1,
+  kind: 'grappling-hook',
+  snapshot: {
+    previous: options.previousState ?? currentState,
+    current: currentState
+  }
+});
+
 const createThrownBombEntityFrameState = (
   currentState: ThrownBombState,
   options: {
@@ -3137,6 +3152,91 @@ describe('Renderer atlas telemetry', () => {
     const palette = getDroppedItemPlaceholderPalette('bomb');
     expect(uniform1f.mock.calls).toHaveLength(1);
     expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(0.45);
+    expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
+    expect(uniform3f.mock.calls).toEqual([
+      [expect.anything(), palette.baseColor[0], palette.baseColor[1], palette.baseColor[2]],
+      [expect.anything(), palette.accentColor[0], palette.accentColor[1], palette.accentColor[2]]
+    ]);
+  });
+
+  it('draws grappling-hook placeholders from interpolated entity snapshots', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
+    });
+    await renderer.initialize();
+
+    const drawArrays = vi.mocked(gl.drawArrays);
+    const bufferData = vi.mocked(gl.bufferData);
+    const uniform1f = vi.mocked(gl.uniform1f);
+    const uniform3f = vi.mocked(gl.uniform3f);
+    drawArrays.mockClear();
+    bufferData.mockClear();
+    uniform1f.mockClear();
+    uniform3f.mockClear();
+
+    const currentState = createDroppedItemState({
+      position: { x: 28, y: 14 },
+      itemId: 'grappling-hook',
+      amount: 1
+    });
+    const previousState = createDroppedItemState({
+      position: { x: 20, y: 14 },
+      itemId: 'grappling-hook',
+      amount: 1
+    });
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        createGrapplingHookEntityFrameState(currentState, {
+          id: 61,
+          previousState
+        })
+      ],
+      renderAlpha: 0.5,
+      timeMs: 0
+    });
+
+    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 1);
+
+    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+    expect(dynamicUploads).toHaveLength(1);
+    expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      19,
+      9,
+      0,
+      0,
+      29,
+      9,
+      1,
+      0,
+      29,
+      19,
+      1,
+      1,
+      19,
+      9,
+      0,
+      0,
+      29,
+      19,
+      1,
+      1,
+      19,
+      19,
+      0,
+      1
+    ]);
+    const palette = getDroppedItemPlaceholderPalette('grappling-hook');
+    expect(uniform1f.mock.calls).toHaveLength(1);
+    expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(0);
     expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
     expect(uniform3f.mock.calls).toEqual([
       [expect.anything(), palette.baseColor[0], palette.baseColor[1], palette.baseColor[2]],

@@ -105,6 +105,7 @@ import { type DroppedItemState } from '../world/droppedItem';
 import { type BombDetonationFlashState } from '../world/bombDetonationFlash';
 import { BOMB_ITEM_ID, type ThrownBombState } from '../world/bombThrowing';
 import { ARROW_ITEM_ID, type ArrowProjectileState } from '../world/bowFiring';
+import { GRAPPLING_HOOK_ITEM_ID } from '../world/grapplingHook';
 import { type StarterWandFireboltState } from '../world/starterWand';
 import {
   isStandalonePlayerRenderStateCeilingBonkActive,
@@ -184,6 +185,12 @@ export interface ArrowProjectileEntityFrameState {
   snapshot: EntityRenderStateSnapshot<ArrowProjectileState>;
 }
 
+export interface GrapplingHookEntityFrameState {
+  id: EntityId;
+  kind: 'grappling-hook';
+  snapshot: EntityRenderStateSnapshot<DroppedItemState>;
+}
+
 export interface ThrownBombEntityFrameState {
   id: EntityId;
   kind: 'thrown-bomb';
@@ -203,6 +210,7 @@ export type RendererEntityFrameState =
   | DroppedItemEntityFrameState
   | FireboltEntityFrameState
   | ArrowProjectileEntityFrameState
+  | GrapplingHookEntityFrameState
   | ThrownBombEntityFrameState
   | BombDetonationFlashEntityFrameState;
 
@@ -1438,6 +1446,9 @@ export class Renderer {
         case 'arrow-projectile':
           this.drawArrowProjectile(entity, renderAlpha, worldToClipMatrix);
           break;
+        case 'grappling-hook':
+          this.drawGrapplingHook(entity, renderAlpha, worldToClipMatrix);
+          break;
         case 'thrown-bomb':
           this.drawThrownBomb(entity, renderAlpha, worldToClipMatrix);
           break;
@@ -1575,6 +1586,46 @@ export class Renderer {
       renderPosition
     );
     const palette = getDroppedItemPlaceholderPalette(state.itemId);
+    gl.useProgram(this.droppedItemProgram);
+    gl.uniformMatrix4fv(this.uDroppedItemMatrix, false, worldToClipMatrix);
+    gl.uniform1f(this.uDroppedItemLight, nearbyLightSample.level / MAX_LIGHT_LEVEL);
+    gl.uniform3f(
+      this.uDroppedItemBaseColor,
+      palette.baseColor[0],
+      palette.baseColor[1],
+      palette.baseColor[2]
+    );
+    gl.uniform3f(
+      this.uDroppedItemAccentColor,
+      palette.accentColor[0],
+      palette.accentColor[1],
+      palette.accentColor[2]
+    );
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.droppedItemBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      buildDroppedItemPlaceholderVertices(state, renderPosition),
+      gl.DYNAMIC_DRAW
+    );
+    gl.bindVertexArray(this.droppedItemVao);
+    gl.drawArrays(gl.TRIANGLES, 0, DROPPED_ITEM_PLACEHOLDER_VERTEX_COUNT);
+    this.telemetry.drawCalls += 1;
+  }
+
+  private drawGrapplingHook(
+    entity: GrapplingHookEntityFrameState,
+    renderAlpha: number,
+    worldToClipMatrix: Float32Array
+  ): void {
+    const state = entity.snapshot.current;
+    const renderPosition = resolveInterpolatedEntityWorldPosition(entity.snapshot, renderAlpha);
+    const gl = this.gl;
+    const nearbyLightSample = getDroppedItemPlaceholderNearbyLightSample(
+      this.world,
+      state,
+      renderPosition
+    );
+    const palette = getDroppedItemPlaceholderPalette(GRAPPLING_HOOK_ITEM_ID);
     gl.useProgram(this.droppedItemProgram);
     gl.uniformMatrix4fv(this.uDroppedItemMatrix, false, worldToClipMatrix);
     gl.uniform1f(this.uDroppedItemLight, nearbyLightSample.level / MAX_LIGHT_LEVEL);

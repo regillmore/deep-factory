@@ -4,14 +4,35 @@ import { createPlayerState } from './playerState';
 import {
   clearGrapplingHookState,
   cloneGrapplingHookState,
+  createFiredGrapplingHookStateFromUse,
   createGrapplingHookState,
   createIdleGrapplingHookState,
+  DEFAULT_GRAPPLING_HOOK_MAX_RANGE,
+  DEFAULT_GRAPPLING_HOOK_RADIUS,
+  DEFAULT_GRAPPLING_HOOK_SPEED,
   isGrapplingHookActive,
+  isGrapplingHookLatched,
+  stepGrapplingHookState,
   tryFireGrapplingHook
 } from './grapplingHook';
+import { TileWorld } from './world';
+
+const clearTileRect = (
+  world: TileWorld,
+  minTileX: number,
+  maxTileX: number,
+  minTileY: number,
+  maxTileY: number
+): void => {
+  for (let worldTileY = minTileY; worldTileY <= maxTileY; worldTileY += 1) {
+    for (let worldTileX = minTileX; worldTileX <= maxTileX; worldTileX += 1) {
+      world.setTile(worldTileX, worldTileY, 0);
+    }
+  }
+};
 
 describe('grapplingHook', () => {
-  it('starts an active hook state from player aim and clones it safely', () => {
+  it('starts an in-flight hook state from player aim and clones it safely', () => {
     const playerState = createPlayerState({
       position: { x: 8, y: 28 },
       facing: 'right'
@@ -21,39 +42,90 @@ describe('grapplingHook', () => {
       playerState,
       createIdleGrapplingHookState(),
       {
-        x: 96,
-        y: -12
+        x: 38,
+        y: -26
       }
     );
 
     expect(fireResult).toEqual({
       nextState: {
         kind: 'fired',
+        phase: 'in-flight',
         originWorldPoint: { x: 8, y: 14 },
-        targetWorldPoint: { x: 96, y: -12 }
+        targetWorldPoint: { x: 38, y: -26 },
+        hookWorldPoint: { x: 8, y: 14 },
+        velocity: {
+          x: DEFAULT_GRAPPLING_HOOK_SPEED * 0.6,
+          y: DEFAULT_GRAPPLING_HOOK_SPEED * -0.8
+        },
+        radius: DEFAULT_GRAPPLING_HOOK_RADIUS,
+        maxRange: DEFAULT_GRAPPLING_HOOK_MAX_RANGE,
+        travelledDistance: 0,
+        latchedTile: null
       },
       hookFired: true,
       blockedReason: null
     });
     expect(isGrapplingHookActive(fireResult.nextState)).toBe(true);
+    expect(isGrapplingHookLatched(fireResult.nextState)).toBe(false);
 
     const clonedState = cloneGrapplingHookState(fireResult.nextState);
     if (clonedState.kind !== 'fired') {
       throw new Error('expected a fired grappling-hook state');
     }
-    clonedState.originWorldPoint.x += 10;
+    clonedState.hookWorldPoint.x += 10;
     expect(fireResult.nextState).toEqual({
       kind: 'fired',
+      phase: 'in-flight',
       originWorldPoint: { x: 8, y: 14 },
-      targetWorldPoint: { x: 96, y: -12 }
+      targetWorldPoint: { x: 38, y: -26 },
+      hookWorldPoint: { x: 8, y: 14 },
+      velocity: {
+        x: DEFAULT_GRAPPLING_HOOK_SPEED * 0.6,
+        y: DEFAULT_GRAPPLING_HOOK_SPEED * -0.8
+      },
+      radius: DEFAULT_GRAPPLING_HOOK_RADIUS,
+      maxRange: DEFAULT_GRAPPLING_HOOK_MAX_RANGE,
+      travelledDistance: 0,
+      latchedTile: null
+    });
+  });
+
+  it('falls back to the current facing direction when the aim target sits on the player focus point', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'left'
+    });
+
+    expect(createFiredGrapplingHookStateFromUse(playerState, { x: 8, y: 14 })).toEqual({
+      kind: 'fired',
+      phase: 'in-flight',
+      originWorldPoint: { x: 8, y: 14 },
+      targetWorldPoint: { x: 8, y: 14 },
+      hookWorldPoint: { x: 8, y: 14 },
+      velocity: {
+        x: -DEFAULT_GRAPPLING_HOOK_SPEED,
+        y: 0
+      },
+      radius: DEFAULT_GRAPPLING_HOOK_RADIUS,
+      maxRange: DEFAULT_GRAPPLING_HOOK_MAX_RANGE,
+      travelledDistance: 0,
+      latchedTile: null
     });
   });
 
   it('blocks dead players and already-active hooks without mutating the source state', () => {
     const firedState = createGrapplingHookState({
       kind: 'fired',
+      phase: 'in-flight',
       originWorldPoint: { x: 8, y: 14 },
-      targetWorldPoint: { x: 96, y: -12 }
+      targetWorldPoint: { x: 24, y: 14 },
+      hookWorldPoint: { x: 12, y: 14 },
+      velocity: { x: 540, y: 0 },
+      radius: DEFAULT_GRAPPLING_HOOK_RADIUS,
+      maxRange: DEFAULT_GRAPPLING_HOOK_MAX_RANGE,
+      travelledDistance: 4,
+      latchedTile: null
     });
 
     expect(
@@ -87,5 +159,100 @@ describe('grapplingHook', () => {
     });
     expect(blockedWhileActive.nextState).not.toBe(firedState);
     expect(clearGrapplingHookState()).toEqual(createIdleGrapplingHookState());
+  });
+
+  it('advances in-flight hook states in a straight line and clears them once they outrun the maximum range', () => {
+    const initialState = createGrapplingHookState({
+      kind: 'fired',
+      phase: 'in-flight',
+      originWorldPoint: { x: 8, y: 14 },
+      targetWorldPoint: { x: 80, y: 14 },
+      hookWorldPoint: { x: 8, y: 14 },
+      velocity: { x: 300, y: 0 },
+      radius: 4,
+      maxRange: 60,
+      travelledDistance: 0,
+      latchedTile: null
+    });
+
+    const steppedResult = stepGrapplingHookState(initialState, {
+      fixedDtSeconds: 0.1
+    });
+
+    expect(steppedResult.nextState).toEqual({
+      kind: 'fired',
+      phase: 'in-flight',
+      originWorldPoint: { x: 8, y: 14 },
+      targetWorldPoint: { x: 80, y: 14 },
+      hookWorldPoint: { x: 38, y: 14 },
+      velocity: { x: 300, y: 0 },
+      radius: 4,
+      maxRange: 60,
+      travelledDistance: 30,
+      latchedTile: null
+    });
+    expect(cloneGrapplingHookState(initialState)).toEqual(initialState);
+
+    expect(
+      stepGrapplingHookState(steppedResult.nextState, {
+        fixedDtSeconds: 0.1
+      })
+    ).toEqual({
+      nextState: createIdleGrapplingHookState()
+    });
+  });
+
+  it('latches onto the first solid tile along the hook travel segment and then stays anchored', () => {
+    const world = new TileWorld(0);
+    clearTileRect(world, -1, 6, -2, 1);
+    world.setTile(2, 0, 1);
+    const playerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+
+    const stepResult = stepGrapplingHookState(
+      createFiredGrapplingHookStateFromUse(playerState, {
+        x: 80,
+        y: 14
+      }),
+      {
+        world: {
+          getTile: (worldTileX, worldTileY) => world.getTile(worldTileX, worldTileY)
+        },
+        fixedDtSeconds: 0.2
+      }
+    );
+
+    expect(stepResult.nextState).toMatchObject({
+      kind: 'fired',
+      phase: 'latched',
+      hookWorldPoint: {
+        x: 28,
+        y: 14
+      },
+      travelledDistance: 20,
+      latchedTile: {
+        worldTileX: 2,
+        worldTileY: 0,
+        tileId: 1
+      }
+    });
+    if (stepResult.nextState.kind !== 'fired') {
+      throw new Error('expected the grappling hook to remain fired after latching');
+    }
+    expect(stepResult.nextState.velocity).toEqual({
+      x: 0,
+      y: 0
+    });
+    expect(isGrapplingHookLatched(stepResult.nextState)).toBe(true);
+
+    expect(
+      stepGrapplingHookState(stepResult.nextState, {
+        fixedDtSeconds: 0.2
+      })
+    ).toEqual({
+      nextState: stepResult.nextState
+    });
   });
 });

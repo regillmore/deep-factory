@@ -75,6 +75,10 @@ import {
   createArrowProjectileStateFromBowFire,
   stepArrowProjectileState
 } from './world/bowFiring';
+import {
+  DEFAULT_GRAPPLING_HOOK_MAX_RANGE,
+  DEFAULT_GRAPPLING_HOOK_SPEED
+} from './world/grapplingHook';
 import { DEFAULT_MANA_CRYSTAL_MAX_MANA_CAP } from './world/playerManaCrystal';
 import {
   PROCEDURAL_DIRT_TILE_ID,
@@ -762,6 +766,7 @@ const testRuntime = vi.hoisted(() => {
       bunnyCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       fireboltCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       arrowCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
+      grapplingHookCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       bombCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       bombDetonationFlashCurrentPositions: Array<{
         id: number;
@@ -1033,6 +1038,31 @@ vi.mock('./gl/renderer', () => ({
               ];
             })
         : [];
+      const grapplingHookCurrentPositions = Array.isArray(renderState.entities)
+        ? renderState.entities
+            .filter((entity) => entity?.kind === 'grappling-hook')
+            .flatMap((entity) => {
+              const snapshot = entity?.snapshot?.current;
+              if (
+                !snapshot?.position ||
+                typeof entity?.id !== 'number' ||
+                typeof snapshot.position.x !== 'number' ||
+                typeof snapshot.position.y !== 'number'
+              ) {
+                return [];
+              }
+
+              return [
+                {
+                  id: entity.id,
+                  position: {
+                    x: snapshot.position.x,
+                    y: snapshot.position.y
+                  }
+                }
+              ];
+            })
+        : [];
       const bombCurrentPositions = Array.isArray(renderState.entities)
         ? renderState.entities
             .filter((entity) => entity?.kind === 'thrown-bomb')
@@ -1135,6 +1165,7 @@ vi.mock('./gl/renderer', () => ({
         bunnyCurrentPositions,
         fireboltCurrentPositions,
         arrowCurrentPositions,
+        grapplingHookCurrentPositions,
         bombCurrentPositions,
         bombDetonationFlashCurrentPositions,
         renderAlpha: typeof renderState.renderAlpha === 'number' ? renderState.renderAlpha : null,
@@ -12358,8 +12389,8 @@ describe('main.ts shell state orchestration', () => {
         pointerType: 'mouse'
       }
     ];
-    runFixedUpdate(1 / 60);
-    runRenderFrame(1000 / 60, 1);
+    runFixedUpdate(0.2);
+    runRenderFrame(200, 1);
 
     expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toHaveLength(1);
 
@@ -13501,6 +13532,156 @@ describe('main.ts shell state orchestration', () => {
     expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('DEAD');
     expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('100.0%');
     expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('1');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'grappling-hook',
+      amount: 1
+    });
+  });
+
+  it('spawns an in-flight grappling-hook entity and clears it once the hook outruns its maximum range', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 40, -4, 1);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'grappling-hook', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 30,
+        worldTileY: 0,
+        worldX: playerFocusPoint.x + DEFAULT_GRAPPLING_HOOK_MAX_RANGE + 80,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    const hookPositions = testRuntime.latestRendererRenderFrameState?.grapplingHookCurrentPositions ?? [];
+    expect(hookPositions).toHaveLength(1);
+    expect(hookPositions[0]?.position.x).toBeCloseTo(
+      playerFocusPoint.x + DEFAULT_GRAPPLING_HOOK_SPEED * (1 / 60),
+      6
+    );
+    expect(hookPositions[0]?.position.y).toBeCloseTo(playerFocusPoint.y, 6);
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('HOOK');
+
+    testRuntime.playerItemUseRequests = [];
+    runFixedUpdate(DEFAULT_GRAPPLING_HOOK_MAX_RANGE / DEFAULT_GRAPPLING_HOOK_SPEED);
+    runRenderFrame(1000, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.grapplingHookCurrentPositions).toEqual([]);
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('hook active');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'grappling-hook',
+      amount: 1
+    });
+  });
+
+  it('latches the grappling-hook entity onto the first solid tile hit and keeps it anchored afterward', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 20, -4, 1);
+    savedWorld.setTile(2, 0, 1);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'grappling-hook', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 6,
+        worldTileY: 0,
+        worldX: playerFocusPoint.x + 80,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(0.2);
+    runRenderFrame(200, 1);
+
+    const latchedHookPositions =
+      testRuntime.latestRendererRenderFrameState?.grapplingHookCurrentPositions ?? [];
+    expect(latchedHookPositions).toHaveLength(1);
+    expect(latchedHookPositions[0]?.position.x).toBeCloseTo(28, 6);
+    expect(latchedHookPositions[0]?.position.y).toBeCloseTo(playerFocusPoint.y, 6);
+    expect(getHotbarOverlaySlotButton(6).title).toContain('hook active');
+
+    testRuntime.playerItemUseRequests = [];
+    runFixedUpdate(0.5);
+    runRenderFrame(1500, 1);
+
+    const anchoredHookPositions =
+      testRuntime.latestRendererRenderFrameState?.grapplingHookCurrentPositions ?? [];
+    expect(anchoredHookPositions).toHaveLength(1);
+    expect(anchoredHookPositions[0]?.position.x).toBeCloseTo(28, 6);
+    expect(anchoredHookPositions[0]?.position.y).toBeCloseTo(playerFocusPoint.y, 6);
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('HOOK');
 
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({

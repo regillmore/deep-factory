@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-28: Grappling hook flight and latch stay on one detached state plus entity path
+
+- Decision: Grappling-hook use now spawns one fixed-step hook entity that mirrors the detached grappling-hook session state, advances through an explicit `in-flight` phase, clears on range failure, and freezes into a `latched` phase at the first solid-tile hit.
+- Reason: Hook traversal needs deterministic flight and anchor resolution for later pull and cancel work, while the renderer still needs an interpolated entity-pass target that does not invent its own timing or latch logic.
+- Consequence: Future grappling-hook pull, tether, cancel, and cleanup follow-ups should extend the shared fired-state phase machine and its mirrored entity path instead of introducing separate latch flags, render-only hook timers, or anchor recomputation from the original aim point.
+
 ### 2026-03-28: Grappling hook starts from detached fired state before traversal
 
 - Decision: `Grappling Hook` use now flips a session-owned runtime state from `idle` to `fired` through the shared hidden-panel item-use path, blocks refires while that fired state is still active, and leaves the equipped hook item unconsumed.
