@@ -14,12 +14,14 @@ import {
 } from './grapplingHookTetherPlaceholder';
 
 describe('grapplingHookTetherPlaceholder', () => {
-  it('resolves interpolated tether endpoints from the player focus and hook snapshots', () => {
+  it('resolves interpolated tether endpoints from the facing-side player hold and hook snapshots', () => {
     const previousPlayerState = createPlayerState({
-      position: { x: 8, y: 28 }
+      position: { x: 8, y: 28 },
+      facing: 'left'
     });
     const currentPlayerState = createPlayerState({
-      position: { x: 16, y: 28 }
+      position: { x: 16, y: 28 },
+      facing: 'right'
     });
     const previousHookState = createDroppedItemState({
       position: { x: 20, y: 14 },
@@ -51,7 +53,51 @@ describe('grapplingHookTetherPlaceholder', () => {
         0.5
       )
     ).toEqual({
-      playerWorldPoint: { x: 12, y: 14 },
+      playerWorldPoint: { x: 15, y: 14 },
+      hookWorldPoint: { x: 24, y: 14 }
+    });
+  });
+
+  it('keeps the tether origin on the current left-facing hold during interpolation', () => {
+    const previousPlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const currentPlayerState = createPlayerState({
+      position: { x: 16, y: 28 },
+      facing: 'left'
+    });
+    const previousHookState = createDroppedItemState({
+      position: { x: 20, y: 14 },
+      itemId: 'grappling-hook',
+      amount: 1
+    });
+    const currentHookState = createDroppedItemState({
+      position: { x: 28, y: 14 },
+      itemId: 'grappling-hook',
+      amount: 1
+    });
+
+    expect(
+      resolveInterpolatedGrapplingHookTetherPlaceholderEndpoints(
+        {
+          previous: cloneStandalonePlayerRenderState(
+            previousPlayerState,
+            createStandalonePlayerRenderPresentationState()
+          ),
+          current: cloneStandalonePlayerRenderState(
+            currentPlayerState,
+            createStandalonePlayerRenderPresentationState()
+          )
+        },
+        {
+          previous: previousHookState,
+          current: currentHookState
+        },
+        0.5
+      )
+    ).toEqual({
+      playerWorldPoint: { x: 9, y: 14 },
       hookWorldPoint: { x: 24, y: 14 }
     });
   });

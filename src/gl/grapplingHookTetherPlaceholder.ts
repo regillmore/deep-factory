@@ -19,6 +19,7 @@ export const GRAPPLING_HOOK_TETHER_PLACEHOLDER_THICKNESS = 2;
 const GRAPPLING_HOOK_TETHER_PLACEHOLDER_HALF_THICKNESS =
   GRAPPLING_HOOK_TETHER_PLACEHOLDER_THICKNESS * 0.5;
 const GRAPPLING_HOOK_TETHER_PLACEHOLDER_NEARBY_LIGHT_SAMPLE_PADDING_TILES = 1;
+const GRAPPLING_HOOK_TETHER_PLACEHOLDER_PLAYER_HOLD_HORIZONTAL_OFFSET_RATIO = 0.25;
 const GRAPPLING_HOOK_TETHER_LENGTH_EPSILON = 1e-6;
 
 interface TileRange {
@@ -67,12 +68,20 @@ export const resolveInterpolatedGrapplingHookTetherPlaceholderEndpoints = (
     renderAlpha
   );
   const hookWorldPoint = resolveInterpolatedEntityWorldPosition(grapplingHookSnapshot, renderAlpha);
+  const playerFocusPoint = getPlayerCameraFocusPoint({
+    ...standalonePlayerSnapshot.current,
+    position: playerRenderPosition
+  });
+  const holdHorizontalOffset =
+    standalonePlayerSnapshot.current.size.width *
+    GRAPPLING_HOOK_TETHER_PLACEHOLDER_PLAYER_HOLD_HORIZONTAL_OFFSET_RATIO *
+    (standalonePlayerSnapshot.current.facing === 'left' ? -1 : 1);
 
   return {
-    playerWorldPoint: getPlayerCameraFocusPoint({
-      ...standalonePlayerSnapshot.current,
-      position: playerRenderPosition
-    }),
+    playerWorldPoint: {
+      x: playerFocusPoint.x + holdHorizontalOffset,
+      y: playerFocusPoint.y
+    },
     hookWorldPoint
   };
 };

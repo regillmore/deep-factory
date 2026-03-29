@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-28
 
+- Task: Offset the grappling-hook tether origin to a facing-aware hand hold.
+- Changes: Updated [src/gl/grapplingHookTetherPlaceholder.ts](../src/gl/grapplingHookTetherPlaceholder.ts) plus [src/gl/grapplingHookTetherPlaceholder.test.ts](../src/gl/grapplingHookTetherPlaceholder.test.ts) so tether endpoints now derive from the interpolated player position plus the current facing-side hand hold instead of the camera-focus center, including explicit left-versus-right interpolation regressions; updated [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so the renderer integration expects that shifted tether upload; removed completed task `696` from [docs/NEXT.md](docs/NEXT.md), added replacement task `698`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/gl/grapplingHookTetherPlaceholder.test.ts src/gl/renderer.test.ts -t grappling` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Clear active grappling-hook traversal when the latched anchor tile is removed.
 - Changes: Updated [src/world/grapplingHook.ts](../src/world/grapplingHook.ts) plus [src/world/grapplingHook.test.ts](../src/world/grapplingHook.test.ts) with a focused anchor-loss helper that detects when the currently latched tile becomes non-solid; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so shared renderer tile-edit notifications now detach active grappling hooks for gameplay, debug-break, and debug-history anchor removal without adding a second cleanup path; removed completed task `626` from [docs/NEXT.md](docs/NEXT.md), added replacement task `697`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/grapplingHook.test.ts`, `cmd /c npx vitest run src/main.test.ts -t grappling`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -3244,7 +3244,7 @@ describe('Renderer atlas telemetry', () => {
     ]);
   });
 
-  it('draws a live grappling-hook tether from the interpolated player focus to the hook head', async () => {
+  it('draws a live grappling-hook tether from the interpolated facing-side player hold to the hook head', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));
     const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
@@ -3263,10 +3263,12 @@ describe('Renderer atlas telemetry', () => {
     bufferData.mockClear();
 
     const currentPlayerState = createPlayerState({
-      position: { x: 16, y: 28 }
+      position: { x: 16, y: 28 },
+      facing: 'right'
     });
     const previousPlayerState = createPlayerState({
-      position: { x: 8, y: 28 }
+      position: { x: 8, y: 28 },
+      facing: 'left'
     });
     const currentHookState = createDroppedItemState({
       position: { x: 28, y: 14 },
@@ -3300,11 +3302,11 @@ describe('Renderer atlas telemetry', () => {
     const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
     expect(dynamicUploads).toHaveLength(3);
     expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
-      12,
+      15,
       13,
       0,
       0,
-      12,
+      15,
       15,
       0,
       1,
@@ -3312,7 +3314,7 @@ describe('Renderer atlas telemetry', () => {
       15,
       1,
       1,
-      12,
+      15,
       13,
       0,
       0,

@@ -8,11 +8,11 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Anchor removal can come from multiple gameplay, debug-break, debug-history, or support-cleanup edits, so the shared tile-edit notification seam is the one place that sees every solid-tile removal consistently.
 - Consequence: Future grappling-hook anchor-loss or terrain-edit cleanup should extend that shared tile-edit listener plus helper predicate rather than adding hook-specific detach code to each mining, bomb, or debug-edit path.
 
-### 2026-03-28: Grappling-hook tether visuals derive from interpolated player and hook snapshots
+### 2026-03-28: Grappling-hook tether visuals derive from interpolated player hand-hold and hook snapshots
 
-- Decision: The grappling-hook tether now renders by pairing the standalone player's interpolated focus point with the grappling-hook entity's interpolated head position inside the renderer, rather than storing separate tether endpoint state or timing.
-- Reason: Hook visuals should stay aligned with the same fixed-step snapshots that already drive the player and hook head, so tether geometry cannot drift from traversal state or invent render-only latch timing.
-- Consequence: Future grappling-hook tether follow-ups should extend that shared snapshot-derived render path instead of persisting duplicate tether endpoints or adding a second hook-visual timer outside the entity pass.
+- Decision: The grappling-hook tether now renders by pairing the grappling-hook entity's interpolated head position with a facing-aware hand-hold point derived from the standalone player's interpolated render position plus current render snapshot, rather than storing separate tether endpoint state or timing.
+- Reason: Hook visuals should stay aligned with the same fixed-step snapshots that already drive the player and hook head, while still starting from the visible player-side hold instead of the body-center camera focus.
+- Consequence: Future grappling-hook tether follow-ups should extend that shared snapshot-derived hand-hold helper instead of persisting duplicate tether endpoints or adding a second hook-visual timer outside the entity pass.
 
 ### 2026-03-28: World-session replacement reuses shared grappling-hook cleanup
 
