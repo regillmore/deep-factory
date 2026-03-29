@@ -493,7 +493,7 @@ import {
   clearGrapplingHookState,
   createIdleGrapplingHookState,
   createGrapplingHookState,
-  evaluateGrapplingHookAimRange,
+  evaluateGrapplingHookPreviewTarget,
   isGrapplingHookLatched,
   shouldDetachLatchedGrapplingHookForTileEdit,
   stepLatchedGrapplingHookTraversal,
@@ -6114,15 +6114,17 @@ const bootstrap = async (): Promise<void> => {
       return null;
     }
 
-    const rangeEvaluation = evaluateGrapplingHookAimRange(
+    const previewEvaluation = evaluateGrapplingHookPreviewTarget(
       standalonePlayerState,
-      resolvePointerInspectWorldPoint(pointerInspect)
+      resolvePointerInspectWorldPoint(pointerInspect),
+      renderer.getTile(pointerInspect.tile.x, pointerInspect.tile.y)
     );
 
     return {
       tileX: pointerInspect.tile.x,
       tileY: pointerInspect.tile.y,
-      withinRange: rangeEvaluation.withinRange
+      withinRange: previewEvaluation.withinRange,
+      latchReady: previewEvaluation.latchReady
     };
   };
   const getSelectedStandalonePlayerItemSpearPreview = (

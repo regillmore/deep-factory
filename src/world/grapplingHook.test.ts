@@ -11,6 +11,7 @@ import {
   DEFAULT_GRAPPLING_HOOK_RADIUS,
   DEFAULT_GRAPPLING_HOOK_SPEED,
   evaluateGrapplingHookAimRange,
+  evaluateGrapplingHookPreviewTarget,
   isGrapplingHookActive,
   isGrapplingHookLatched,
   shouldDetachLatchedGrapplingHookForTileEdit,
@@ -191,6 +192,58 @@ describe('grapplingHook', () => {
     ).toMatchObject({
       distance: DEFAULT_GRAPPLING_HOOK_MAX_RANGE + 1,
       withinRange: false
+    });
+  });
+
+  it('marks only in-range solid preview targets as latch-ready', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+
+    expect(
+      evaluateGrapplingHookPreviewTarget(
+        playerState,
+        {
+          x: 32,
+          y: 14
+        },
+        1
+      )
+    ).toMatchObject({
+      targetSolid: true,
+      withinRange: true,
+      latchReady: true
+    });
+
+    expect(
+      evaluateGrapplingHookPreviewTarget(
+        playerState,
+        {
+          x: 32,
+          y: 14
+        },
+        0
+      )
+    ).toMatchObject({
+      targetSolid: false,
+      withinRange: true,
+      latchReady: false
+    });
+
+    expect(
+      evaluateGrapplingHookPreviewTarget(
+        playerState,
+        {
+          x: 8 + DEFAULT_GRAPPLING_HOOK_MAX_RANGE + 1,
+          y: 14
+        },
+        1
+      )
+    ).toMatchObject({
+      targetSolid: true,
+      withinRange: false,
+      latchReady: false
     });
   });
 

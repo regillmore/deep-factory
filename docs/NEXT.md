@@ -4,8 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Grappling hook traversal
 
-700. Distinguish solid-versus-empty in-range grappling-hook previews after task 698: show hovered solid tiles as latch-ready while leaving empty-air in-range aims neutral, and cover solid-target preview regressions.
 701. Surface selected-hook latch-ready hotbar feedback after task 700: show a temporary ready readout on the selected grappling-hook slot while the hovered preview target is an in-range solid latch candidate, and cover solid-preview-versus-active-hook slot regressions.
+702. Snap inactive grappling-hook previews to the first in-range solid latch tile after task 701: when the hovered aim sits in empty air behind nearby terrain, highlight the actual first latch tile instead of the hovered empty cell, and cover intervening-terrain preview regressions.
 
 ## Bow and arrow ranged combat
 

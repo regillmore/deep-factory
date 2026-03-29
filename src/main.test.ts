@@ -13644,11 +13644,14 @@ describe('main.ts shell state orchestration', () => {
       facing: 'right'
     });
     const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 40, -4, 1);
+    savedWorld.setTile(12, 0, 1);
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
       JSON.stringify(
         createWorldSaveEnvelope({
-          worldSnapshot: new TileWorld(0).createSnapshot(),
+          worldSnapshot: savedWorld.createSnapshot(),
           standalonePlayerState,
           standalonePlayerInventoryState: createPlayerInventoryState({
             hotbar: [
@@ -13687,7 +13690,8 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestPlayerItemGrapplingHookPreviewState).toEqual({
       tileX: 30,
       tileY: 0,
-      withinRange: false
+      withinRange: false,
+      latchReady: false
     });
     expect(getHotbarOverlaySlotButton(6).title).toContain('maximum range');
     expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('RANGE');
@@ -13708,7 +13712,29 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestPlayerItemGrapplingHookPreviewState).toEqual({
       tileX: 10,
       tileY: 0,
-      withinRange: true
+      withinRange: true,
+      latchReady: false
+    });
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('');
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('maximum range');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
+
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 12, y: 0 },
+      world: {
+        x: playerFocusPoint.x + 120,
+        y: playerFocusPoint.y
+      }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemGrapplingHookPreviewState).toEqual({
+      tileX: 12,
+      tileY: 0,
+      withinRange: true,
+      latchReady: true
     });
     expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('');
     expect(getHotbarOverlaySlotButton(6).title).not.toContain('maximum range');
@@ -13764,7 +13790,8 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestPlayerItemGrapplingHookPreviewState).toEqual({
       tileX: -30,
       tileY: -4,
-      withinRange: false
+      withinRange: false,
+      latchReady: false
     });
   });
 

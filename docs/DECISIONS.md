@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-29: Grappling-hook ready preview is reserved for in-range solid hovered tiles
+
+- Decision: Inactive grappling-hook hover previews now show a ready cue only when the hovered tile is solid and the requested world aim stays within range, while in-range empty-air aims stay neutral and out-of-range aims remain blocked.
+- Reason: The preview should only promise an immediate latch when the hovered tile itself can support the hook, instead of implying that empty air is just as ready as solid terrain.
+- Consequence: Future grappling-hook preview or slot-feedback work should reuse the shared preview-target evaluation and reserve ready cues for in-range solid hovered tiles rather than any in-range aim.
+
 ### 2026-03-29: Selected grappling-hook range-block slot feedback follows the inactive preview without overriding live hook states
 
 - Decision: The selected grappling-hook slot now shows temporary `RANGE` blocked feedback only when the inactive hover preview is beyond maximum range, while live hook traversal and dead-player states still keep their existing `HOOK` and `DEAD` readouts.

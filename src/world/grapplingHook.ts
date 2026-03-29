@@ -101,6 +101,11 @@ export interface GrapplingHookAimRangeEvaluation {
   withinRange: boolean;
 }
 
+export interface GrapplingHookPreviewTargetEvaluation extends GrapplingHookAimRangeEvaluation {
+  targetSolid: boolean;
+  latchReady: boolean;
+}
+
 const DIRECTION_EPSILON = 1e-6;
 
 interface SegmentIntersectionResult {
@@ -417,6 +422,26 @@ export const evaluateGrapplingHookAimRange = (
     distance: distanceToTarget.distance,
     maxRange,
     withinRange: distanceToTarget.distance <= maxRange + DIRECTION_EPSILON
+  };
+};
+
+export const evaluateGrapplingHookPreviewTarget = (
+  playerState: PlayerState,
+  targetWorldPoint: GrapplingHookWorldPoint,
+  targetTileId: number,
+  options: Pick<TryFireGrapplingHookOptions, 'maxRange'> & {
+    registry?: TileMetadataRegistry;
+  } = {}
+): GrapplingHookPreviewTargetEvaluation => {
+  const rangeEvaluation = evaluateGrapplingHookAimRange(playerState, targetWorldPoint, {
+    maxRange: options.maxRange
+  });
+  const targetSolid = isTileSolid(targetTileId, options.registry ?? TILE_METADATA);
+
+  return {
+    ...rangeEvaluation,
+    targetSolid,
+    latchReady: rangeEvaluation.withinRange && targetSolid
   };
 };
 

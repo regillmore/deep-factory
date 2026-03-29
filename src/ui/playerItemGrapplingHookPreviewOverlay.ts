@@ -6,9 +6,10 @@ export interface PlayerItemGrapplingHookPreviewState {
   tileX: number;
   tileY: number;
   withinRange: boolean;
+  latchReady: boolean;
 }
 
-export type PlayerItemGrapplingHookPreviewTone = 'aimed' | 'out-of-range';
+export type PlayerItemGrapplingHookPreviewTone = 'neutral' | 'latch-ready' | 'out-of-range';
 
 export interface PlayerItemGrapplingHookPreviewPresentation {
   tone: PlayerItemGrapplingHookPreviewTone;
@@ -20,14 +21,20 @@ export interface PlayerItemGrapplingHookPreviewPresentation {
 
 export const resolvePlayerItemGrapplingHookPreviewTone = (
   preview: PlayerItemGrapplingHookPreviewState
-): PlayerItemGrapplingHookPreviewTone => (preview.withinRange ? 'aimed' : 'out-of-range');
+): PlayerItemGrapplingHookPreviewTone => {
+  if (!preview.withinRange) {
+    return 'out-of-range';
+  }
+
+  return preview.latchReady ? 'latch-ready' : 'neutral';
+};
 
 export const resolvePlayerItemGrapplingHookPreviewPresentation = (
   preview: PlayerItemGrapplingHookPreviewState
 ): PlayerItemGrapplingHookPreviewPresentation => {
   const tone = resolvePlayerItemGrapplingHookPreviewTone(preview);
   switch (tone) {
-    case 'aimed':
+    case 'latch-ready':
       return {
         tone,
         borderColor: 'rgba(120, 210, 255, 0.95)',
@@ -35,6 +42,15 @@ export const resolvePlayerItemGrapplingHookPreviewPresentation = (
         background: 'rgba(120, 210, 255, 0.14)',
         boxShadow:
           '0 0 0 1px rgba(8, 18, 33, 0.4), 0 0 18px rgba(120, 210, 255, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.08)'
+      };
+    case 'neutral':
+      return {
+        tone,
+        borderColor: 'rgba(176, 190, 208, 0.92)',
+        borderStyle: 'dashed',
+        background: 'rgba(176, 190, 208, 0.12)',
+        boxShadow:
+          '0 0 0 1px rgba(8, 14, 24, 0.45), 0 0 18px rgba(176, 190, 208, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.06)'
       };
     case 'out-of-range':
     default:
