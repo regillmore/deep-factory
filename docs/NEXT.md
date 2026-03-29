@@ -2,8 +2,6 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-704. Player dirt block placement should not be blocked by tall grass or surface flowers.
-
 ## Grappling hook traversal
 
 702. Snap inactive grappling-hook previews to the first in-range solid latch tile after task 701: when the hovered aim sits in empty air behind nearby terrain, highlight the actual first latch tile instead of the hovered empty cell, and cover intervening-terrain preview regressions.

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-29: Solid-block placement can replace surface decorations
+
+- Decision: Shared solid-block placement now treats `tall_grass` and `surface_flower` tiles as replaceable decoration instead of occupied blockers, while still requiring solid-face support and preventing overlap with the standalone player.
+- Reason: Surface decoration lives on the same foreground tile layer as ordinary blocks, but decorative foliage should not stop normal dirt, stone, or wood building on that cell.
+- Consequence: Future solid placeables should preserve or deliberately override this replaceable-decoration exception instead of treating those surface foliage tiles as hard occupancy by default.
+
 ### 2026-03-29: Grappling-hook ready preview is reserved for in-range solid hovered tiles
 
 - Decision: Inactive grappling-hook hover previews now show a ready cue only when the hovered tile is solid and the requested world aim stays within range, while in-range empty-air aims stay neutral and out-of-range aims remain blocked.

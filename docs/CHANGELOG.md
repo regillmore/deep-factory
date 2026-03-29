@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-29
 
+- Task: Let solid-block placement replace tall grass and surface flowers.
+- Changes: Updated [src/world/starterBlockPlacement.ts](../src/world/starterBlockPlacement.ts) plus [src/world/starterBlockPlacement.test.ts](../src/world/starterBlockPlacement.test.ts) so shared dirt, stone, and wood block placement now treats `tall_grass` and `surface_flower` as replaceable decoration instead of occupied blockers; updated [src/main.test.ts](../src/main.test.ts) with preview and hidden-panel placement regressions for placing dirt over tall grass; removed completed task `704` from [docs/NEXT.md](docs/NEXT.md), added replacement task `705`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/starterBlockPlacement.test.ts src/main.test.ts -t "tall grass"` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface selected-hook latch-ready hotbar feedback.
 - Changes: Updated [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts) plus [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts) so selected grappling hooks now render a temporary `READY` readout for inactive in-range solid latch candidates beside the existing `HOOK`, `RANGE`, and `DEAD` states; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so render-frame inactive-hook previews mirror latch-ready feedback onto the selected hotbar slot without overriding active-hook traversal feedback; removed completed task `701` from [docs/NEXT.md](docs/NEXT.md), added replacement task `703`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/hotbarOverlay.test.ts src/main.test.ts -t grappling` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

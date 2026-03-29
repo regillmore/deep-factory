@@ -2,6 +2,8 @@ import type { WorldAabb } from './collision';
 import { TILE_SIZE } from './constants';
 import type { PlayerInventoryItemId } from './playerInventory';
 import type { PlayerState } from './playerState';
+import { isSurfaceFlowerTileId } from './surfaceFlowerTiles';
+import { isTallGrassTileId } from './tallGrassTiles';
 import { isTileSolid, TILE_METADATA, type TileMetadataRegistry } from './tileMetadata';
 
 export type PlaceableSolidBlockItemId = Extract<
@@ -63,6 +65,11 @@ const getPlayerBodyAabb = (playerState: Pick<PlayerState, 'position' | 'size'>):
   };
 };
 
+const isReplaceableSurfaceDecorationTileId = (
+  tileId: number,
+  registry: TileMetadataRegistry
+): boolean => isTallGrassTileId(tileId, registry) || isSurfaceFlowerTileId(tileId, registry);
+
 const hasSolidFaceSupport = (
   world: StarterBlockPlacementWorldView,
   worldTileX: number,
@@ -81,7 +88,8 @@ export const evaluateStarterBlockPlacement = (
   worldTileY: number,
   registry: TileMetadataRegistry = TILE_METADATA
 ): StarterBlockPlacementEvaluation => {
-  const occupied = world.getTile(worldTileX, worldTileY) !== 0;
+  const targetTileId = world.getTile(worldTileX, worldTileY);
+  const occupied = targetTileId !== 0 && !isReplaceableSurfaceDecorationTileId(targetTileId, registry);
   const solidFaceSupport = !occupied && hasSolidFaceSupport(world, worldTileX, worldTileY, registry);
   const blockedByPlayer =
     !occupied && doesAabbOverlap(createTileAabb(worldTileX, worldTileY), getPlayerBodyAabb(playerState));

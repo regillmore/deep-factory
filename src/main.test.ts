@@ -8563,6 +8563,34 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('shows a valid starter dirt placement preview when tall grass occupies the hovered tile', async () => {
+    setPersistedWorldSaveWithInventory();
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, -1), getTallGrassTileId());
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 1, y: -1 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 1,
+      tileY: -1,
+      placementTileX: 1,
+      placementTileY: -1,
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+  });
+
   it('shows a valid starter torch placement preview even when the hovered tile overlaps the player', async () => {
     setPersistedWorldSaveWithInventory();
     await import('./main');
@@ -10405,6 +10433,50 @@ describe('main.ts shell state orchestration', () => {
 
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'dirt-block',
+      amount: 63
+    });
+  });
+
+  it('places a starter dirt block over tall grass from the selected hotbar slot while the full debug-edit panel is hidden', async () => {
+    setPersistedWorldSaveWithInventory();
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    expect(testRuntime.canvasInteractionMode).toBe('play');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, -1), getTallGrassTileId());
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        worldX: 24,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        tileId: 9
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(restoredWorld.getTile(1, -1)).toBe(9);
+    expect(persistedEnvelope?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'dirt-block',
       amount: 63
     });

@@ -12,6 +12,8 @@ import {
   STARTER_BUILDING_BLOCK_ITEM_ID,
   STARTER_BUILDING_BLOCK_TILE_ID
 } from './starterBlockPlacement';
+import { getSurfaceFlowerTileId } from './surfaceFlowerTiles';
+import { getTallGrassTileId } from './tallGrassTiles';
 import { TileWorld } from './world';
 
 describe('evaluateStarterBlockPlacement', () => {
@@ -62,6 +64,26 @@ describe('evaluateStarterBlockPlacement', () => {
       blockedByPlayer: false,
       canPlace: false
     });
+  });
+
+  it('allows placement through replaceable tall grass and surface flower decoration tiles', () => {
+    const playerState = createPlayerState({
+      position: { x: 40, y: 0 },
+      grounded: true
+    });
+
+    for (const decorationTileId of [getTallGrassTileId(), getSurfaceFlowerTileId()]) {
+      const world = new TileWorld(0);
+      world.setTile(1, -1, decorationTileId);
+      world.setTile(1, 0, 1);
+
+      expect(evaluateStarterBlockPlacement(world, playerState, 1, -1)).toEqual({
+        occupied: false,
+        hasSolidFaceSupport: true,
+        blockedByPlayer: false,
+        canPlace: true
+      });
+    }
   });
 
   it('rejects empty tiles that do not touch any solid face', () => {
