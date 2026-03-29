@@ -490,6 +490,7 @@ import {
   createIdleGrapplingHookState,
   createGrapplingHookState,
   isGrapplingHookLatched,
+  shouldDetachLatchedGrapplingHookForTileEdit,
   stepLatchedGrapplingHookTraversal,
   stepGrapplingHookState,
   type FiredGrapplingHookState,
@@ -4114,6 +4115,9 @@ const bootstrap = async (): Promise<void> => {
   ): boolean => applyWorldWallEdit(worldTileX, worldTileY, 0).changed;
   renderer.onTileEdited((event) => {
     refreshTrackedSmallTreeGrowthAnchorsAroundTileEdit(event.worldTileX, event.worldTileY);
+    if (shouldDetachLatchedGrapplingHookForTileEdit(grapplingHookState, event)) {
+      clearActiveGrapplingHookTraversal();
+    }
     if (event.editOrigin !== 'gameplay') {
       return;
     }

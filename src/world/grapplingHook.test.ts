@@ -12,6 +12,7 @@ import {
   DEFAULT_GRAPPLING_HOOK_SPEED,
   isGrapplingHookActive,
   isGrapplingHookLatched,
+  shouldDetachLatchedGrapplingHookForTileEdit,
   stepLatchedGrapplingHookTraversal,
   stepGrapplingHookState,
   tryFireGrapplingHook
@@ -321,5 +322,53 @@ describe('grapplingHook', () => {
     });
     expect(detachStep.nextHookState).toEqual(createIdleGrapplingHookState());
     expect(detachStep.detachedReason).toBe('reached-anchor');
+  });
+
+  it('detaches a latched hook when its anchor tile becomes non-solid', () => {
+    const latchedState = createGrapplingHookState({
+      kind: 'fired',
+      phase: 'latched',
+      originWorldPoint: { x: 8, y: 14 },
+      targetWorldPoint: { x: 80, y: 14 },
+      hookWorldPoint: { x: 28, y: 14 },
+      velocity: { x: 0, y: 0 },
+      radius: DEFAULT_GRAPPLING_HOOK_RADIUS,
+      maxRange: DEFAULT_GRAPPLING_HOOK_MAX_RANGE,
+      travelledDistance: 20,
+      latchedTile: {
+        worldTileX: 2,
+        worldTileY: 0,
+        tileId: 1
+      }
+    });
+
+    expect(
+      shouldDetachLatchedGrapplingHookForTileEdit(latchedState, {
+        worldTileX: 1,
+        worldTileY: 0,
+        tileId: 0
+      })
+    ).toBe(false);
+    expect(
+      shouldDetachLatchedGrapplingHookForTileEdit(latchedState, {
+        worldTileX: 2,
+        worldTileY: 0,
+        tileId: 19
+      })
+    ).toBe(false);
+    expect(
+      shouldDetachLatchedGrapplingHookForTileEdit(latchedState, {
+        worldTileX: 2,
+        worldTileY: 0,
+        tileId: 0
+      })
+    ).toBe(true);
+    expect(
+      shouldDetachLatchedGrapplingHookForTileEdit(createIdleGrapplingHookState(), {
+        worldTileX: 2,
+        worldTileY: 0,
+        tileId: 0
+      })
+    ).toBe(false);
   });
 });

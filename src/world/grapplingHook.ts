@@ -87,6 +87,12 @@ export interface StepLatchedGrapplingHookTraversalResult {
   detachedReason: 'reached-anchor' | null;
 }
 
+export interface GrapplingHookAnchorTileEdit {
+  worldTileX: number;
+  worldTileY: number;
+  tileId: number;
+}
+
 const DIRECTION_EPSILON = 1e-6;
 
 interface SegmentIntersectionResult {
@@ -380,6 +386,25 @@ export const isGrapplingHookActive = (state: GrapplingHookState): boolean => sta
 export const isGrapplingHookLatched = (
   state: GrapplingHookState
 ): state is FiredGrapplingHookState => state.kind === 'fired' && state.phase === 'latched';
+
+export const shouldDetachLatchedGrapplingHookForTileEdit = (
+  grapplingHookState: GrapplingHookState,
+  tileEdit: GrapplingHookAnchorTileEdit,
+  registry: TileMetadataRegistry = TILE_METADATA
+): boolean => {
+  if (!isGrapplingHookLatched(grapplingHookState) || grapplingHookState.latchedTile === null) {
+    return false;
+  }
+
+  if (
+    tileEdit.worldTileX !== grapplingHookState.latchedTile.worldTileX ||
+    tileEdit.worldTileY !== grapplingHookState.latchedTile.worldTileY
+  ) {
+    return false;
+  }
+
+  return !isTileSolid(tileEdit.tileId, registry);
+};
 
 export const stepLatchedGrapplingHookTraversal = (
   playerState: PlayerState,

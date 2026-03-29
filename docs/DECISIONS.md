@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-28: Grappling-hook anchor-loss cleanup reuses shared tile-edit notifications
+
+- Decision: Latched grappling-hook traversal now detaches from the shared renderer tile-edit listener whenever the current anchor cell becomes non-solid, instead of relying on individual gameplay tools or debug-edit paths to clear hook state themselves.
+- Reason: Anchor removal can come from multiple gameplay, debug-break, debug-history, or support-cleanup edits, so the shared tile-edit notification seam is the one place that sees every solid-tile removal consistently.
+- Consequence: Future grappling-hook anchor-loss or terrain-edit cleanup should extend that shared tile-edit listener plus helper predicate rather than adding hook-specific detach code to each mining, bomb, or debug-edit path.
+
 ### 2026-03-28: Grappling-hook tether visuals derive from interpolated player and hook snapshots
 
 - Decision: The grappling-hook tether now renders by pairing the standalone player's interpolated focus point with the grappling-hook entity's interpolated head position inside the renderer, rather than storing separate tether endpoint state or timing.

@@ -13882,6 +13882,168 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
   });
 
+  it('clears a latched grappling-hook traversal when a gameplay tile edit removes its anchor', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 32 },
+      grounded: true,
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 20, -4, 4);
+    for (let worldTileX = -8; worldTileX <= 20; worldTileX += 1) {
+      savedWorld.setTile(worldTileX, 2, 1);
+    }
+    savedWorld.setTile(2, 1, 1);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'grappling-hook', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 6,
+        worldTileY: 1,
+        worldX: playerFocusPoint.x + 80,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(0.2);
+    runRenderFrame(200, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.grapplingHookCurrentPositions).toHaveLength(1);
+    expect(getHotbarOverlaySlotButton(6).title).toContain('hook active');
+
+    testRuntime.rendererSetTileResult = true;
+    expect(
+      (
+        testRuntime.rendererInstance as {
+          setTile(worldTileX: number, worldTileY: number, tileId: number): boolean;
+        }
+      ).setTile(2, 1, 0)
+    ).toBe(true);
+    runRenderFrame(200 + 1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.grapplingHookCurrentPositions).toEqual([]);
+    expect(testRuntime.latestRendererRenderFrameState?.standalonePlayerCurrentPosition).toEqual({
+      x: 8,
+      y: 32
+    });
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('hook active');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
+  });
+
+  it('clears a latched grappling-hook traversal when a debug-break edit removes its anchor tile', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 32 },
+      grounded: true,
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 20, -4, 4);
+    for (let worldTileX = -8; worldTileX <= 20; worldTileX += 1) {
+      savedWorld.setTile(worldTileX, 2, 1);
+    }
+    savedWorld.setTile(2, 1, 1);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'grappling-hook', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 6,
+        worldTileY: 1,
+        worldX: playerFocusPoint.x + 80,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(0.2);
+    runRenderFrame(200, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.grapplingHookCurrentPositions).toHaveLength(1);
+    expect(getHotbarOverlaySlotButton(6).title).toContain('hook active');
+
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: 2,
+        worldTileY: 1,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererSetTileResult = true;
+    runFixedUpdate();
+    runRenderFrame(200 + 1000 / 30, 1);
+
+    expect(testRuntime.rendererSetTileCalls).toContainEqual({
+      worldTileX: 2,
+      worldTileY: 1,
+      tileId: 0,
+      editOrigin: 'debug-break'
+    });
+    expect(testRuntime.latestRendererRenderFrameState?.grapplingHookCurrentPositions).toEqual([]);
+    expect(testRuntime.latestRendererRenderFrameState?.standalonePlayerCurrentPosition).toEqual({
+      x: 8,
+      y: 32
+    });
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('hook active');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
+  });
+
   it('clears an in-flight grappling-hook traversal when a paused-menu import replaces the session', async () => {
     const standalonePlayerState = createPlayerState({
       position: { x: 8, y: 28 },

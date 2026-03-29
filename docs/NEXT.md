@@ -4,8 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Grappling hook traversal
 
-626. Clear active grappling-hook traversal when the latched anchor tile is removed after task 573: detach the current hook when gameplay or debug terrain edits remove its supporting solid tile, and cover anchor-loss cleanup regressions.
 696. Offset the grappling-hook tether origin to a facing-aware hand hold after task 625: start the tether from a small player-side hold point instead of the camera-focus center, and cover facing-plus-interpolation regressions.
+697. Preview out-of-range grappling-hook aim targets after tasks 626 and 696: mark selected-hook use targets beyond maximum range as blocked through the shared hidden-panel preview path, and cover desktop-versus-touch range-preview regressions.
 
 ## Bow and arrow ranged combat
 
