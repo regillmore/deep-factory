@@ -12,6 +12,7 @@ import {
   DEFAULT_GRAPPLING_HOOK_SPEED,
   isGrapplingHookActive,
   isGrapplingHookLatched,
+  stepLatchedGrapplingHookTraversal,
   stepGrapplingHookState,
   tryFireGrapplingHook
 } from './grapplingHook';
@@ -254,5 +255,71 @@ describe('grapplingHook', () => {
     ).toEqual({
       nextState: stepResult.nextState
     });
+  });
+
+  it('pulls the player toward a latched anchor and detaches once the player reaches release range', () => {
+    const world = new TileWorld(0);
+    clearTileRect(world, -1, 6, -2, 1);
+    world.setTile(2, 0, 1);
+    const playerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const latchedState = createGrapplingHookState({
+      kind: 'fired',
+      phase: 'latched',
+      originWorldPoint: { x: 8, y: 14 },
+      targetWorldPoint: { x: 80, y: 14 },
+      hookWorldPoint: { x: 28, y: 14 },
+      velocity: { x: 0, y: 0 },
+      radius: DEFAULT_GRAPPLING_HOOK_RADIUS,
+      maxRange: DEFAULT_GRAPPLING_HOOK_MAX_RANGE,
+      travelledDistance: 20,
+      latchedTile: {
+        worldTileX: 2,
+        worldTileY: 0,
+        tileId: 1
+      }
+    });
+
+    const pullStep = stepLatchedGrapplingHookTraversal(playerState, latchedState, {
+      world,
+      fixedDtSeconds: 0.1,
+      pullSpeed: 100,
+      releaseDistance: 4
+    });
+
+    expect(pullStep.nextPlayerState.position).toEqual({
+      x: 18,
+      y: 28
+    });
+    expect(pullStep.nextPlayerState.velocity).toEqual({
+      x: 100,
+      y: 0
+    });
+    expect(pullStep.nextHookState).toEqual(latchedState);
+    expect(pullStep.detachedReason).toBeNull();
+
+    const detachStep = stepLatchedGrapplingHookTraversal(
+      pullStep.nextPlayerState,
+      pullStep.nextHookState,
+      {
+        world,
+        fixedDtSeconds: 0.1,
+        pullSpeed: 100,
+        releaseDistance: 4
+      }
+    );
+
+    expect(detachStep.nextPlayerState.position).toEqual({
+      x: 26,
+      y: 28
+    });
+    expect(detachStep.nextPlayerState.velocity).toEqual({
+      x: 0,
+      y: 0
+    });
+    expect(detachStep.nextHookState).toEqual(createIdleGrapplingHookState());
+    expect(detachStep.detachedReason).toBe('reached-anchor');
   });
 });

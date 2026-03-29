@@ -4,6 +4,7 @@ import {
   sweepAabbAlongAxis,
   sweepAabbDownwardAlongOneWayPlatforms,
   type AxisSweepCollisionResult,
+  type CollisionWorldView,
   type SolidTileCollision,
   type WorldAabb
 } from './collision';
@@ -387,7 +388,7 @@ const offsetAabb = (aabb: WorldAabb, deltaX: number, deltaY: number): WorldAabb 
 });
 
 const getAabbContact = (
-  world: TileWorld,
+  world: CollisionWorldView,
   aabb: WorldAabb,
   axis: 'x' | 'y',
   delta: number,
@@ -402,7 +403,7 @@ const getAabbContact = (
 };
 
 const getOneWayPlatformAabbContact = (
-  world: TileWorld,
+  world: CollisionWorldView,
   aabb: WorldAabb,
   delta: number,
   registry: TileMetadataRegistry
@@ -416,7 +417,7 @@ const getOneWayPlatformAabbContact = (
 };
 
 const getGroundSupport = (
-  world: TileWorld,
+  world: CollisionWorldView,
   aabb: WorldAabb,
   registry: TileMetadataRegistry,
   ignoreOneWayPlatforms = false
@@ -430,7 +431,7 @@ const getWallContactSideFromProbeDelta = (probeDelta: number): PlayerWallContact
   probeDelta < 0 ? 'left' : 'right';
 
 const getWallContact = (
-  world: TileWorld,
+  world: CollisionWorldView,
   aabb: WorldAabb,
   probeDelta: number,
   registry: TileMetadataRegistry
@@ -475,7 +476,7 @@ const chooseNearestDownwardCollisionSweep = (
 };
 
 const sweepPlayerVerticalMovement = (
-  world: TileWorld,
+  world: CollisionWorldView,
   aabb: WorldAabb,
   delta: number,
   registry: TileMetadataRegistry,
@@ -491,7 +492,7 @@ const sweepPlayerVerticalMovement = (
 };
 
 const isPlayerSupportedByOneWayPlatform = (
-  world: TileWorld,
+  world: CollisionWorldView,
   aabb: WorldAabb,
   registry: TileMetadataRegistry
 ): boolean => {
@@ -1305,7 +1306,7 @@ export const clonePlayerState = (state: PlayerState): PlayerState =>
   }) as PlayerState;
 
 export const respawnPlayerStateAtSpawnIfEmbeddedInSolid = (
-  world: TileWorld,
+  world: CollisionWorldView,
   state: PlayerState,
   spawn: PlayerSpawnPlacement | null,
   registry: TileMetadataRegistry = TILE_METADATA
@@ -1347,7 +1348,7 @@ export const getPlayerCameraFocusPoint = (state: PlayerState): PlayerVector => (
 });
 
 export const getPlayerCollisionContacts = (
-  world: TileWorld,
+  world: CollisionWorldView,
   state: PlayerState,
   registry: TileMetadataRegistry = TILE_METADATA
 ): PlayerCollisionContacts => {
@@ -1396,7 +1397,7 @@ export const integratePlayerState = (state: PlayerState, fixedDtSeconds: number)
 };
 
 export const movePlayerStateWithCollisions = (
-  world: TileWorld,
+  world: CollisionWorldView,
   state: PlayerState,
   fixedDtSeconds: number,
   options: {

@@ -1,11 +1,19 @@
 import { TILE_SIZE } from './constants';
-import { getPlayerCameraFocusPoint, type PlayerState } from './playerState';
+import type { CollisionWorldView } from './collision';
+import {
+  clonePlayerState,
+  getPlayerCameraFocusPoint,
+  movePlayerStateWithCollisions,
+  type PlayerState
+} from './playerState';
 import { isTileSolid, TILE_METADATA, type TileMetadataRegistry } from './tileMetadata';
 
 export const GRAPPLING_HOOK_ITEM_ID = 'grappling-hook';
 export const DEFAULT_GRAPPLING_HOOK_SPEED = 540;
 export const DEFAULT_GRAPPLING_HOOK_RADIUS = 4;
 export const DEFAULT_GRAPPLING_HOOK_MAX_RANGE = TILE_SIZE * 20;
+export const DEFAULT_GRAPPLING_HOOK_PULL_SPEED = DEFAULT_GRAPPLING_HOOK_SPEED;
+export const DEFAULT_GRAPPLING_HOOK_RELEASE_DISTANCE = DEFAULT_GRAPPLING_HOOK_RADIUS;
 
 export interface GrapplingHookWorldPoint {
   x: number;
@@ -64,6 +72,19 @@ export interface StepGrapplingHookStateOptions {
 
 export interface StepGrapplingHookStateResult {
   nextState: GrapplingHookState;
+}
+
+export interface StepLatchedGrapplingHookTraversalOptions {
+  fixedDtSeconds: number;
+  world: CollisionWorldView;
+  pullSpeed?: number;
+  releaseDistance?: number;
+}
+
+export interface StepLatchedGrapplingHookTraversalResult {
+  nextPlayerState: PlayerState;
+  nextHookState: GrapplingHookState;
+  detachedReason: 'reached-anchor' | null;
 }
 
 const DIRECTION_EPSILON = 1e-6;
@@ -287,6 +308,31 @@ const resolveGrapplingHookTerrainLatch = (
   return bestHit;
 };
 
+const createStoppedPlayerState = (state: PlayerState): PlayerState => {
+  const clonedState = clonePlayerState(state);
+  return {
+    ...clonedState,
+    velocity: {
+      x: 0,
+      y: 0
+    }
+  };
+};
+
+const resolveDistanceBetweenGrapplingHookAnchorAndPlayerFocus = (
+  playerState: PlayerState,
+  anchorWorldPoint: GrapplingHookWorldPoint
+): { deltaX: number; deltaY: number; distance: number } => {
+  const playerFocusPoint = getPlayerCameraFocusPoint(playerState);
+  const deltaX = anchorWorldPoint.x - playerFocusPoint.x;
+  const deltaY = anchorWorldPoint.y - playerFocusPoint.y;
+  return {
+    deltaX,
+    deltaY,
+    distance: Math.hypot(deltaX, deltaY)
+  };
+};
+
 export const createIdleGrapplingHookState = (): GrapplingHookState => ({
   kind: 'idle'
 });
@@ -334,6 +380,93 @@ export const isGrapplingHookActive = (state: GrapplingHookState): boolean => sta
 export const isGrapplingHookLatched = (
   state: GrapplingHookState
 ): state is FiredGrapplingHookState => state.kind === 'fired' && state.phase === 'latched';
+
+export const stepLatchedGrapplingHookTraversal = (
+  playerState: PlayerState,
+  grapplingHookState: GrapplingHookState,
+  options: StepLatchedGrapplingHookTraversalOptions
+): StepLatchedGrapplingHookTraversalResult => {
+  const clonedPlayerState = clonePlayerState(playerState);
+  const clonedHookState = cloneGrapplingHookState(grapplingHookState);
+  if (!isGrapplingHookLatched(grapplingHookState)) {
+    return {
+      nextPlayerState: clonedPlayerState,
+      nextHookState: clonedHookState,
+      detachedReason: null
+    };
+  }
+
+  const fixedDtSeconds = expectNonNegativeFiniteNumber(
+    options.fixedDtSeconds,
+    'options.fixedDtSeconds'
+  );
+  const pullSpeed = expectPositiveFiniteNumber(
+    options.pullSpeed ?? DEFAULT_GRAPPLING_HOOK_PULL_SPEED,
+    'options.pullSpeed'
+  );
+  const releaseDistance = expectNonNegativeFiniteNumber(
+    options.releaseDistance ?? DEFAULT_GRAPPLING_HOOK_RELEASE_DISTANCE,
+    'options.releaseDistance'
+  );
+  if (fixedDtSeconds <= 0) {
+    return {
+      nextPlayerState: clonedPlayerState,
+      nextHookState: clonedHookState,
+      detachedReason: null
+    };
+  }
+
+  const initialAnchorDistance = resolveDistanceBetweenGrapplingHookAnchorAndPlayerFocus(
+    playerState,
+    grapplingHookState.hookWorldPoint
+  );
+  if (initialAnchorDistance.distance <= releaseDistance + DIRECTION_EPSILON) {
+    return {
+      nextPlayerState: createStoppedPlayerState(playerState),
+      nextHookState: clearGrapplingHookState(),
+      detachedReason: 'reached-anchor'
+    };
+  }
+
+  const stepDistance = Math.min(pullSpeed * fixedDtSeconds, initialAnchorDistance.distance);
+  if (stepDistance <= DIRECTION_EPSILON) {
+    return {
+      nextPlayerState: clonedPlayerState,
+      nextHookState: clonedHookState,
+      detachedReason: null
+    };
+  }
+
+  const stepSpeed = stepDistance / fixedDtSeconds;
+  const pulledPlayerState = movePlayerStateWithCollisions(
+    options.world,
+    {
+      ...clonePlayerState(playerState),
+      velocity: {
+        x: (initialAnchorDistance.deltaX / initialAnchorDistance.distance) * stepSpeed,
+        y: (initialAnchorDistance.deltaY / initialAnchorDistance.distance) * stepSpeed
+      }
+    },
+    fixedDtSeconds
+  );
+  const remainingAnchorDistance = resolveDistanceBetweenGrapplingHookAnchorAndPlayerFocus(
+    pulledPlayerState,
+    grapplingHookState.hookWorldPoint
+  );
+  if (remainingAnchorDistance.distance <= releaseDistance + DIRECTION_EPSILON) {
+    return {
+      nextPlayerState: createStoppedPlayerState(pulledPlayerState),
+      nextHookState: clearGrapplingHookState(),
+      detachedReason: 'reached-anchor'
+    };
+  }
+
+  return {
+    nextPlayerState: pulledPlayerState,
+    nextHookState: createGrapplingHookState(grapplingHookState),
+    detachedReason: null
+  };
+};
 
 export const createFiredGrapplingHookStateFromUse = (
   playerState: PlayerState,

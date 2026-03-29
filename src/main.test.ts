@@ -13614,15 +13614,19 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
-  it('latches the grappling-hook entity onto the first solid tile hit and keeps it anchored afterward', async () => {
+  it('pulls the standalone player toward a latched grappling-hook anchor and clears it after release', async () => {
     const standalonePlayerState = createPlayerState({
-      position: { x: 8, y: 28 },
+      position: { x: 8, y: 32 },
+      grounded: true,
       facing: 'right'
     });
     const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
     const savedWorld = new TileWorld(0);
-    clearTileRect(savedWorld, -8, 20, -4, 1);
-    savedWorld.setTile(2, 0, 1);
+    clearTileRect(savedWorld, -8, 20, -4, 4);
+    for (let worldTileX = -8; worldTileX <= 20; worldTileX += 1) {
+      savedWorld.setTile(worldTileX, 2, 1);
+    }
+    savedWorld.setTile(2, 1, 1);
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
       JSON.stringify(
@@ -13655,7 +13659,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.playerItemUseRequests = [
       {
         worldTileX: 6,
-        worldTileY: 0,
+        worldTileY: 1,
         worldX: playerFocusPoint.x + 80,
         worldY: playerFocusPoint.y,
         pointerType: 'mouse'
@@ -13670,18 +13674,129 @@ describe('main.ts shell state orchestration', () => {
     expect(latchedHookPositions).toHaveLength(1);
     expect(latchedHookPositions[0]?.position.x).toBeCloseTo(28, 6);
     expect(latchedHookPositions[0]?.position.y).toBeCloseTo(playerFocusPoint.y, 6);
+    expect(testRuntime.latestRendererRenderFrameState?.standalonePlayerCurrentPosition).toEqual({
+      x: 8,
+      y: 32
+    });
     expect(getHotbarOverlaySlotButton(6).title).toContain('hook active');
 
     testRuntime.playerItemUseRequests = [];
-    runFixedUpdate(0.5);
-    runRenderFrame(1500, 1);
+    runFixedUpdate(1 / 60);
+    runRenderFrame(200 + 1000 / 60, 1);
 
-    const anchoredHookPositions =
+    const pullingHookPositions =
       testRuntime.latestRendererRenderFrameState?.grapplingHookCurrentPositions ?? [];
-    expect(anchoredHookPositions).toHaveLength(1);
-    expect(anchoredHookPositions[0]?.position.x).toBeCloseTo(28, 6);
-    expect(anchoredHookPositions[0]?.position.y).toBeCloseTo(playerFocusPoint.y, 6);
+    expect(pullingHookPositions).toHaveLength(1);
+    expect(pullingHookPositions[0]?.position.x).toBeCloseTo(28, 6);
+    expect(pullingHookPositions[0]?.position.y).toBeCloseTo(playerFocusPoint.y, 6);
+    expect(testRuntime.latestRendererRenderFrameState?.standalonePlayerCurrentPosition).toEqual({
+      x: 17,
+      y: 32
+    });
     expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('HOOK');
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(200 + 1000 / 30, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.grapplingHookCurrentPositions).toEqual([]);
+    expect(testRuntime.latestRendererRenderFrameState?.standalonePlayerCurrentPosition).toEqual({
+      x: 26,
+      y: 32
+    });
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('hook active');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerState).toMatchObject({
+      position: {
+        x: 26,
+        y: 32
+      }
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'grappling-hook',
+      amount: 1
+    });
+  });
+
+  it('clears an active grappling-hook traversal from a follow-up touch use', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 32 },
+      grounded: true,
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 20, -4, 4);
+    for (let worldTileX = -8; worldTileX <= 20; worldTileX += 1) {
+      savedWorld.setTile(worldTileX, 2, 1);
+    }
+    savedWorld.setTile(2, 1, 1);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'grappling-hook', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 6,
+        worldTileY: 1,
+        worldX: playerFocusPoint.x + 80,
+        worldY: playerFocusPoint.y,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(0.2);
+    runRenderFrame(200, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.grapplingHookCurrentPositions).toHaveLength(1);
+    expect(getHotbarOverlaySlotButton(6).title).toContain('hook active');
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 6,
+        worldTileY: 1,
+        worldX: playerFocusPoint.x + 80,
+        worldY: playerFocusPoint.y,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(200 + 1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.grapplingHookCurrentPositions).toEqual([]);
+    expect(testRuntime.latestRendererRenderFrameState?.standalonePlayerCurrentPosition).toEqual({
+      x: 8,
+      y: 32
+    });
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('hook active');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
 
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({

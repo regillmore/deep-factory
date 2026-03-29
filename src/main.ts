@@ -489,6 +489,8 @@ import {
   clearGrapplingHookState,
   createIdleGrapplingHookState,
   createGrapplingHookState,
+  isGrapplingHookLatched,
+  stepLatchedGrapplingHookTraversal,
   stepGrapplingHookState,
   type FiredGrapplingHookState,
   GRAPPLING_HOOK_ITEM_ID,
@@ -3804,6 +3806,16 @@ const bootstrap = async (): Promise<void> => {
           amount: 1
         }),
       fixedUpdate: (hookState, fixedDt) => {
+        if (!isGrapplingHookActive(grapplingHookState)) {
+          if (nextGrapplingHookEntityId !== null) {
+            entityRegistry.despawn(nextGrapplingHookEntityId);
+            if (grapplingHookEntityId === nextGrapplingHookEntityId) {
+              grapplingHookEntityId = null;
+            }
+          }
+          return hookState;
+        }
+
         const stepResult = stepGrapplingHookState(hookState, {
           fixedDtSeconds: fixedDt,
           world: {
@@ -4612,10 +4624,27 @@ const bootstrap = async (): Promise<void> => {
       currentPlayerDeathState === null
         ? renderer.stepPlayerState(previousPlayerState, fixedDt, playerMovementIntent)
         : createStandalonePlayerDeathHoldState(previousPlayerState);
+    const traversalSteppedPlayerState =
+      currentPlayerDeathState === null && isGrapplingHookLatched(grapplingHookState)
+        ? (() => {
+            const traversalResult = stepLatchedGrapplingHookTraversal(
+              movementSteppedPlayerState,
+              grapplingHookState,
+              {
+                fixedDtSeconds: fixedDt,
+                world: {
+                  getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY)
+                }
+              }
+            );
+            grapplingHookState = traversalResult.nextHookState;
+            return traversalResult.nextPlayerState;
+          })()
+        : movementSteppedPlayerState;
     const steppedPlayerState =
       currentPlayerDeathState === null
-        ? stepPlayerManaRegeneration(movementSteppedPlayerState, fixedDt)
-        : movementSteppedPlayerState;
+        ? stepPlayerManaRegeneration(traversalSteppedPlayerState, fixedDt)
+        : traversalSteppedPlayerState;
     const { nextPlayerState, nextDeathState, respawnEvent } =
       resolveStandalonePlayerFixedStepDeathRespawn(
       previousPlayerState,
@@ -5348,6 +5377,10 @@ const bootstrap = async (): Promise<void> => {
     const standalonePlayerState = getStandalonePlayerState();
     if (standalonePlayerState === null) {
       return false;
+    }
+    if (isGrapplingHookActive(grapplingHookState)) {
+      clearActiveGrapplingHookTraversal();
+      return true;
     }
 
     const fireResult = tryFireGrapplingHook(

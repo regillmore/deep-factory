@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-28: Grappling-hook pull reuses shared collision sweeps and the same item-use path releases it
+
+- Decision: Once a grappling hook reaches the `latched` phase, later fixed steps now pull the player toward that anchor through the shared player collision helper, auto-detach when release range is reached, and treat a follow-up grappling-hook use from mouse or touch as an explicit cancel.
+- Reason: Traversal should obey the same terrain collision rules as ordinary movement while keeping release behavior on the same mixed-device hidden-panel input path that already owns hook use.
+- Consequence: Future grappling-hook follow-ups such as tether visuals, world-replacement cleanup, or anchor-loss cleanup should extend that shared latched traversal plus same-item release path instead of adding a second movement seam or device-specific detach logic.
+
 ### 2026-03-28: Grappling hook flight and latch stay on one detached state plus entity path
 
 - Decision: Grappling-hook use now spawns one fixed-step hook entity that mirrors the detached grappling-hook session state, advances through an explicit `in-flight` phase, clears on range failure, and freezes into a `latched` phase at the first solid-tile hit.
