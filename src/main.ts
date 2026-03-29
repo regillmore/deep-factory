@@ -2170,7 +2170,7 @@ const bootstrap = async (): Promise<void> => {
   const resolveHotbarOverlaySelectedGrapplingHookReadout = (
     selectedGrapplingHookPreview: PlayerItemGrapplingHookPreviewState | null = null
   ): {
-    status: 'active' | 'dead' | 'range-blocked';
+    status: 'active' | 'dead' | 'latch-ready' | 'range-blocked';
   } | null => {
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
     if (selectedStack?.itemId !== GRAPPLING_HOOK_ITEM_ID) {
@@ -2192,9 +2192,15 @@ const bootstrap = async (): Promise<void> => {
     }
 
     if (!isGrapplingHookActive(grapplingHookState)) {
-      return selectedGrapplingHookPreview !== null && !selectedGrapplingHookPreview.withinRange
+      if (selectedGrapplingHookPreview !== null && !selectedGrapplingHookPreview.withinRange) {
+        return {
+          status: 'range-blocked'
+        };
+      }
+
+      return selectedGrapplingHookPreview?.latchReady
         ? {
-            status: 'range-blocked'
+            status: 'latch-ready'
           }
         : null;
     }

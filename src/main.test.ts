@@ -13638,7 +13638,7 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
-  it('shows a blocked grappling-hook preview when the hovered mouse aim exceeds maximum range', async () => {
+  it('shows grappling-hook ready-versus-blocked preview feedback from hovered mouse aim', async () => {
     const standalonePlayerState = createPlayerState({
       position: { x: 8, y: 28 },
       facing: 'right'
@@ -13736,9 +13736,11 @@ describe('main.ts shell state orchestration', () => {
       withinRange: true,
       latchReady: true
     });
-    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('READY');
+    expect(getHotbarOverlaySlotButton(6).title).toContain('solid latch target in range');
     expect(getHotbarOverlaySlotButton(6).title).not.toContain('maximum range');
-    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('100.0%');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('1');
   });
 
   it('shows the same blocked grappling-hook preview from touch aim when the target exceeds maximum range', async () => {
@@ -13858,6 +13860,76 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestPlayerItemGrapplingHookPreviewState).toBeNull();
     expect(getHotbarOverlaySlotButton(6).title).toContain('hook active');
     expect(getHotbarOverlaySlotButton(6).title).not.toContain('maximum range');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('HOOK');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('100.0%');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('1');
+  });
+
+  it('keeps active grappling-hook hotbar feedback even when the current hover aim lands on an in-range solid latch candidate', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 40, -4, 1);
+    savedWorld.setTile(10, 0, 1);
+    savedWorld.setTile(14, 0, 1);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'grappling-hook', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 10,
+        worldTileY: 0,
+        worldX: playerFocusPoint.x + 96,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    testRuntime.playerItemUseRequests = [];
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 14, y: 0 },
+      world: {
+        x: playerFocusPoint.x + 160,
+        y: playerFocusPoint.y
+      }
+    };
+
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestPlayerItemGrapplingHookPreviewState).toBeNull();
+    expect(getHotbarOverlaySlotButton(6).title).toContain('hook active');
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('solid latch target in range');
     expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('HOOK');
     expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('100.0%');
     expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('1');

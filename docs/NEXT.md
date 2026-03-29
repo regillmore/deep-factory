@@ -2,10 +2,12 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
+704. Player dirt block placement should not be blocked by tall grass or surface flowers.
+
 ## Grappling hook traversal
 
-701. Surface selected-hook latch-ready hotbar feedback after task 700: show a temporary ready readout on the selected grappling-hook slot while the hovered preview target is an in-range solid latch candidate, and cover solid-preview-versus-active-hook slot regressions.
 702. Snap inactive grappling-hook previews to the first in-range solid latch tile after task 701: when the hovered aim sits in empty air behind nearby terrain, highlight the actual first latch tile instead of the hovered empty cell, and cover intervening-terrain preview regressions.
+703. Snap inactive grappling-hook previews to the first solid intercept even when the hovered tile is also solid after task 702: when nearer terrain blocks a farther solid hovered tile, highlight the actual first latch tile instead of the obscured hovered cell, and cover obstructed-solid preview regressions.
 
 ## Bow and arrow ranged combat
 
