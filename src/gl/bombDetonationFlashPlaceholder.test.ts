@@ -5,11 +5,15 @@ import { createBombDetonationFlashState } from '../world/bombDetonationFlash';
 import {
   buildBombDetonationFlashPlaceholderVertices,
   getBombDetonationFlashPlaceholderNearbyLightSample,
+  resolveBombDetonationFlashPlaceholderRenderRadius,
   resolveBombDetonationFlashPlaceholderVisuals
 } from './bombDetonationFlashPlaceholder';
 
+const toRoundedFloatArray = (values: Float32Array): number[] =>
+  Array.from(values, (value) => Number(value.toFixed(4)));
+
 describe('bombDetonationFlashPlaceholder', () => {
-  it('builds a quad around the detonation flash radius', () => {
+  it('builds a full-size quad around the detonation flash radius at ignition', () => {
     const flashState = createBombDetonationFlashState({
       position: { x: 32, y: 20 },
       radius: 12
@@ -38,6 +42,84 @@ describe('bombDetonationFlashPlaceholder', () => {
       1,
       20,
       32,
+      0,
+      1
+    ]);
+  });
+
+  it('contracts the detonation flash render radius toward a smaller ember core over the fixed-step lifetime', () => {
+    const startState = createBombDetonationFlashState({
+      position: { x: 32, y: 20 },
+      radius: 12,
+      durationSeconds: 0.2,
+      secondsRemaining: 0.2
+    });
+    const midpointState = createBombDetonationFlashState({
+      position: { x: 32, y: 20 },
+      radius: 12,
+      durationSeconds: 0.2,
+      secondsRemaining: 0.1
+    });
+    const endState = createBombDetonationFlashState({
+      position: { x: 32, y: 20 },
+      radius: 12,
+      durationSeconds: 0.2,
+      secondsRemaining: 0
+    });
+
+    expect(resolveBombDetonationFlashPlaceholderRenderRadius(startState)).toBeCloseTo(12, 10);
+    expect(resolveBombDetonationFlashPlaceholderRenderRadius(midpointState)).toBeCloseTo(8.1, 10);
+    expect(resolveBombDetonationFlashPlaceholderRenderRadius(endState)).toBeCloseTo(4.2, 10);
+
+    expect(toRoundedFloatArray(buildBombDetonationFlashPlaceholderVertices(midpointState))).toEqual([
+      23.9,
+      11.9,
+      0,
+      0,
+      40.1,
+      11.9,
+      1,
+      0,
+      40.1,
+      28.1,
+      1,
+      1,
+      23.9,
+      11.9,
+      0,
+      0,
+      40.1,
+      28.1,
+      1,
+      1,
+      23.9,
+      28.1,
+      0,
+      1
+    ]);
+    expect(toRoundedFloatArray(buildBombDetonationFlashPlaceholderVertices(endState))).toEqual([
+      27.8,
+      15.8,
+      0,
+      0,
+      36.2,
+      15.8,
+      1,
+      0,
+      36.2,
+      24.2,
+      1,
+      1,
+      27.8,
+      15.8,
+      0,
+      0,
+      36.2,
+      24.2,
+      1,
+      1,
+      27.8,
+      24.2,
       0,
       1
     ]);

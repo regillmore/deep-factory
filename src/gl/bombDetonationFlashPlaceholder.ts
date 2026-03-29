@@ -13,6 +13,7 @@ export const BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR = [1, 0.94, 0.7] as 
 export const BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_MIN_LIGHT_FACTOR = 0.35;
 export const BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_BASE_COLOR = [0.4, 0.1, 0.02] as const;
 export const BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_ACCENT_COLOR = [1, 0.42, 0.12] as const;
+export const BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_RADIUS_SCALE = 0.35;
 
 const BOMB_DETONATION_FLASH_PLACEHOLDER_NEARBY_LIGHT_SAMPLE_PADDING_TILES = 1;
 
@@ -72,6 +73,18 @@ const lerpColor = (
   lerpNumber(start[2], end[2], progressNormalized)
 ];
 
+const resolveBombDetonationFlashPlaceholderProgressNormalized = (
+  state: Pick<BombDetonationFlashState, 'secondsRemaining' | 'durationSeconds'>
+): number => {
+  const durationSeconds = expectPositiveFiniteNumber(state.durationSeconds, 'state.durationSeconds');
+  const secondsRemaining = Math.min(
+    expectNonNegativeFiniteNumber(state.secondsRemaining, 'state.secondsRemaining'),
+    durationSeconds
+  );
+
+  return 1 - secondsRemaining / durationSeconds;
+};
+
 const getOverlappingTileRange = (min: number, max: number): TileRange | null => {
   if (max <= min) {
     return null;
@@ -93,11 +106,38 @@ const getBombDetonationFlashPlaceholderBounds = (
   maxY: renderPosition.y + state.radius
 });
 
+export const resolveBombDetonationFlashPlaceholderRenderRadius = (
+  state: Pick<BombDetonationFlashState, 'radius' | 'secondsRemaining' | 'durationSeconds'>
+): number => {
+  const radius = expectPositiveFiniteNumber(state.radius, 'state.radius');
+  const progressNormalized = resolveBombDetonationFlashPlaceholderProgressNormalized(state);
+
+  return lerpNumber(
+    radius,
+    radius * BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_RADIUS_SCALE,
+    progressNormalized
+  );
+};
+
+const getBombDetonationFlashPlaceholderRenderBounds = (
+  state: BombDetonationFlashState,
+  renderPosition: BombDetonationFlashState['position'] = state.position
+): { minX: number; minY: number; maxX: number; maxY: number } => {
+  const renderRadius = resolveBombDetonationFlashPlaceholderRenderRadius(state);
+
+  return {
+    minX: renderPosition.x - renderRadius,
+    minY: renderPosition.y - renderRadius,
+    maxX: renderPosition.x + renderRadius,
+    maxY: renderPosition.y + renderRadius
+  };
+};
+
 export const buildBombDetonationFlashPlaceholderVertices = (
   state: BombDetonationFlashState,
   renderPosition: BombDetonationFlashState['position'] = state.position
 ): Float32Array => {
-  const bounds = getBombDetonationFlashPlaceholderBounds(state, renderPosition);
+  const bounds = getBombDetonationFlashPlaceholderRenderBounds(state, renderPosition);
 
   return new Float32Array([
     bounds.minX,
@@ -130,12 +170,7 @@ export const buildBombDetonationFlashPlaceholderVertices = (
 export const resolveBombDetonationFlashPlaceholderVisuals = (
   state: Pick<BombDetonationFlashState, 'secondsRemaining' | 'durationSeconds'>
 ): BombDetonationFlashPlaceholderVisuals => {
-  const durationSeconds = expectPositiveFiniteNumber(state.durationSeconds, 'state.durationSeconds');
-  const secondsRemaining = Math.min(
-    expectNonNegativeFiniteNumber(state.secondsRemaining, 'state.secondsRemaining'),
-    durationSeconds
-  );
-  const progressNormalized = 1 - secondsRemaining / durationSeconds;
+  const progressNormalized = resolveBombDetonationFlashPlaceholderProgressNormalized(state);
 
   return {
     progressNormalized,

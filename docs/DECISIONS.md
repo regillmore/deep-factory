@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-29: Bomb flash quad size reads fixed-step lifetime progress
+
+- Decision: Bomb-detonation-flash placeholder geometry now contracts from the resolved blast radius toward a smaller ember-core radius from the same `secondsRemaining` and `durationSeconds` ratio that already drives flash color and light.
+- Reason: The explosion silhouette should cool and shrink in lockstep with the same fixed-step lifetime that despawns the flash, so render cadence cannot leave a full-size quad after the effect has already entered its ember phase.
+- Consequence: Future bomb-flash size or shape tuning should extend that shared placeholder lifetime-progress resolver instead of introducing a second render-owned geometry timer or ad hoc per-frame radius math.
+
 ### 2026-03-28: Grappling-hook anchor-loss cleanup reuses shared tile-edit notifications
 
 - Decision: Latched grappling-hook traversal now detaches from the shared renderer tile-edit listener whenever the current anchor cell becomes non-solid, instead of relying on individual gameplay tools or debug-edit paths to clear hook state themselves.

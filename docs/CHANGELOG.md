@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-29
+
+- Task: Shrink bomb detonation flash quads over their fixed-step lifetime.
+- Changes: Updated [src/gl/bombDetonationFlashPlaceholder.ts](../src/gl/bombDetonationFlashPlaceholder.ts) plus [src/gl/bombDetonationFlashPlaceholder.test.ts](../src/gl/bombDetonationFlashPlaceholder.test.ts) so bomb flashes now contract their render radius from full blast size toward an ember core from the same fixed-step lifetime progress that already drives color and light; updated [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so the renderer integration expects the contracted interpolated upload; removed completed task `622` from [docs/NEXT.md](docs/NEXT.md), added replacement task `699`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/gl/bombDetonationFlashPlaceholder.test.ts src/gl/renderer.test.ts -t bomb` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-28
 
 - Task: Offset the grappling-hook tether origin to a facing-aware hand hold.

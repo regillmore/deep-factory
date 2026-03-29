@@ -54,4 +54,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bomb utility
 
-622. Shrink bomb detonation flash quads over their fixed-step lifetime after task 621: contract the placeholder radius from full blast size toward a smaller ember core before despawn, and cover progress-to-geometry regressions.
+699. Fade bomb detonation flash opacity over their fixed-step lifetime after task 622: drive the placeholder alpha from opaque ignition toward translucent ember through the shared entity-pass shader path, and cover progress-to-alpha regressions.

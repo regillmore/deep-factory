@@ -82,6 +82,7 @@ vi.mock('./atlasValidation', () => ({
 
 import { getDroppedItemPlaceholderPalette } from './droppedItemPlaceholder';
 import {
+  buildBombDetonationFlashPlaceholderVertices,
   resolveBombDetonationFlashPlaceholderVisuals
 } from './bombDetonationFlashPlaceholder';
 import { Renderer, type RendererEntityFrameState } from './renderer';
@@ -3463,13 +3464,14 @@ describe('Renderer atlas telemetry', () => {
       durationSeconds: 0.18,
       secondsRemaining: 0.045
     });
-    const previousState = createBombDetonationFlashState({
-      position: { x: 64, y: 44 },
-      radius: 32,
-      durationSeconds: 0.18,
-      secondsRemaining: 0.09
-    });
-    const expectedVisuals = resolveBombDetonationFlashPlaceholderVisuals(currentState);
+      const previousState = createBombDetonationFlashState({
+        position: { x: 64, y: 44 },
+        radius: 32,
+        durationSeconds: 0.18,
+        secondsRemaining: 0.09
+      });
+      const expectedVisuals = resolveBombDetonationFlashPlaceholderVisuals(currentState);
+      const expectedRenderPosition = { x: 68, y: 48 };
 
     renderer.render(new Camera2D(), {
       entities: [
@@ -3482,37 +3484,16 @@ describe('Renderer atlas telemetry', () => {
       timeMs: 0
     });
 
-    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
-    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 1);
+      expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+      expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 1);
 
-    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
-    expect(dynamicUploads).toHaveLength(1);
-    expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
-      36,
-      16,
-      0,
-      0,
-      100,
-      16,
-      1,
-      0,
-      100,
-      80,
-      1,
-      1,
-      36,
-      16,
-      0,
-      0,
-      100,
-      80,
-      1,
-      1,
-      36,
-      80,
-      0,
-      1
-    ]);
+      const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+      expect(dynamicUploads).toHaveLength(1);
+      expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual(
+        Array.from(
+          buildBombDetonationFlashPlaceholderVertices(currentState, expectedRenderPosition)
+        )
+      );
     expect(uniform1f.mock.calls).toHaveLength(1);
     expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(expectedVisuals.minimumLightFactor);
     expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
