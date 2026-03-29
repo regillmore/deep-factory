@@ -93,6 +93,14 @@ export interface GrapplingHookAnchorTileEdit {
   tileId: number;
 }
 
+export interface GrapplingHookAimRangeEvaluation {
+  originWorldPoint: GrapplingHookWorldPoint;
+  targetWorldPoint: GrapplingHookWorldPoint;
+  distance: number;
+  maxRange: number;
+  withinRange: boolean;
+}
+
 const DIRECTION_EPSILON = 1e-6;
 
 interface SegmentIntersectionResult {
@@ -325,13 +333,13 @@ const createStoppedPlayerState = (state: PlayerState): PlayerState => {
   };
 };
 
-const resolveDistanceBetweenGrapplingHookAnchorAndPlayerFocus = (
+const resolveDistanceBetweenGrapplingHookTargetAndPlayerFocus = (
   playerState: PlayerState,
-  anchorWorldPoint: GrapplingHookWorldPoint
+  targetWorldPoint: GrapplingHookWorldPoint
 ): { deltaX: number; deltaY: number; distance: number } => {
   const playerFocusPoint = getPlayerCameraFocusPoint(playerState);
-  const deltaX = anchorWorldPoint.x - playerFocusPoint.x;
-  const deltaY = anchorWorldPoint.y - playerFocusPoint.y;
+  const deltaX = targetWorldPoint.x - playerFocusPoint.x;
+  const deltaY = targetWorldPoint.y - playerFocusPoint.y;
   return {
     deltaX,
     deltaY,
@@ -387,6 +395,31 @@ export const isGrapplingHookLatched = (
   state: GrapplingHookState
 ): state is FiredGrapplingHookState => state.kind === 'fired' && state.phase === 'latched';
 
+export const evaluateGrapplingHookAimRange = (
+  playerState: PlayerState,
+  targetWorldPoint: GrapplingHookWorldPoint,
+  options: Pick<TryFireGrapplingHookOptions, 'maxRange'> = {}
+): GrapplingHookAimRangeEvaluation => {
+  const maxRange = expectPositiveFiniteNumber(
+    options.maxRange ?? DEFAULT_GRAPPLING_HOOK_MAX_RANGE,
+    'options.maxRange'
+  );
+  const normalizedTargetWorldPoint = cloneGrapplingHookWorldPoint(targetWorldPoint);
+  const originWorldPoint = getPlayerCameraFocusPoint(playerState);
+  const distanceToTarget = resolveDistanceBetweenGrapplingHookTargetAndPlayerFocus(
+    playerState,
+    normalizedTargetWorldPoint
+  );
+
+  return {
+    originWorldPoint,
+    targetWorldPoint: normalizedTargetWorldPoint,
+    distance: distanceToTarget.distance,
+    maxRange,
+    withinRange: distanceToTarget.distance <= maxRange + DIRECTION_EPSILON
+  };
+};
+
 export const shouldDetachLatchedGrapplingHookForTileEdit = (
   grapplingHookState: GrapplingHookState,
   tileEdit: GrapplingHookAnchorTileEdit,
@@ -441,7 +474,7 @@ export const stepLatchedGrapplingHookTraversal = (
     };
   }
 
-  const initialAnchorDistance = resolveDistanceBetweenGrapplingHookAnchorAndPlayerFocus(
+  const initialAnchorDistance = resolveDistanceBetweenGrapplingHookTargetAndPlayerFocus(
     playerState,
     grapplingHookState.hookWorldPoint
   );
@@ -474,7 +507,7 @@ export const stepLatchedGrapplingHookTraversal = (
     },
     fixedDtSeconds
   );
-  const remainingAnchorDistance = resolveDistanceBetweenGrapplingHookAnchorAndPlayerFocus(
+  const remainingAnchorDistance = resolveDistanceBetweenGrapplingHookTargetAndPlayerFocus(
     pulledPlayerState,
     grapplingHookState.hookWorldPoint
   );

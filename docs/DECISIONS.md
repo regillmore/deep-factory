@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-29: Grappling-hook range preview follows the requested world aim only while no hook is active
+
+- Decision: Selected grappling-hook range preview now evaluates the live requested world aim point against maximum range only while the hook is inactive, instead of using tile-center distance alone or overriding active-hook cancel behavior.
+- Reason: Mouse and touch aim already resolve through requested world coordinates, so preview should match the same fire semantics both devices use while leaving follow-up active-hook taps free to cancel regardless of distance.
+- Consequence: Future grappling-hook hover feedback should extend the shared aim-range helper plus inactive-hook preview path rather than recomputing range from hovered tiles only or replacing active-hook slot feedback during traversal.
+
 ### 2026-03-29: Bomb flash quad size reads fixed-step lifetime progress
 
 - Decision: Bomb-detonation-flash placeholder geometry now contracts from the resolved blast radius toward a smaller ember-core radius from the same `secondsRemaining` and `durationSeconds` ratio that already drives flash color and light.

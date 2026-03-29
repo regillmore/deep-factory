@@ -157,6 +157,10 @@ import {
   type PlayerItemMiningPreviewState
 } from './ui/playerItemMiningPreviewOverlay';
 import {
+  PlayerItemGrapplingHookPreviewOverlay,
+  type PlayerItemGrapplingHookPreviewState
+} from './ui/playerItemGrapplingHookPreviewOverlay';
+import {
   PlayerItemPlacementPreviewOverlay,
   type PlayerItemPlacementPreviewState
 } from './ui/playerItemPlacementPreviewOverlay';
@@ -489,6 +493,7 @@ import {
   clearGrapplingHookState,
   createIdleGrapplingHookState,
   createGrapplingHookState,
+  evaluateGrapplingHookAimRange,
   isGrapplingHookLatched,
   shouldDetachLatchedGrapplingHookForTileEdit,
   stepLatchedGrapplingHookTraversal,
@@ -1363,6 +1368,9 @@ const bootstrap = async (): Promise<void> => {
   const playerItemBunnyReleasePreview = new PlayerItemBunnyReleasePreviewOverlay(canvas, {
     host: worldHost
   });
+  const playerItemGrapplingHookPreview = new PlayerItemGrapplingHookPreviewOverlay(canvas, {
+    host: worldHost
+  });
   const playerItemMiningPreview = new PlayerItemMiningPreviewOverlay(canvas, {
     host: worldHost
   });
@@ -1570,6 +1578,7 @@ const bootstrap = async (): Promise<void> => {
     const visible = currentScreen === 'in-world' && !debugEditControlsVisible;
     playerItemAxeChopPreview.setVisible(visible);
     playerItemBunnyReleasePreview.setVisible(visible);
+    playerItemGrapplingHookPreview.setVisible(visible);
     playerItemMiningPreview.setVisible(visible);
     playerItemPlacementPreview.setVisible(visible);
     playerItemSpearPreview.setVisible(visible);
@@ -6075,6 +6084,38 @@ const bootstrap = async (): Promise<void> => {
       landingTile: releaseEvaluation.landingTile
     };
   };
+  const getSelectedStandalonePlayerItemGrapplingHookPreview = (
+    pointerInspect: PointerInspectSnapshot | null
+  ): PlayerItemGrapplingHookPreviewState | null => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState) ||
+      pointerInspect === null
+    ) {
+      return null;
+    }
+
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (
+      selectedStack?.itemId !== GRAPPLING_HOOK_ITEM_ID ||
+      isGrapplingHookActive(grapplingHookState)
+    ) {
+      return null;
+    }
+
+    const rangeEvaluation = evaluateGrapplingHookAimRange(
+      standalonePlayerState,
+      resolvePointerInspectWorldPoint(pointerInspect)
+    );
+
+    return {
+      tileX: pointerInspect.tile.x,
+      tileY: pointerInspect.tile.y,
+      withinRange: rangeEvaluation.withinRange
+    };
+  };
   const getSelectedStandalonePlayerItemSpearPreview = (
     pointerInspect: PointerInspectSnapshot | null
   ): PlayerItemSpearPreviewState | null => {
@@ -7893,6 +7934,9 @@ const bootstrap = async (): Promise<void> => {
             pointerInspect.tile.y
           )
         : null;
+    const selectedPlayerItemGrapplingHookPreview = !debugEditControlsVisible
+      ? getSelectedStandalonePlayerItemGrapplingHookPreview(pointerInspect)
+      : null;
     const selectedPlayerItemAxeChopPreview = !debugEditControlsVisible
       ? getSelectedStandalonePlayerItemAxeChopPreview(pointerInspect)
       : null;
@@ -8145,6 +8189,7 @@ const bootstrap = async (): Promise<void> => {
     });
     playerItemAxeChopPreview.update(camera, selectedPlayerItemAxeChopPreview);
     playerItemBunnyReleasePreview.update(camera, selectedPlayerItemBunnyReleasePreview);
+    playerItemGrapplingHookPreview.update(camera, selectedPlayerItemGrapplingHookPreview);
     playerItemMiningPreview.update(camera, selectedPlayerItemMiningPreview);
     playerItemPlacementPreview.update(camera, selectedPlayerItemPlacementPreview);
     playerItemSpearPreview.update(camera, selectedPlayerItemSpearPreview);

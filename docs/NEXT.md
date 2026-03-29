@@ -4,8 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Grappling hook traversal
 
-697. Preview out-of-range grappling-hook aim targets after tasks 626 and 696: mark selected-hook use targets beyond maximum range as blocked through the shared hidden-panel preview path, and cover desktop-versus-touch range-preview regressions.
 698. Surface selected-hook range-block feedback after task 697: show a temporary blocked readout on the selected grappling-hook slot while the hovered preview target is beyond maximum range, and cover preview-versus-active-hook feedback regressions.
+700. Distinguish solid-versus-empty in-range grappling-hook previews after task 698: show hovered solid tiles as latch-ready while leaving empty-air in-range aims neutral, and cover solid-target preview regressions.
 
 ## Bow and arrow ranged combat
 

@@ -10,6 +10,7 @@ import {
   DEFAULT_GRAPPLING_HOOK_MAX_RANGE,
   DEFAULT_GRAPPLING_HOOK_RADIUS,
   DEFAULT_GRAPPLING_HOOK_SPEED,
+  evaluateGrapplingHookAimRange,
   isGrapplingHookActive,
   isGrapplingHookLatched,
   shouldDetachLatchedGrapplingHookForTileEdit,
@@ -161,6 +162,36 @@ describe('grapplingHook', () => {
     });
     expect(blockedWhileActive.nextState).not.toBe(firedState);
     expect(clearGrapplingHookState()).toEqual(createIdleGrapplingHookState());
+  });
+
+  it('evaluates selected-hook aim targets against the maximum hook range from the player focus', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+
+    expect(
+      evaluateGrapplingHookAimRange(playerState, {
+        x: 8 + DEFAULT_GRAPPLING_HOOK_MAX_RANGE,
+        y: 14
+      })
+    ).toEqual({
+      originWorldPoint: { x: 8, y: 14 },
+      targetWorldPoint: { x: 8 + DEFAULT_GRAPPLING_HOOK_MAX_RANGE, y: 14 },
+      distance: DEFAULT_GRAPPLING_HOOK_MAX_RANGE,
+      maxRange: DEFAULT_GRAPPLING_HOOK_MAX_RANGE,
+      withinRange: true
+    });
+
+    expect(
+      evaluateGrapplingHookAimRange(playerState, {
+        x: 8 + DEFAULT_GRAPPLING_HOOK_MAX_RANGE + 1,
+        y: 14
+      })
+    ).toMatchObject({
+      distance: DEFAULT_GRAPPLING_HOOK_MAX_RANGE + 1,
+      withinRange: false
+    });
   });
 
   it('advances in-flight hook states in a straight line and clears them once they outrun the maximum range', () => {

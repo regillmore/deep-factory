@@ -48,6 +48,7 @@ import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
 import type { PlayerItemAxeChopPreviewState } from './ui/playerItemAxeChopPreviewOverlay';
 import type { PlayerItemBunnyReleasePreviewState } from './ui/playerItemBunnyReleasePreviewOverlay';
+import type { PlayerItemGrapplingHookPreviewState } from './ui/playerItemGrapplingHookPreviewOverlay';
 import type { PlayerItemMiningPreviewState } from './ui/playerItemMiningPreviewOverlay';
 import type { PlayerItemPlacementPreviewState } from './ui/playerItemPlacementPreviewOverlay';
 import type { PlayerItemSpearPreviewState } from './ui/playerItemSpearPreviewOverlay';
@@ -562,6 +563,7 @@ const testRuntime = vi.hoisted(() => {
     hoveredTileCursorInstance: null as null | { visible: boolean },
     playerItemAxeChopPreviewInstance: null as null | { visible: boolean },
     playerItemBunnyReleasePreviewInstance: null as null | { visible: boolean },
+    playerItemGrapplingHookPreviewInstance: null as null | { visible: boolean },
     playerItemMiningPreviewInstance: null as null | { visible: boolean },
     playerItemPlacementPreviewInstance: null as null | { visible: boolean },
     playerItemSpearPreviewInstance: null as null | { visible: boolean },
@@ -797,6 +799,8 @@ const testRuntime = vi.hoisted(() => {
     latestArmedDebugToolPreviewState: null as ArmedDebugToolPreviewState | null,
     latestPlayerItemAxeChopPreviewState: null as PlayerItemAxeChopPreviewState | null,
     latestPlayerItemBunnyReleasePreviewState: null as PlayerItemBunnyReleasePreviewState | null,
+    latestPlayerItemGrapplingHookPreviewState:
+      null as PlayerItemGrapplingHookPreviewState | null,
     latestPlayerItemMiningPreviewState: null as PlayerItemMiningPreviewState | null,
     latestPlayerItemPlacementPreviewState: null as PlayerItemPlacementPreviewState | null,
     latestPlayerItemSpearPreviewState: null as PlayerItemSpearPreviewState | null,
@@ -2267,6 +2271,24 @@ vi.mock('./ui/playerItemAxeChopPreviewOverlay', () => ({
   }
 }));
 
+vi.mock('./ui/playerItemGrapplingHookPreviewOverlay', () => ({
+  PlayerItemGrapplingHookPreviewOverlay: class {
+    visible = false;
+
+    constructor() {
+      testRuntime.playerItemGrapplingHookPreviewInstance = this;
+    }
+
+    setVisible(visible: boolean): void {
+      this.visible = visible;
+    }
+
+    update(_camera: unknown, state: PlayerItemGrapplingHookPreviewState | null): void {
+      testRuntime.latestPlayerItemGrapplingHookPreviewState = state;
+    }
+  }
+}));
+
 vi.mock('./ui/playerItemPlacementPreviewOverlay', () => ({
   PlayerItemPlacementPreviewOverlay: class {
     visible = false;
@@ -3242,6 +3264,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.hoveredTileCursorInstance = null;
     testRuntime.playerItemAxeChopPreviewInstance = null;
     testRuntime.playerItemBunnyReleasePreviewInstance = null;
+    testRuntime.playerItemGrapplingHookPreviewInstance = null;
     testRuntime.playerItemMiningPreviewInstance = null;
     testRuntime.playerItemPlacementPreviewInstance = null;
     testRuntime.playerItemSpearPreviewInstance = null;
@@ -3345,6 +3368,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.latestArmedDebugToolPreviewState = null;
     testRuntime.latestPlayerItemAxeChopPreviewState = null;
     testRuntime.latestPlayerItemBunnyReleasePreviewState = null;
+    testRuntime.latestPlayerItemGrapplingHookPreviewState = null;
     testRuntime.latestPlayerItemMiningPreviewState = null;
     testRuntime.latestPlayerItemPlacementPreviewState = null;
     testRuntime.latestPlayerItemSpearPreviewState = null;
@@ -13611,6 +13635,112 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
       itemId: 'grappling-hook',
       amount: 1
+    });
+  });
+
+  it('shows a blocked grappling-hook preview when the hovered mouse aim exceeds maximum range', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'grappling-hook', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 30, y: 0 },
+      world: {
+        x: playerFocusPoint.x + DEFAULT_GRAPPLING_HOOK_MAX_RANGE + 16,
+        y: playerFocusPoint.y
+      }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemGrapplingHookPreviewState).toEqual({
+      tileX: 30,
+      tileY: 0,
+      withinRange: false
+    });
+  });
+
+  it('shows the same blocked grappling-hook preview from touch aim when the target exceeds maximum range', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'left'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'grappling-hook', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: -30, y: -4 },
+      world: {
+        x: playerFocusPoint.x - DEFAULT_GRAPPLING_HOOK_MAX_RANGE - 16,
+        y: playerFocusPoint.y - 4
+      }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemGrapplingHookPreviewState).toEqual({
+      tileX: -30,
+      tileY: -4,
+      withinRange: false
     });
   });
 
