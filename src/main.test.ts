@@ -12378,7 +12378,7 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
-  it('shows selected bow carried-arrow availability on the hotbar overlay when ammo is available', async () => {
+  it('shows selected bow unreserved-arrow availability on the hotbar overlay when ammo is available', async () => {
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
       JSON.stringify(
@@ -12413,7 +12413,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     runRenderFrame();
 
-    expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: 12 arrows carried');
+    expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: 12 arrows available');
     expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('12');
     expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
   });
@@ -12493,8 +12493,9 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.playerItemUseRequests = [];
     runFixedUpdate(DEFAULT_BOW_DRAW_COOLDOWN_SECONDS - 2 / 60);
 
-    expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: 12 arrows carried');
-    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('12');
+    expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: 11 arrows available');
+    expect(getHotbarOverlaySlotButton(6).title).toContain('1 arrow reserved in flight');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('11');
     expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('0.0%');
     expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
 
@@ -12536,7 +12537,9 @@ describe('main.ts shell state orchestration', () => {
     runFixedUpdate(DEFAULT_BOW_DRAW_COOLDOWN_SECONDS);
 
     expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
-    expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: 1 arrow carried');
+    expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: empty');
+    expect(getHotbarOverlaySlotButton(6).title).toContain('1 arrow reserved in flight');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('EMPTY');
 
     testRuntime.playerItemUseRequests = [bowUseRequest];
     runFixedUpdate(1 / 60);

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-29: Selected bow slot feedback follows available unreserved arrows
+
+- Decision: The selected bow hotbar readout now shows remaining available arrows after subtracting active projectile reservations, and its tooltip calls out any arrows still reserved in flight instead of mirroring the raw carried stack.
+- Reason: Bow shot gating already depends on unreserved ammo, so the selected-slot feedback should match the actual next-shot availability while unresolved arrows still hold reservations.
+- Consequence: Future bow slot or tooltip feedback should derive from the shared available-versus-reserved ammo calculation rather than reading the carried `Arrow` stack directly.
+
 ### 2026-03-29: Solid-block placement can replace surface decorations
 
 - Decision: Shared solid-block placement now treats `tall_grass` and `surface_flower` tiles as replaceable decoration instead of occupied blockers, while still requiring solid-face support and preventing overlap with the standalone player.

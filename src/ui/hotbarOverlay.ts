@@ -43,7 +43,8 @@ interface HotbarOverlayUpdateOptions {
   selectedBowDrawCooldownFillNormalized?: number | null;
   selectedBowAmmoReadout?:
     | {
-        carriedArrowCount: number;
+        availableArrowCount: number;
+        reservedArrowCount: number;
       }
     | null;
   selectedGrapplingHookReadout?:
@@ -293,10 +294,21 @@ const formatStarterWandManaTitleText = (
     : baseTitle;
 };
 
-const formatSelectedBowAmmoTitleText = (carriedArrowCount: number): string =>
-  carriedArrowCount > 0
-    ? `ammo: ${carriedArrowCount} ${carriedArrowCount === 1 ? 'arrow' : 'arrows'} carried`
-    : 'ammo: empty';
+const formatSelectedBowAmmoCountLabel = (count: number, noun: string): string =>
+  `${count} ${noun}${count === 1 ? '' : 's'}`;
+
+const formatSelectedBowAmmoTitleText = (
+  availableArrowCount: number,
+  reservedArrowCount: number
+): string => {
+  const baseTitle =
+    availableArrowCount > 0
+      ? `ammo: ${formatSelectedBowAmmoCountLabel(availableArrowCount, 'arrow')} available`
+      : 'ammo: empty';
+  return reservedArrowCount > 0
+    ? `${baseTitle} (${formatSelectedBowAmmoCountLabel(reservedArrowCount, 'arrow')} reserved in flight)`
+    : baseTitle;
+};
 
 export class HotbarOverlay {
   private root: HTMLDivElement;
@@ -555,7 +567,14 @@ export class HotbarOverlay {
         selectedBowAmmoReadout !== null &&
         !selectedBowCoolingDown
           ? {
-              carriedArrowCount: Math.max(0, Math.floor(selectedBowAmmoReadout.carriedArrowCount))
+              availableArrowCount: Math.max(
+                0,
+                Math.floor(selectedBowAmmoReadout.availableArrowCount)
+              ),
+              reservedArrowCount: Math.max(
+                0,
+                Math.floor(selectedBowAmmoReadout.reservedArrowCount)
+              )
             }
           : null;
       const selectedGrapplingHookState =
@@ -626,7 +645,8 @@ export class HotbarOverlay {
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${SELECTED_BOW_DRAW_COOLDOWN_TITLE_TEXT})`
         : selectedBowAmmo !== null
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${formatSelectedBowAmmoTitleText(
-              selectedBowAmmo.carriedArrowCount
+              selectedBowAmmo.availableArrowCount,
+              selectedBowAmmo.reservedArrowCount
             )})`
         : selectedWandCoolingDown
             ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${STARTER_WAND_COOLDOWN_TITLE_TEXT})`
@@ -650,8 +670,8 @@ export class HotbarOverlay {
           : selectedBowCoolingDown
             ? SELECTED_BOW_DRAW_COOLDOWN_AMOUNT_TEXT
           : selectedBowAmmo !== null
-            ? selectedBowAmmo.carriedArrowCount > 0
-              ? String(selectedBowAmmo.carriedArrowCount)
+            ? selectedBowAmmo.availableArrowCount > 0
+              ? String(selectedBowAmmo.availableArrowCount)
               : SELECTED_BOW_EMPTY_AMOUNT_TEXT
           : selectedWandCoolingDown
             ? STARTER_WAND_COOLDOWN_AMOUNT_TEXT
@@ -668,7 +688,7 @@ export class HotbarOverlay {
             ? SELECTED_GRAPPLING_HOOK_AMOUNT_COLOR[selectedGrapplingHookState.status]
           : selectedBowCoolingDown
             ? SELECTED_BOW_DRAW_COOLDOWN_AMOUNT_COLOR
-          : selectedBowAmmo !== null && selectedBowAmmo.carriedArrowCount <= 0
+          : selectedBowAmmo !== null && selectedBowAmmo.availableArrowCount <= 0
             ? SELECTED_BOW_EMPTY_AMOUNT_COLOR
           : selectedWandCoolingDown
             ? STARTER_WAND_COOLDOWN_AMOUNT_COLOR

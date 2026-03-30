@@ -342,7 +342,8 @@ describe('HotbarOverlay', () => {
       ], 6),
       {
         selectedBowAmmoReadout: {
-          carriedArrowCount: 12
+          availableArrowCount: 12,
+          reservedArrowCount: 0
         },
         selectedBowDrawCooldownFillNormalized: 0.6
       }
@@ -361,19 +362,21 @@ describe('HotbarOverlay', () => {
       ], 6),
       {
         selectedBowAmmoReadout: {
-          carriedArrowCount: 12
+          availableArrowCount: 11,
+          reservedArrowCount: 1
         }
       }
     );
 
-    expect(getSlotAmountLabel(overlay, 6).textContent).toBe('12');
+    expect(getSlotAmountLabel(overlay, 6).textContent).toBe('11');
     expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#ffe7a3');
     expect(getSlotCooldownFill(overlay, 6).style.height).toBe('0.0%');
     expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('0');
-    expect(getSlotRow(overlay).children[6]!.title).toContain('ammo: 12 arrows carried');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('ammo: 11 arrows available');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('1 arrow reserved in flight');
   });
 
-  it('shows selected bow ammo feedback for available and empty carried-arrow states', () => {
+  it('shows selected bow ammo feedback for available, reserved, and empty unreserved-arrow states', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });
 
@@ -384,7 +387,8 @@ describe('HotbarOverlay', () => {
       ], 6),
       {
         selectedBowAmmoReadout: {
-          carriedArrowCount: 12
+          availableArrowCount: 12,
+          reservedArrowCount: 0
         }
       }
     );
@@ -392,13 +396,33 @@ describe('HotbarOverlay', () => {
     expect(getSlotAmountLabel(overlay, 6).textContent).toBe('12');
     expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#ffe7a3');
     expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('0');
-    expect(getSlotRow(overlay).children[6]!.title).toContain('ammo: 12 arrows carried');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('ammo: 12 arrows available');
+
+    overlay.update(
+      createHotbarState([
+        [6, createPlayerInventoryItemStack('bow', 1)],
+        [7, createPlayerInventoryItemStack('arrow', 12)]
+      ], 6),
+      {
+        selectedBowAmmoReadout: {
+          availableArrowCount: 11,
+          reservedArrowCount: 1
+        }
+      }
+    );
+
+    expect(getSlotAmountLabel(overlay, 6).textContent).toBe('11');
+    expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#ffe7a3');
+    expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('0');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('ammo: 11 arrows available');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('1 arrow reserved in flight');
 
     overlay.update(
       createHotbarState([[6, createPlayerInventoryItemStack('bow', 1)]], 6),
       {
         selectedBowAmmoReadout: {
-          carriedArrowCount: 0
+          availableArrowCount: 0,
+          reservedArrowCount: 1
         }
       }
     );
@@ -407,6 +431,7 @@ describe('HotbarOverlay', () => {
     expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#ffd2d2');
     expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('0');
     expect(getSlotRow(overlay).children[6]!.title).toContain('ammo: empty');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('1 arrow reserved in flight');
 
     overlay.update(createHotbarState([[6, createPlayerInventoryItemStack('bow', 1)]], 6));
 

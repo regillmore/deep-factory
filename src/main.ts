@@ -2142,8 +2142,14 @@ const bootstrap = async (): Promise<void> => {
       return null;
     }
 
+    const carriedArrowCount = getPlayerInventoryItemAmount(
+      standalonePlayerInventoryState,
+      ARROW_ITEM_ID
+    );
+    const reservedArrowCount = resolveReservedBowArrowCount();
     return {
-      carriedArrowCount: getPlayerInventoryItemAmount(standalonePlayerInventoryState, ARROW_ITEM_ID)
+      availableArrowCount: Math.max(0, carriedArrowCount - reservedArrowCount),
+      reservedArrowCount
     };
   };
   const resolveReservedBowArrowCount = (): number => getArrowProjectileEntityStates().length;
