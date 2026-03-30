@@ -2,11 +2,6 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-## Grappling hook traversal
-
-702. Snap inactive grappling-hook previews to the first in-range solid latch tile after task 701: when the hovered aim sits in empty air behind nearby terrain, highlight the actual first latch tile instead of the hovered empty cell, and cover intervening-terrain preview regressions.
-703. Snap inactive grappling-hook previews to the first solid intercept even when the hovered tile is also solid after task 702: when nearer terrain blocks a farther solid hovered tile, highlight the actual first latch tile instead of the obscured hovered cell, and cover obstructed-solid preview regressions.
-
 ## Bow and arrow ranged combat
 
 617. Clear bow-ammo reservations on world-session replacement after task 615: release any in-flight reserved arrows when `New World`, import, or restore replaces a session that does not persist projectile entities, and cover reservation-cleanup regressions.
