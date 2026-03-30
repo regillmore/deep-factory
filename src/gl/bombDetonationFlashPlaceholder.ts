@@ -13,6 +13,7 @@ export const BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR = [1, 0.94, 0.7] as 
 export const BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_MIN_LIGHT_FACTOR = 0.35;
 export const BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_BASE_COLOR = [0.4, 0.1, 0.02] as const;
 export const BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_ACCENT_COLOR = [1, 0.42, 0.12] as const;
+export const BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_ALPHA = 0.25;
 export const BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_RADIUS_SCALE = 0.35;
 
 const BOMB_DETONATION_FLASH_PLACEHOLDER_NEARBY_LIGHT_SAMPLE_PADDING_TILES = 1;
@@ -37,6 +38,7 @@ export interface BombDetonationFlashPlaceholderNearbyLightSample {
 export interface BombDetonationFlashPlaceholderVisuals {
   progressNormalized: number;
   minimumLightFactor: number;
+  alpha: number;
   baseColor: BombDetonationFlashPlaceholderColor;
   accentColor: BombDetonationFlashPlaceholderColor;
 }
@@ -179,6 +181,7 @@ export const resolveBombDetonationFlashPlaceholderVisuals = (
       BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_MIN_LIGHT_FACTOR,
       progressNormalized
     ),
+    alpha: lerpNumber(1, BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_ALPHA, progressNormalized),
     baseColor: lerpColor(
       BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR,
       BOMB_DETONATION_FLASH_PLACEHOLDER_EMBER_BASE_COLOR,

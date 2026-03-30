@@ -320,6 +320,7 @@ export class Renderer {
   private uBunnyLight: WebGLUniformLocation;
   private uDroppedItemMatrix: WebGLUniformLocation;
   private uDroppedItemLight: WebGLUniformLocation;
+  private uDroppedItemAlpha: WebGLUniformLocation;
   private uDroppedItemBaseColor: WebGLUniformLocation;
   private uDroppedItemAccentColor: WebGLUniformLocation;
   private uGrapplingHookTetherMatrix: WebGLUniformLocation;
@@ -807,6 +808,7 @@ export class Renderer {
       precision mediump float;
       in vec2 v_uv;
       uniform float u_light;
+      uniform float u_alpha;
       uniform vec3 u_baseColor;
       uniform vec3 u_accentColor;
       out vec4 outColor;
@@ -841,7 +843,7 @@ export class Renderer {
           color = u_accentColor;
         }
 
-        outColor = vec4(color * clamp(u_light, 0.0, 1.0), 1.0);
+        outColor = vec4(color * clamp(u_light, 0.0, 1.0), clamp(u_alpha, 0.0, 1.0));
       }`
     );
 
@@ -852,6 +854,10 @@ export class Renderer {
     const droppedItemLight = gl.getUniformLocation(this.droppedItemProgram, 'u_light');
     if (!droppedItemLight) throw new Error('Missing uniform u_light');
     this.uDroppedItemLight = droppedItemLight;
+
+    const droppedItemAlpha = gl.getUniformLocation(this.droppedItemProgram, 'u_alpha');
+    if (!droppedItemAlpha) throw new Error('Missing uniform u_alpha');
+    this.uDroppedItemAlpha = droppedItemAlpha;
 
     const droppedItemBaseColor = gl.getUniformLocation(this.droppedItemProgram, 'u_baseColor');
     if (!droppedItemBaseColor) throw new Error('Missing uniform u_baseColor');
@@ -1681,6 +1687,7 @@ export class Renderer {
     gl.useProgram(this.droppedItemProgram);
     gl.uniformMatrix4fv(this.uDroppedItemMatrix, false, worldToClipMatrix);
     gl.uniform1f(this.uDroppedItemLight, nearbyLightSample.level / MAX_LIGHT_LEVEL);
+    gl.uniform1f(this.uDroppedItemAlpha, 1);
     gl.uniform3f(
       this.uDroppedItemBaseColor,
       palette.baseColor[0],
@@ -1767,6 +1774,7 @@ export class Renderer {
     gl.useProgram(this.droppedItemProgram);
     gl.uniformMatrix4fv(this.uDroppedItemMatrix, false, worldToClipMatrix);
     gl.uniform1f(this.uDroppedItemLight, nearbyLightSample.level / MAX_LIGHT_LEVEL);
+    gl.uniform1f(this.uDroppedItemAlpha, 1);
     gl.uniform3f(
       this.uDroppedItemBaseColor,
       palette.baseColor[0],
@@ -1809,6 +1817,7 @@ export class Renderer {
       this.uDroppedItemLight,
       Math.max(0.65, nearbyLightSample.level / MAX_LIGHT_LEVEL)
     );
+    gl.uniform1f(this.uDroppedItemAlpha, 1);
     gl.uniform3f(this.uDroppedItemBaseColor, 0.34, 0.48, 0.95);
     gl.uniform3f(this.uDroppedItemAccentColor, 1, 0.84, 0.42);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.fireboltBuffer);
@@ -1843,6 +1852,7 @@ export class Renderer {
       this.uDroppedItemLight,
       Math.max(warningVisuals.minimumLightFactor, nearbyLightSample.level / MAX_LIGHT_LEVEL)
     );
+    gl.uniform1f(this.uDroppedItemAlpha, 1);
     gl.uniform3f(
       this.uDroppedItemBaseColor,
       warningVisuals.baseColor[0],
@@ -1886,6 +1896,7 @@ export class Renderer {
       this.uDroppedItemLight,
       Math.max(flashVisuals.minimumLightFactor, nearbyLightSample.level / MAX_LIGHT_LEVEL)
     );
+    gl.uniform1f(this.uDroppedItemAlpha, flashVisuals.alpha);
     gl.uniform3f(
       this.uDroppedItemBaseColor,
       flashVisuals.baseColor[0],
@@ -1929,6 +1940,7 @@ export class Renderer {
       this.uDroppedItemLight,
       Math.max(0.55, nearbyLightSample.level / MAX_LIGHT_LEVEL)
     );
+    gl.uniform1f(this.uDroppedItemAlpha, 1);
     gl.uniform3f(
       this.uDroppedItemBaseColor,
       palette.baseColor[0],

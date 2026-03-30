@@ -49,4 +49,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bomb utility
 
-699. Fade bomb detonation flash opacity over their fixed-step lifetime after task 622: drive the placeholder alpha from opaque ignition toward translucent ember through the shared entity-pass shader path, and cover progress-to-alpha regressions.
+706. Fade thrown-bomb fuse-warning opacity during the late blink after task 699: route warning-phase alpha through the shared entity-pass shader path while keeping earlier flight opaque, and cover blink-alpha regressions.

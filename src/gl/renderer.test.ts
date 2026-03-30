@@ -3068,9 +3068,10 @@ describe('Renderer atlas telemetry', () => {
       0,
       1
     ]);
-    expect(uniform1f.mock.calls).toHaveLength(1);
+    expect(uniform1f.mock.calls).toHaveLength(2);
     expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(0.65);
     expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
+    expect(uniform1f.mock.calls[1]?.[1]).toBe(1);
   });
 
   it('draws thrown-bomb placeholders from interpolated entity snapshots', async () => {
@@ -3151,9 +3152,10 @@ describe('Renderer atlas telemetry', () => {
       1
     ]);
     const palette = getDroppedItemPlaceholderPalette('bomb');
-    expect(uniform1f.mock.calls).toHaveLength(1);
+    expect(uniform1f.mock.calls).toHaveLength(2);
     expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(0.45);
     expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
+    expect(uniform1f.mock.calls[1]?.[1]).toBe(1);
     expect(uniform3f.mock.calls).toEqual([
       [expect.anything(), palette.baseColor[0], palette.baseColor[1], palette.baseColor[2]],
       [expect.anything(), palette.accentColor[0], palette.accentColor[1], palette.accentColor[2]]
@@ -3236,9 +3238,10 @@ describe('Renderer atlas telemetry', () => {
       1
     ]);
     const palette = getDroppedItemPlaceholderPalette('grappling-hook');
-    expect(uniform1f.mock.calls).toHaveLength(1);
+    expect(uniform1f.mock.calls).toHaveLength(2);
     expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(0);
     expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
+    expect(uniform1f.mock.calls[1]?.[1]).toBe(1);
     expect(uniform3f.mock.calls).toEqual([
       [expect.anything(), palette.baseColor[0], palette.baseColor[1], palette.baseColor[2]],
       [expect.anything(), palette.accentColor[0], palette.accentColor[1], palette.accentColor[2]]
@@ -3418,8 +3421,9 @@ describe('Renderer atlas telemetry', () => {
     });
 
     expect(warningVisuals.blinkActive).toBe(true);
-    expect(uniform1f.mock.calls).toHaveLength(1);
+    expect(uniform1f.mock.calls).toHaveLength(2);
     expect(uniform1f.mock.calls[0]?.[1]).toBeCloseTo(warningVisuals.minimumLightFactor, 6);
+    expect(uniform1f.mock.calls[1]?.[1]).toBe(1);
     expect(uniform3f.mock.calls).toEqual([
       [
         expect.anything(),
@@ -3494,9 +3498,10 @@ describe('Renderer atlas telemetry', () => {
           buildBombDetonationFlashPlaceholderVertices(currentState, expectedRenderPosition)
         )
       );
-    expect(uniform1f.mock.calls).toHaveLength(1);
+    expect(uniform1f.mock.calls).toHaveLength(2);
     expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(expectedVisuals.minimumLightFactor);
     expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
+    expect(uniform1f.mock.calls[1]?.[1]).toBeCloseTo(expectedVisuals.alpha, 6);
     expect(uniform3f.mock.calls).toEqual([
       [
         expect.anything(),
@@ -3588,9 +3593,10 @@ describe('Renderer atlas telemetry', () => {
       0,
       1
     ]);
-    expect(uniform1f.mock.calls).toHaveLength(1);
+    expect(uniform1f.mock.calls).toHaveLength(2);
     expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(0.55);
     expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
+    expect(uniform1f.mock.calls[1]?.[1]).toBe(1);
   });
 
   it('preserves supported-entry submission order when slime and standalone-player entries are interleaved', async () => {

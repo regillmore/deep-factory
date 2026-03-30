@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-29
 
+- Task: Fade bomb detonation flash opacity over their fixed-step lifetime.
+- Changes: Updated [src/gl/bombDetonationFlashPlaceholder.ts](../src/gl/bombDetonationFlashPlaceholder.ts) plus [src/gl/bombDetonationFlashPlaceholder.test.ts](../src/gl/bombDetonationFlashPlaceholder.test.ts) so bomb flashes now resolve lifetime-driven alpha alongside their existing ignition-to-ember color and light ramps; updated [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so the shared palette entity shader accepts per-entity alpha, bomb flashes fade through that path, and other palette placeholders stay opaque; removed completed task `699` from [docs/NEXT.md](docs/NEXT.md), added replacement task `706`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/gl/bombDetonationFlashPlaceholder.test.ts src/gl/renderer.test.ts -t bomb` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Let solid-block placement replace tall grass and surface flowers.
 - Changes: Updated [src/world/starterBlockPlacement.ts](../src/world/starterBlockPlacement.ts) plus [src/world/starterBlockPlacement.test.ts](../src/world/starterBlockPlacement.test.ts) so shared dirt, stone, and wood block placement now treats `tall_grass` and `surface_flower` as replaceable decoration instead of occupied blockers; updated [src/main.test.ts](../src/main.test.ts) with preview and hidden-panel placement regressions for placing dirt over tall grass; removed completed task `704` from [docs/NEXT.md](docs/NEXT.md), added replacement task `705`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/starterBlockPlacement.test.ts src/main.test.ts -t "tall grass"` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

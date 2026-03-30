@@ -169,6 +169,7 @@ describe('bombDetonationFlashPlaceholder', () => {
     expect(resolveBombDetonationFlashPlaceholderVisuals(startState)).toEqual({
       progressNormalized: 0,
       minimumLightFactor: 0.8,
+      alpha: 1,
       baseColor: [1, 0.56, 0.18],
       accentColor: [1, 0.94, 0.7]
     });
@@ -176,6 +177,7 @@ describe('bombDetonationFlashPlaceholder', () => {
     const midpointVisuals = resolveBombDetonationFlashPlaceholderVisuals(midpointState);
     expect(midpointVisuals.progressNormalized).toBe(0.5);
     expect(midpointVisuals.minimumLightFactor).toBeCloseTo(0.575, 10);
+    expect(midpointVisuals.alpha).toBeCloseTo(0.625, 10);
     expect(midpointVisuals.baseColor[0]).toBeCloseTo(0.7, 10);
     expect(midpointVisuals.baseColor[1]).toBeCloseTo(0.33, 10);
     expect(midpointVisuals.baseColor[2]).toBeCloseTo(0.1, 10);
@@ -186,6 +188,7 @@ describe('bombDetonationFlashPlaceholder', () => {
     const endVisuals = resolveBombDetonationFlashPlaceholderVisuals(endState);
     expect(endVisuals.progressNormalized).toBe(1);
     expect(endVisuals.minimumLightFactor).toBeCloseTo(0.35, 10);
+    expect(endVisuals.alpha).toBeCloseTo(0.25, 10);
     expect(endVisuals.baseColor[0]).toBeCloseTo(0.4, 10);
     expect(endVisuals.baseColor[1]).toBeCloseTo(0.1, 10);
     expect(endVisuals.baseColor[2]).toBeCloseTo(0.02, 10);
