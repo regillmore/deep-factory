@@ -21,6 +21,8 @@ import type {
 import { hasStarterTorchFaceSupport, STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import {
   hasStarterDoorDoorwaySupport,
+  isStarterDoorTileId,
+  resolveStarterDoorPairAnchor,
   resolveStarterDoorToggleTarget
 } from './starterDoorPlacement';
 import {
@@ -955,6 +957,31 @@ export class TileWorld {
     }
   }
 
+  private clearOrphanedStarterDoorMateIfNeeded(
+    worldTileX: number,
+    worldTileY: number,
+    previousTileId: number,
+    nextTileId: number,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): void {
+    if (!isStarterDoorTileId(previousTileId) || isStarterDoorTileId(nextTileId)) {
+      return;
+    }
+
+    const pairAnchor = resolveStarterDoorPairAnchor(worldTileX, worldTileY, previousTileId);
+    if (pairAnchor === null) {
+      return;
+    }
+
+    const mateTileY =
+      pairAnchor.bottomTileY === worldTileY ? pairAnchor.bottomTileY - 1 : pairAnchor.bottomTileY;
+    if (!isStarterDoorTileId(this.getResolvedTileIdWithoutEnsuringChunk(pairAnchor.tileX, mateTileY))) {
+      return;
+    }
+
+    this.setTile(pairAnchor.tileX, mateTileY, 0, editOrigin);
+  }
+
   private clearUnsupportedAdjacentStarterFurnaces(
     worldTileX: number,
     worldTileY: number,
@@ -1507,6 +1534,13 @@ export class TileWorld {
         this.clearUnsupportedSurfaceDecorationAtAnchor(worldTileX, worldTileY, editOrigin);
         this.clearUnsupportedSmallTreeAtAnchor(worldTileX, worldTileY, true, editOrigin);
       }
+      this.clearOrphanedStarterDoorMateIfNeeded(
+        worldTileX,
+        worldTileY,
+        result.previousTileId,
+        tileId,
+        editOrigin
+      );
       if (tileSolidnessChanged) {
         this.clearUnsupportedAdjacentStarterTorches(worldTileX, worldTileY, true, editOrigin);
         this.clearUnsupportedAdjacentStarterWorkbenches(worldTileX, worldTileY, true, editOrigin);

@@ -19,8 +19,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Door utility
 
 712. Add door interaction hover feedback after task 587: tint selected-door nearby placed pairs as toggle-ready versus blocked without confusing empty-doorway placement previews, and cover preview-state regressions.
-713. Add half-door cleanup after task 711: when gameplay or debug edits remove one tile from a placed door pair, clear the remaining mate tile through the shared paired-door path and cover orphaned-door regressions.
 714. Add gameplay support-collapse door refunds after tasks 711 and 713: when gameplay edits break a door pair's framing or floor support, clear the pair through the same paired-door removal seam and return exactly one `Door` item while keeping debug-break cleanup refund-free.
+715. Clear malformed door remnants after task 713 and save/load: strip orphaned or mismatched door halves during snapshot restore or import and cover malformed-door save regressions.
 
 ## Recall mirror recovery
 

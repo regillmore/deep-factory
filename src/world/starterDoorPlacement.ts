@@ -36,6 +36,11 @@ export interface StarterDoorToggleTarget {
   nextTopTileId: number;
 }
 
+export interface StarterDoorPairAnchor {
+  tileX: number;
+  bottomTileY: number;
+}
+
 const doesAabbOverlap = (aabb: WorldAabb, other: WorldAabb): boolean =>
   aabb.minX < other.maxX &&
   aabb.maxX > other.minX &&
@@ -71,6 +76,26 @@ const isStarterDoorBottomTileId = (tileId: number): boolean =>
 const isStarterDoorTopTileId = (tileId: number): boolean =>
   tileId === STARTER_DOOR_TOP_TILE_ID || tileId === STARTER_DOOR_OPEN_TOP_TILE_ID;
 
+export const resolveStarterDoorPairAnchor = (
+  worldTileX: number,
+  worldTileY: number,
+  tileId: number
+): StarterDoorPairAnchor | null => {
+  if (isStarterDoorTopTileId(tileId)) {
+    return {
+      tileX: worldTileX,
+      bottomTileY: worldTileY + 1
+    };
+  }
+  if (isStarterDoorBottomTileId(tileId)) {
+    return {
+      tileX: worldTileX,
+      bottomTileY: worldTileY
+    };
+  }
+  return null;
+};
+
 const resolveStarterDoorStateFromPair = (
   bottomTileId: number,
   topTileId: number
@@ -96,17 +121,12 @@ export const resolveStarterDoorToggleTarget = (
   worldTileY: number
 ): StarterDoorToggleTarget | null => {
   const targetedTileId = world.getTile(worldTileX, worldTileY);
-  if (!isStarterDoorTileId(targetedTileId)) {
+  const anchor = resolveStarterDoorPairAnchor(worldTileX, worldTileY, targetedTileId);
+  if (anchor === null) {
     return null;
   }
 
-  let bottomTileY = worldTileY;
-  if (isStarterDoorTopTileId(targetedTileId)) {
-    bottomTileY += 1;
-  } else if (!isStarterDoorBottomTileId(targetedTileId)) {
-    return null;
-  }
-
+  const { tileX, bottomTileY } = anchor;
   const bottomTileId = world.getTile(worldTileX, bottomTileY);
   const topTileId = world.getTile(worldTileX, bottomTileY - 1);
   const state = resolveStarterDoorStateFromPair(bottomTileId, topTileId);
@@ -115,7 +135,7 @@ export const resolveStarterDoorToggleTarget = (
   }
 
   return {
-    tileX: worldTileX,
+    tileX,
     bottomTileY,
     state,
     nextBottomTileId:

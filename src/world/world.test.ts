@@ -744,6 +744,106 @@ describe('TileWorld', () => {
     ]);
   });
 
+  it('clears the remaining door mate when a gameplay edit removes the closed bottom half directly', () => {
+    const world = new TileWorld(0);
+    const events: TileEditEvent[] = [];
+
+    world.setTile(-1, -2, 1);
+    world.setTile(-1, -1, 1);
+    world.setTile(1, -2, 1);
+    world.setTile(1, -1, 1);
+    world.setTile(0, 0, 1);
+    expect(world.setTile(0, -2, STARTER_DOOR_TOP_TILE_ID)).toBe(true);
+    expect(world.setTile(0, -1, STARTER_DOOR_BOTTOM_TILE_ID)).toBe(true);
+
+    world.onTileEdited((event) => {
+      events.push(event);
+    });
+
+    expect(world.setTile(0, -1, 0)).toBe(true);
+
+    expect(world.getTile(0, -2)).toBe(0);
+    expect(world.getTile(0, -1)).toBe(0);
+    expect(events).toEqual([
+      {
+        worldTileX: 0,
+        worldTileY: -1,
+        chunkX: 0,
+        chunkY: -1,
+        localX: 0,
+        localY: CHUNK_SIZE - 1,
+        previousTileId: STARTER_DOOR_BOTTOM_TILE_ID,
+        previousLiquidLevel: 0,
+        tileId: 0,
+        liquidLevel: 0,
+        editOrigin: 'gameplay'
+      },
+      {
+        worldTileX: 0,
+        worldTileY: -2,
+        chunkX: 0,
+        chunkY: -1,
+        localX: 0,
+        localY: CHUNK_SIZE - 2,
+        previousTileId: STARTER_DOOR_TOP_TILE_ID,
+        previousLiquidLevel: 0,
+        tileId: 0,
+        liquidLevel: 0,
+        editOrigin: 'gameplay'
+      }
+    ]);
+  });
+
+  it('clears the remaining door mate when a debug break removes the open top half directly', () => {
+    const world = new TileWorld(0);
+    const events: TileEditEvent[] = [];
+
+    world.setTile(-1, -2, 1);
+    world.setTile(-1, -1, 1);
+    world.setTile(1, -2, 1);
+    world.setTile(1, -1, 1);
+    world.setTile(0, 0, STARTER_PLATFORM_TILE_ID);
+    expect(world.setTile(0, -2, STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(true);
+    expect(world.setTile(0, -1, STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toBe(true);
+
+    world.onTileEdited((event) => {
+      events.push(event);
+    });
+
+    expect(world.setTile(0, -2, 0, 'debug-break')).toBe(true);
+
+    expect(world.getTile(0, -2)).toBe(0);
+    expect(world.getTile(0, -1)).toBe(0);
+    expect(events).toEqual([
+      {
+        worldTileX: 0,
+        worldTileY: -2,
+        chunkX: 0,
+        chunkY: -1,
+        localX: 0,
+        localY: CHUNK_SIZE - 2,
+        previousTileId: STARTER_DOOR_OPEN_TOP_TILE_ID,
+        previousLiquidLevel: 0,
+        tileId: 0,
+        liquidLevel: 0,
+        editOrigin: 'debug-break'
+      },
+      {
+        worldTileX: 0,
+        worldTileY: -1,
+        chunkX: 0,
+        chunkY: -1,
+        localX: 0,
+        localY: CHUNK_SIZE - 1,
+        previousTileId: STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+        previousLiquidLevel: 0,
+        tileId: 0,
+        liquidLevel: 0,
+        editOrigin: 'debug-break'
+      }
+    ]);
+  });
+
   it('clears a planted small tree and emits a second edit when its grass support anchor is replaced', () => {
     const world = new TileWorld(0);
     const events: TileEditEvent[] = [];

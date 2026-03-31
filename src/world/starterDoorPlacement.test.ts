@@ -5,6 +5,7 @@ import {
   evaluateStarterDoorPlacement,
   hasStarterDoorDoorwaySupport,
   isStarterDoorTileId,
+  resolveStarterDoorPairAnchor,
   resolveStarterDoorToggleTarget,
   STARTER_DOOR_BOTTOM_TILE_ID,
   STARTER_DOOR_ITEM_ID,
@@ -30,6 +31,26 @@ describe('starterDoorPlacement', () => {
     expect(isStarterDoorTileId(STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toBe(true);
     expect(isStarterDoorTileId(STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(true);
     expect(isStarterDoorTileId(19)).toBe(false);
+  });
+
+  it('resolves the shared bottom-anchored door pair from either tile role', () => {
+    expect(resolveStarterDoorPairAnchor(3, 4, STARTER_DOOR_BOTTOM_TILE_ID)).toEqual({
+      tileX: 3,
+      bottomTileY: 4
+    });
+    expect(resolveStarterDoorPairAnchor(3, 3, STARTER_DOOR_TOP_TILE_ID)).toEqual({
+      tileX: 3,
+      bottomTileY: 4
+    });
+    expect(resolveStarterDoorPairAnchor(3, 4, STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toEqual({
+      tileX: 3,
+      bottomTileY: 4
+    });
+    expect(resolveStarterDoorPairAnchor(3, 3, STARTER_DOOR_OPEN_TOP_TILE_ID)).toEqual({
+      tileX: 3,
+      bottomTileY: 4
+    });
+    expect(resolveStarterDoorPairAnchor(3, 4, 0)).toBeNull();
   });
 
   it('requires a framed two-tile doorway with floor support below the bottom tile', () => {

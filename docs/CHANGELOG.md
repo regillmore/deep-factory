@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-30
 
+- Task: Add half-door cleanup.
+- Changes: Updated [src/world/starterDoorPlacement.ts](../src/world/starterDoorPlacement.ts) plus [src/world/starterDoorPlacement.test.ts](../src/world/starterDoorPlacement.test.ts) with a shared bottom-anchored door-pair helper, and updated [src/world/world.ts](../src/world/world.ts) plus [src/world/world.test.ts](../src/world/world.test.ts) so direct gameplay or debug tile edits that remove one half of a placed door now clear the remaining mate through the same world-owned edit path instead of leaving orphaned door tiles behind; removed completed task `713` from [docs/NEXT.md](docs/NEXT.md), added replacement task `715`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/starterDoorPlacement.test.ts src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Fade thrown-bomb late-blink opacity.
 - Changes: Updated [src/gl/thrownBombPlaceholder.ts](../src/gl/thrownBombPlaceholder.ts) plus [src/gl/thrownBombPlaceholder.test.ts](../src/gl/thrownBombPlaceholder.test.ts) so thrown bombs now keep early flight and the slow warning cadence fully opaque while fast late-fuse off-beats drop to a deterministic reduced alpha; updated [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so in-flight bomb placeholders send that warning alpha through the shared palette entity shader path; removed completed task `706` from [docs/NEXT.md](docs/NEXT.md), added replacement task `715`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/gl/thrownBombPlaceholder.test.ts src/gl/renderer.test.ts -t bomb` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
