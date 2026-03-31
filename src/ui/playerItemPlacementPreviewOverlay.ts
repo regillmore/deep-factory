@@ -1,4 +1,5 @@
 import { Camera2D } from '../core/camera2d';
+import type { CanvasSizeLike, ClientRectLike } from '../input/picking';
 import { computeHoveredTileCursorClientRect, type HoveredTileCursorClientRect } from './hoveredTileCursor';
 import { appendOverlayMount, type OverlayMountOptions } from './overlayMountHost';
 
@@ -127,6 +128,51 @@ export const resolvePlayerItemPlacementPreviewPresentation = (
   }
 };
 
+const mergeClientRects = (
+  first: HoveredTileCursorClientRect,
+  second: HoveredTileCursorClientRect
+): HoveredTileCursorClientRect => {
+  const left = Math.min(first.left, second.left);
+  const top = Math.min(first.top, second.top);
+  const right = Math.max(first.left + first.width, second.left + second.width);
+  const bottom = Math.max(first.top + first.height, second.top + second.height);
+
+  return {
+    left,
+    top,
+    width: Math.max(0, right - left),
+    height: Math.max(0, bottom - top)
+  };
+};
+
+export const resolvePlayerItemPlacementPreviewClientRect = (
+  preview: PlayerItemPlacementPreviewState,
+  camera: Camera2D,
+  canvas: CanvasSizeLike,
+  rect: ClientRectLike
+): HoveredTileCursorClientRect => {
+  if (preview.doorToggleStatus === undefined) {
+    return computeHoveredTileCursorClientRect(preview.tileX, preview.tileY, camera, canvas, rect);
+  }
+
+  const topHalfRect = computeHoveredTileCursorClientRect(
+    preview.placementTileX,
+    preview.placementTileY - 1,
+    camera,
+    canvas,
+    rect
+  );
+  const bottomHalfRect = computeHoveredTileCursorClientRect(
+    preview.placementTileX,
+    preview.placementTileY,
+    camera,
+    canvas,
+    rect
+  );
+
+  return mergeClientRects(topHalfRect, bottomHalfRect);
+};
+
 const updatePreviewRoot = (root: HTMLDivElement, rect: HoveredTileCursorClientRect): void => {
   if (rect.width <= 0 || rect.height <= 0) {
     root.style.display = 'none';
@@ -182,13 +228,7 @@ export class PlayerItemPlacementPreviewOverlay {
     }
 
     const canvasRect = this.canvas.getBoundingClientRect();
-    const clientRect = computeHoveredTileCursorClientRect(
-      preview.tileX,
-      preview.tileY,
-      camera,
-      this.canvas,
-      canvasRect
-    );
+    const clientRect = resolvePlayerItemPlacementPreviewClientRect(preview, camera, this.canvas, canvasRect);
     updatePreviewRoot(this.root, clientRect);
     if (clientRect.width <= 0 || clientRect.height <= 0) {
       return;

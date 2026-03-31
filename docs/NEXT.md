@@ -18,9 +18,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Door utility
 
-717. Highlight both tiles of selected-door toggle previews after task 716: render top and bottom door halves together for ready-versus-blocked door interactions and cover paired-footprint overlay regressions.
 718. Add selected-door interaction verb copy after task 717: show `Open` versus `Close` tooltip copy for nearby placed-door interactions on the selected hotbar slot and cover verb-feedback regressions.
 719. Add selected-door dead blocked slot feedback after task 718: show `DEAD` on the selected hotbar slot when selected-door use is blocked because the player is dead, and cover dead-state regressions.
+720. Highlight both tiles of selected-door placement previews after task 717: render the full 1x2 doorway footprint for empty framed-door placement previews and cover paired-placement overlay regressions.
 
 ## Recall mirror recovery
 

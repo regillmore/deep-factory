@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-31: Selected door interaction previews outline the full doorway pair
+
+- Decision: Selected `Door` toggle overlays now render from the resolved bottom-anchored pair across both top and bottom door tiles instead of outlining only the hovered half.
+- Reason: Hovering either half of a placed door still targets one paired interaction, so the world overlay should show the full affected footprint rather than whichever half the pointer last touched.
+- Consequence: Future selected-door interaction or paired-preview work should derive overlay bounds from the shared door-pair anchor instead of the currently hovered half-tile.
+
 ### 2026-03-31: Selected door slot feedback stays interaction-first
 
 - Decision: The selected `Door` hotbar slot now shows ready or range-blocked feedback only when the current hover target resolves a complete placed door pair, and otherwise falls back to the ordinary carried-stack readout instead of reusing empty-doorway placement copy.

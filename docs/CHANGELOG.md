@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-31
 
+- Task: Highlight both tiles of selected-door toggle previews.
+- Changes: Updated [src/ui/playerItemPlacementPreviewOverlay.ts](../src/ui/playerItemPlacementPreviewOverlay.ts) plus [src/ui/playerItemPlacementPreviewOverlay.test.ts](../src/ui/playerItemPlacementPreviewOverlay.test.ts) so selected `Door` toggle previews now resolve a shared client-space rectangle from the paired doorway anchor and outline both top and bottom door halves together for ready-versus-blocked interaction states; removed completed task `717` from [docs/NEXT.md](docs/NEXT.md), added replacement task `720`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/playerItemPlacementPreviewOverlay.test.ts src/main.test.ts -t door` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add selected-door slot feedback.
 - Changes: Updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so selected `Door` hover state now drives ready-versus-range-blocked hotbar feedback only for complete placed-door interactions; updated [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts) plus [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts) with door-specific selected-slot titles, amount labels, and fills that fall back to the ordinary stack copy for empty-doorway placement previews; removed completed task `716` from [docs/NEXT.md](docs/NEXT.md), added replacement task `719`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/hotbarOverlay.test.ts src/main.test.ts -t door` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

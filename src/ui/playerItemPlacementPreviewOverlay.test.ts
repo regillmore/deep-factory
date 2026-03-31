@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import { Camera2D } from '../core/camera2d';
+import { computeHoveredTileCursorClientRect } from './hoveredTileCursor';
 import {
   resolvePlayerItemPlacementPreviewPresentation,
+  resolvePlayerItemPlacementPreviewClientRect,
   resolvePlayerItemPlacementPreviewTone,
   type PlayerItemPlacementPreviewState
 } from './playerItemPlacementPreviewOverlay';
@@ -77,6 +80,66 @@ describe('resolvePlayerItemPlacementPreviewTone', () => {
         })
       )
     ).toBe('unsupported');
+  });
+});
+
+describe('resolvePlayerItemPlacementPreviewClientRect', () => {
+  it('expands selected-door toggle previews across the full paired doorway footprint', () => {
+    const camera = new Camera2D();
+    camera.x = 0;
+    camera.y = 0;
+    camera.zoom = 2;
+
+    const canvas = { width: 800, height: 600 };
+    const rect = { left: 20, top: 40, width: 400, height: 300 };
+    const topHalfRect = computeHoveredTileCursorClientRect(3, -2, camera, canvas, rect);
+    const bottomHalfRect = computeHoveredTileCursorClientRect(3, -1, camera, canvas, rect);
+
+    expect(
+      resolvePlayerItemPlacementPreviewClientRect(
+        createPreviewState({
+          tileX: 3,
+          tileY: -1,
+          placementTileX: 3,
+          placementTileY: -1,
+          occupied: true,
+          doorToggleStatus: 'toggle-blocked'
+        }),
+        camera,
+        canvas,
+        rect
+      )
+    ).toEqual({
+      left: topHalfRect.left,
+      top: topHalfRect.top,
+      width: topHalfRect.width,
+      height: bottomHalfRect.top + bottomHalfRect.height - topHalfRect.top
+    });
+  });
+
+  it('keeps ordinary placement previews on the hovered tile footprint', () => {
+    const camera = new Camera2D();
+    camera.x = 32;
+    camera.y = 16;
+    camera.zoom = 4;
+
+    const canvas = { width: 1200, height: 600 };
+    const rect = { left: 200, top: 100, width: 600, height: 300 };
+
+    expect(
+      resolvePlayerItemPlacementPreviewClientRect(
+        createPreviewState({
+          tileX: 2,
+          tileY: 1,
+          placementTileX: 2,
+          placementTileY: 5,
+          canPlace: true
+        }),
+        camera,
+        canvas,
+        rect
+      )
+    ).toEqual(computeHoveredTileCursorClientRect(2, 1, camera, canvas, rect));
   });
 });
 
