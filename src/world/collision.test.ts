@@ -7,6 +7,10 @@ import {
   sweepAabbAlongAxis,
   sweepAabbDownwardAlongOneWayPlatforms
 } from './collision';
+import {
+  STARTER_DOOR_BOTTOM_TILE_ID,
+  STARTER_DOOR_OPEN_BOTTOM_TILE_ID
+} from './starterDoorPlacement';
 import { TileWorld } from './world';
 import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
 
@@ -18,6 +22,16 @@ describe('world collision queries', () => {
 
     world.setTile(5, SKY_TILE_Y, 4);
     world.setTile(6, SKY_TILE_Y, 3);
+
+    expect(isSolidAt(world, 5, SKY_TILE_Y)).toBe(false);
+    expect(isSolidAt(world, 6, SKY_TILE_Y)).toBe(true);
+  });
+
+  it('treats open doors as non-solid while closed doors remain blocking', () => {
+    const world = new TileWorld(0);
+
+    world.setTile(5, SKY_TILE_Y, STARTER_DOOR_OPEN_BOTTOM_TILE_ID);
+    world.setTile(6, SKY_TILE_Y, STARTER_DOOR_BOTTOM_TILE_ID);
 
     expect(isSolidAt(world, 5, SKY_TILE_Y)).toBe(false);
     expect(isSolidAt(world, 6, SKY_TILE_Y)).toBe(true);

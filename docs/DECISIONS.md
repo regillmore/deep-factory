@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-30: Open-door blocking and cleanup follow the paired doorway support state
+
+- Decision: Closed door pairs stay solid and light-blocking, open door pairs become non-solid and non-light-blocking, and `TileWorld` clears complete door pairs only when their shared doorway framing or solid-or-platform floor support disappears.
+- Reason: Door collision, lighting, save/restore, and later refund work all need one consistent paired-door state contract, while support-collapse checks should reuse sparse world reads instead of forcing neighboring chunks resident.
+- Consequence: Future door collision, cleanup, refund, and malformed-save follow-ups should treat door state as a paired bottom-anchored doorway concern rather than per-tile solidity or chunk-residency side effects.
+
 ### 2026-03-30: Door interactions toggle only complete paired door states in place
 
 - Decision: Selected `Door` use now treats either targeted top or bottom door tile as a request to toggle the full paired doorway in place between closed and open tile ids, and leaves the carried stack untouched.

@@ -18,9 +18,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Door utility
 
-588. Add door collision and cleanup rules after task 587: swap blocking behavior with the current open-or-closed state, clear unsupported doors deterministically, and preserve open or closed door state through snapshot restore.
 711. Add door pickup refunds after task 588: let starter-pickaxe or equivalent shared utility removal clear placed doors through one paired-door path and return exactly one `Door` item without duplicate refunds.
 712. Add door interaction hover feedback after task 587: tint selected-door nearby placed pairs as toggle-ready versus blocked without confusing empty-doorway placement previews, and cover preview-state regressions.
+713. Add half-door cleanup after task 711: when gameplay or debug edits remove one tile from a placed door pair, clear the remaining mate tile through the shared paired-door path and cover orphaned-door regressions.
 
 ## Recall mirror recovery
 

@@ -69,6 +69,12 @@ import {
   resolveTerrainAutotileVariantUvRect,
   resolveTileRenderUvRect
 } from './tileMetadata';
+import {
+  STARTER_DOOR_BOTTOM_TILE_ID,
+  STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+  STARTER_DOOR_OPEN_TOP_TILE_ID,
+  STARTER_DOOR_TOP_TILE_ID
+} from './starterDoorPlacement';
 
 const authoredUvRectFromPixels = (x0: number, y0: number, x1: number, y1: number) => ({
   u0: x0 / AUTHORED_ATLAS_WIDTH,
@@ -167,18 +173,18 @@ describe('tile metadata loader', () => {
       blocksLight: true
     });
     expect(resolveTileGameplayMetadata(25)).toEqual({
-      solid: true,
-      blocksLight: true
+      solid: false,
+      blocksLight: false
     });
     expect(resolveTileGameplayMetadata(26)).toEqual({
-      solid: true,
-      blocksLight: true
+      solid: false,
+      blocksLight: false
     });
     expect(isTileSolid(1)).toBe(true);
     expect(isTileSolid(4)).toBe(false);
     expect(isTileSolid(19)).toBe(true);
     expect(isTileSolid(23)).toBe(true);
-    expect(isTileSolid(25)).toBe(true);
+    expect(isTileSolid(25)).toBe(false);
     expect(isTileClimbable(11)).toBe(true);
     expect(isTileClimbable(10)).toBe(false);
     expect(isTileOneWayPlatform(20)).toBe(true);
@@ -186,7 +192,7 @@ describe('tile metadata loader', () => {
     expect(doesTileBlockLight(1)).toBe(true);
     expect(doesTileBlockLight(4)).toBe(false);
     expect(doesTileBlockLight(19)).toBe(true);
-    expect(doesTileBlockLight(25)).toBe(true);
+    expect(doesTileBlockLight(25)).toBe(false);
     expect(getTileEmissiveLightLevel(10)).toBe(12);
     expect(getTileLiquidKind(1)).toBe(null);
     expect(getTileLiquidKind(7)).toBe('water');
@@ -1658,5 +1664,32 @@ describe('tile metadata loader', () => {
         ]
       })
     ).toThrowError(/frames\[0\] must match the static render source/);
+  });
+
+  it('keeps closed doors blocking and open doors non-blocking in gameplay metadata', () => {
+    expect(resolveTileGameplayMetadata(STARTER_DOOR_BOTTOM_TILE_ID)).toEqual({
+      solid: true,
+      blocksLight: true
+    });
+    expect(resolveTileGameplayMetadata(STARTER_DOOR_TOP_TILE_ID)).toEqual({
+      solid: true,
+      blocksLight: true
+    });
+    expect(resolveTileGameplayMetadata(STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toEqual({
+      solid: false,
+      blocksLight: false
+    });
+    expect(resolveTileGameplayMetadata(STARTER_DOOR_OPEN_TOP_TILE_ID)).toEqual({
+      solid: false,
+      blocksLight: false
+    });
+    expect(isTileSolid(STARTER_DOOR_BOTTOM_TILE_ID)).toBe(true);
+    expect(isTileSolid(STARTER_DOOR_TOP_TILE_ID)).toBe(true);
+    expect(isTileSolid(STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toBe(false);
+    expect(isTileSolid(STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(false);
+    expect(doesTileBlockLight(STARTER_DOOR_BOTTOM_TILE_ID)).toBe(true);
+    expect(doesTileBlockLight(STARTER_DOOR_TOP_TILE_ID)).toBe(true);
+    expect(doesTileBlockLight(STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toBe(false);
+    expect(doesTileBlockLight(STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(false);
   });
 });

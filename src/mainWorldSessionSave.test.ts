@@ -9,6 +9,8 @@ import { createPlayerState } from './world/playerState';
 import { createSmallTreeGrowthState } from './world/smallTreeGrowth';
 import {
   STARTER_DOOR_BOTTOM_TILE_ID,
+  STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+  STARTER_DOOR_OPEN_TOP_TILE_ID,
   STARTER_DOOR_TOP_TILE_ID
 } from './world/starterDoorPlacement';
 import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
@@ -278,10 +280,20 @@ describe('createWorldSessionSaveEnvelope', () => {
     });
   });
 
-  it('captures a placed closed-door pair together with the remaining door stack count', () => {
+  it('captures placed closed and open door pairs together with the remaining door stack count', () => {
     const world = new TileWorld(0);
+    expect(world.setTile(5, -2, 1)).toBe(true);
+    expect(world.setTile(5, -1, 1)).toBe(true);
+    expect(world.setTile(7, -2, 1)).toBe(true);
+    expect(world.setTile(7, -1, 1)).toBe(true);
+    expect(world.setTile(9, -2, 1)).toBe(true);
+    expect(world.setTile(9, -1, 1)).toBe(true);
+    expect(world.setTile(6, 0, 1)).toBe(true);
+    expect(world.setTile(8, 0, 1)).toBe(true);
     expect(world.setTile(6, -2, STARTER_DOOR_TOP_TILE_ID)).toBe(true);
     expect(world.setTile(6, -1, STARTER_DOOR_BOTTOM_TILE_ID)).toBe(true);
+    expect(world.setTile(8, -2, STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(true);
+    expect(world.setTile(8, -1, STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toBe(true);
 
     const standalonePlayerInventoryState = createPlayerInventoryState({
       hotbar: [null, { itemId: 'door', amount: 2 }, ...Array.from({ length: 8 }, () => null)],
@@ -304,6 +316,8 @@ describe('createWorldSessionSaveEnvelope', () => {
     restoredWorld.loadSnapshot(envelope.worldSnapshot);
     expect(restoredWorld.getTile(6, -2)).toBe(STARTER_DOOR_TOP_TILE_ID);
     expect(restoredWorld.getTile(6, -1)).toBe(STARTER_DOOR_BOTTOM_TILE_ID);
+    expect(restoredWorld.getTile(8, -2)).toBe(STARTER_DOOR_OPEN_TOP_TILE_ID);
+    expect(restoredWorld.getTile(8, -1)).toBe(STARTER_DOOR_OPEN_BOTTOM_TILE_ID);
     expect(envelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'door',
       amount: 2

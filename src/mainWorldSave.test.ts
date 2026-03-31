@@ -21,6 +21,8 @@ import {
 import { createSmallTreeGrowthState } from './world/smallTreeGrowth';
 import {
   STARTER_DOOR_BOTTOM_TILE_ID,
+  STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+  STARTER_DOOR_OPEN_TOP_TILE_ID,
   STARTER_DOOR_TOP_TILE_ID
 } from './world/starterDoorPlacement';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
@@ -447,10 +449,20 @@ describe('createWorldSaveEnvelope', () => {
     });
   });
 
-  it('preserves a placed closed-door pair together with the consumed door stack count', () => {
+  it('preserves placed closed and open door pairs together with the consumed door stack count', () => {
     const world = new TileWorld(0);
+    expect(world.setTile(3, -2, 1)).toBe(true);
+    expect(world.setTile(3, -1, 1)).toBe(true);
+    expect(world.setTile(5, -2, 1)).toBe(true);
+    expect(world.setTile(5, -1, 1)).toBe(true);
+    expect(world.setTile(7, -2, 1)).toBe(true);
+    expect(world.setTile(7, -1, 1)).toBe(true);
+    expect(world.setTile(4, 0, 1)).toBe(true);
+    expect(world.setTile(6, 0, 1)).toBe(true);
     expect(world.setTile(4, -2, STARTER_DOOR_TOP_TILE_ID)).toBe(true);
     expect(world.setTile(4, -1, STARTER_DOOR_BOTTOM_TILE_ID)).toBe(true);
+    expect(world.setTile(6, -2, STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(true);
+    expect(world.setTile(6, -1, STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toBe(true);
     const standalonePlayerInventoryState = createPlayerInventoryState({
       hotbar: [null, null, null, { itemId: 'door', amount: 3 }, ...Array.from({ length: 6 }, () => null)],
       selectedHotbarSlotIndex: 3
@@ -475,6 +487,8 @@ describe('createWorldSaveEnvelope', () => {
     restoredWorld.loadSnapshot(decoded.worldSnapshot);
     expect(restoredWorld.getTile(4, -2)).toBe(STARTER_DOOR_TOP_TILE_ID);
     expect(restoredWorld.getTile(4, -1)).toBe(STARTER_DOOR_BOTTOM_TILE_ID);
+    expect(restoredWorld.getTile(6, -2)).toBe(STARTER_DOOR_OPEN_TOP_TILE_ID);
+    expect(restoredWorld.getTile(6, -1)).toBe(STARTER_DOOR_OPEN_BOTTOM_TILE_ID);
     expect(decoded.session.standalonePlayerInventoryState.hotbar[3]).toEqual({
       itemId: 'door',
       amount: 3

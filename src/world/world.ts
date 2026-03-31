@@ -20,6 +20,10 @@ import type {
 } from './chunkSnapshot';
 import { hasStarterTorchFaceSupport, STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import {
+  hasStarterDoorDoorwaySupport,
+  resolveStarterDoorToggleTarget
+} from './starterDoorPlacement';
+import {
   hasStarterWorkbenchGroundSupport,
   STARTER_WORKBENCH_TILE_ID
 } from './starterWorkbenchPlacement';
@@ -45,6 +49,7 @@ import {
   doesTileBlockLight,
   getTileEmissiveLightLevel,
   getTileLiquidKind,
+  isTileOneWayPlatform,
   isTileSolid
 } from './tileMetadata';
 import { isSmallTreeTileId } from './smallTreeTiles';
@@ -892,6 +897,64 @@ export class TileWorld {
     );
   }
 
+  private clearUnsupportedAdjacentStarterDoors(
+    worldTileX: number,
+    worldTileY: number,
+    emitTileEditEvent: boolean,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): void {
+    const doorWorldView = {
+      getTile: (tileX: number, tileY: number) => this.getResolvedTileIdWithoutEnsuringChunk(tileX, tileY)
+    };
+    // One changed support tile can only affect the doorway directly above it or one tile to either
+    // side across the door's two vertical rows.
+    const candidateAnchors = [
+      { tileX: worldTileX, bottomTileY: worldTileY - 1 },
+      { tileX: worldTileX - 1, bottomTileY: worldTileY },
+      { tileX: worldTileX - 1, bottomTileY: worldTileY + 1 },
+      { tileX: worldTileX + 1, bottomTileY: worldTileY },
+      { tileX: worldTileX + 1, bottomTileY: worldTileY + 1 }
+    ];
+    const visitedAnchors = new Set<string>();
+
+    for (const candidate of candidateAnchors) {
+      const anchorKey = `${candidate.tileX},${candidate.bottomTileY}`;
+      if (visitedAnchors.has(anchorKey)) {
+        continue;
+      }
+      visitedAnchors.add(anchorKey);
+
+      const doorPair = resolveStarterDoorToggleTarget(
+        doorWorldView,
+        candidate.tileX,
+        candidate.bottomTileY
+      );
+      if (doorPair === null) {
+        continue;
+      }
+      if (hasStarterDoorDoorwaySupport(doorWorldView, doorPair.tileX, doorPair.bottomTileY)) {
+        continue;
+      }
+
+      this.commitTileState(
+        doorPair.tileX,
+        doorPair.bottomTileY - 1,
+        0,
+        0,
+        emitTileEditEvent,
+        editOrigin
+      );
+      this.commitTileState(
+        doorPair.tileX,
+        doorPair.bottomTileY,
+        0,
+        0,
+        emitTileEditEvent,
+        editOrigin
+      );
+    }
+  }
+
   private clearUnsupportedAdjacentStarterFurnaces(
     worldTileX: number,
     worldTileY: number,
@@ -1432,6 +1495,10 @@ export class TileWorld {
     if (changed) {
       const tileSolidnessChanged =
         result.tileIdChanged && isTileSolid(result.previousTileId) !== isTileSolid(tileId);
+      const tileDoorwaySupportChanged =
+        result.tileIdChanged &&
+        (tileSolidnessChanged ||
+          isTileOneWayPlatform(result.previousTileId) !== isTileOneWayPlatform(tileId));
 
       if (
         result.previousTileId === PROCEDURAL_GRASS_SURFACE_TILE_ID &&
@@ -1445,6 +1512,9 @@ export class TileWorld {
         this.clearUnsupportedAdjacentStarterWorkbenches(worldTileX, worldTileY, true, editOrigin);
         this.clearUnsupportedAdjacentStarterFurnaces(worldTileX, worldTileY, true, editOrigin);
         this.clearUnsupportedAdjacentStarterAnvils(worldTileX, worldTileY, true, editOrigin);
+      }
+      if (tileDoorwaySupportChanged) {
+        this.clearUnsupportedAdjacentStarterDoors(worldTileX, worldTileY, true, editOrigin);
       }
       this.revertBuriedGrassBelow(worldTileX, worldTileY, tileId, editOrigin);
       this.wakeNearbyResidentLiquidChunks(worldTileX, worldTileY);
