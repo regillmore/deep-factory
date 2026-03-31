@@ -390,7 +390,7 @@ import {
   STARTER_PLATFORM_TILE_ID
 } from './world/starterPlatformPlacement';
 import {
-  evaluateStarterDoorPlacement,
+  evaluateStarterDoorItemPreview,
   resolveStarterDoorToggleTarget,
   STARTER_DOOR_BOTTOM_TILE_ID,
   STARTER_DOOR_ITEM_ID,
@@ -6241,8 +6241,8 @@ const bootstrap = async (): Promise<void> => {
             worldTileY
           );
           break;
-        case STARTER_DOOR_ITEM_ID:
-          placement = evaluateStarterDoorPlacement(
+        case STARTER_DOOR_ITEM_ID: {
+          const doorPreview = evaluateStarterDoorItemPreview(
             {
               getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
             },
@@ -6250,7 +6250,27 @@ const bootstrap = async (): Promise<void> => {
             worldTileX,
             worldTileY
           );
+          if (doorPreview.kind === 'toggle') {
+            placementTileX = doorPreview.toggleTarget.tileX;
+            placementTileY = doorPreview.toggleTarget.bottomTileY;
+            placement = {
+              occupied: true,
+              hasSolidFaceSupport: true,
+              blockedByPlayer: false,
+              canPlace: false,
+              doorToggleStatus: doorPreview.canToggle ? 'toggle-ready' : 'toggle-blocked'
+            };
+            break;
+          }
+
+          placement = {
+            occupied: doorPreview.occupied,
+            hasSolidFaceSupport: doorPreview.hasSolidFaceSupport,
+            blockedByPlayer: doorPreview.blockedByPlayer,
+            canPlace: doorPreview.canPlace
+          };
           break;
+        }
         default:
           return null;
       }

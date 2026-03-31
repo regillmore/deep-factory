@@ -18,9 +18,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Door utility
 
-712. Add door interaction hover feedback after task 587: tint selected-door nearby placed pairs as toggle-ready versus blocked without confusing empty-doorway placement previews, and cover preview-state regressions.
 715. Clear malformed door remnants after task 713 and save/load: strip orphaned or mismatched door halves during snapshot restore or import and cover malformed-door save regressions.
 716. Add selected-door slot feedback after task 712: surface toggle-ready versus blocked nearby placed-door interactions on the selected hotbar slot without reusing empty-doorway placement copy, and cover slot-feedback regressions.
+717. Highlight both tiles of selected-door toggle previews after task 716: render top and bottom door halves together for ready-versus-blocked door interactions and cover paired-footprint overlay regressions.
 
 ## Recall mirror recovery
 

@@ -1,6 +1,7 @@
 import type { WorldAabb } from './collision';
 import { TILE_SIZE } from './constants';
 import type { PlayerInventoryItemId } from './playerInventory';
+import { evaluatePlayerHotbarTilePlacementRange } from './playerHotbarPlacementRange';
 import type { PlayerState } from './playerState';
 import {
   isTileOneWayPlatform,
@@ -27,6 +28,21 @@ export interface StarterDoorPlacementEvaluation {
   blockedByPlayer: boolean;
   canPlace: boolean;
 }
+
+export interface StarterDoorTogglePreviewEvaluation {
+  kind: 'toggle';
+  toggleTarget: StarterDoorToggleTarget;
+  withinRange: boolean;
+  canToggle: boolean;
+}
+
+export interface StarterDoorPlacementPreviewEvaluation extends StarterDoorPlacementEvaluation {
+  kind: 'placement';
+}
+
+export type StarterDoorItemPreviewEvaluation =
+  | StarterDoorTogglePreviewEvaluation
+  | StarterDoorPlacementPreviewEvaluation;
 
 export interface StarterDoorToggleTarget {
   tileX: number;
@@ -186,5 +202,29 @@ export const evaluateStarterDoorPlacement = (
     hasSolidFaceSupport: doorwaySupported,
     blockedByPlayer,
     canPlace: !occupied && doorwaySupported && !blockedByPlayer
+  };
+};
+
+export const evaluateStarterDoorItemPreview = (
+  world: StarterDoorPlacementWorldView,
+  playerState: Pick<PlayerState, 'position' | 'size'>,
+  worldTileX: number,
+  worldTileY: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): StarterDoorItemPreviewEvaluation => {
+  const toggleTarget = resolveStarterDoorToggleTarget(world, worldTileX, worldTileY);
+  if (toggleTarget !== null) {
+    const placementRange = evaluatePlayerHotbarTilePlacementRange(playerState, worldTileX, worldTileY);
+    return {
+      kind: 'toggle',
+      toggleTarget,
+      withinRange: placementRange.withinRange,
+      canToggle: placementRange.withinRange
+    };
+  }
+
+  return {
+    kind: 'placement',
+    ...evaluateStarterDoorPlacement(world, playerState, worldTileX, worldTileY, registry)
   };
 };

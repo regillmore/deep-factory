@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-30: Selected door previews prioritize paired-door interactions before placement copy
+
+- Decision: When selected `Door` hover targets resolve a complete paired door, preview state now reports toggle-ready or toggle-blocked interaction feedback before generic empty-doorway placement feedback.
+- Reason: Selected-door use already toggles complete pairs before placement, so the hover preview should match the real action instead of falling back to occupied placement copy on valid door interactions.
+- Consequence: Future door hover, slot-feedback, or pair-footprint preview work should extend that interaction-first selected-door preview seam rather than deriving existing-door feedback from ordinary placement occupancy states.
+
 ### 2026-03-30: Thrown-bomb late-fuse opacity fades only on fast warning off-beats
 
 - Decision: Thrown-bomb fuse warnings now keep full opacity during ordinary flight and the slow warning cadence, and only lower alpha on the fast late-fuse off-beats through the shared palette-shader uniform.

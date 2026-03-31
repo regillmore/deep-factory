@@ -8656,6 +8656,146 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('shows a toggle-ready door preview when the selected door hovers a nearby placed pair', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'dirt-block', amount: 64 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'door', amount: 4 },
+          ...Array.from({ length: 5 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 4
+      }),
+      createPlayerState({
+        position: { x: 40, y: 0 },
+        facing: 'right',
+        grounded: true
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('5', 'Digit5').prevented).toBe(true);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, -2), STARTER_DOOR_TOP_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, -1), STARTER_DOOR_BOTTOM_TILE_ID);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 4, y: -2 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 4,
+      tileY: -2,
+      placementTileX: 4,
+      placementTileY: -1,
+      canPlace: false,
+      occupied: true,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false,
+      doorToggleStatus: 'toggle-ready'
+    });
+  });
+
+  it('shows a blocked door preview when the selected door hovers a placed pair beyond reach', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'dirt-block', amount: 64 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'door', amount: 4 },
+          ...Array.from({ length: 5 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 4
+      }),
+      createPlayerState({
+        position: { x: 40, y: 0 },
+        facing: 'right',
+        grounded: true
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('5', 'Digit5').prevented).toBe(true);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(20, -2), STARTER_DOOR_TOP_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(20, -1), STARTER_DOOR_BOTTOM_TILE_ID);
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: 20, y: -1 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 20,
+      tileY: -1,
+      placementTileX: 20,
+      placementTileY: -1,
+      canPlace: false,
+      occupied: true,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false,
+      doorToggleStatus: 'toggle-blocked'
+    });
+  });
+
+  it('keeps empty doorway door previews on placement copy instead of toggle copy', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'dirt-block', amount: 64 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'door', amount: 4 },
+          ...Array.from({ length: 5 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 4
+      }),
+      createPlayerState({
+        position: { x: 40, y: 0 },
+        facing: 'right',
+        grounded: true
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('5', 'Digit5').prevented).toBe(true);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, -2), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, -1), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(5, -2), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(5, -1), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, 0), 1);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 4, y: -1 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 4,
+      tileY: -1,
+      placementTileX: 4,
+      placementTileY: -1,
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+  });
+
   it('shows a valid rope placement preview when the selected stack hangs below a solid anchor', async () => {
     setPersistedWorldSaveWithInventory();
     await import('./main');

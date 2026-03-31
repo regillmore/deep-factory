@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createPlayerState } from './playerState';
 import {
+  evaluateStarterDoorItemPreview,
   evaluateStarterDoorPlacement,
   hasStarterDoorDoorwaySupport,
   isStarterDoorTileId,
@@ -176,5 +177,65 @@ describe('starterDoorPlacement', () => {
     });
     expect(resolveStarterDoorToggleTarget(mismatchedDoorWorld, 0, -1)).toBeNull();
     expect(resolveStarterDoorToggleTarget(createWorld(), 0, -1)).toBeNull();
+  });
+
+  it('prioritizes complete paired doors as selected-item toggle previews before placement copy', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 0 }
+    });
+    const nearDoorWorld = createWorld({
+      '0,-2': STARTER_DOOR_TOP_TILE_ID,
+      '0,-1': STARTER_DOOR_BOTTOM_TILE_ID
+    });
+    const farDoorWorld = createWorld({
+      '20,-2': STARTER_DOOR_TOP_TILE_ID,
+      '20,-1': STARTER_DOOR_BOTTOM_TILE_ID
+    });
+
+    expect(evaluateStarterDoorItemPreview(nearDoorWorld, playerState, 0, -2)).toEqual({
+      kind: 'toggle',
+      toggleTarget: {
+        tileX: 0,
+        bottomTileY: -1,
+        state: 'closed',
+        nextBottomTileId: STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+        nextTopTileId: STARTER_DOOR_OPEN_TOP_TILE_ID
+      },
+      withinRange: true,
+      canToggle: true
+    });
+    expect(evaluateStarterDoorItemPreview(farDoorWorld, playerState, 20, -1)).toEqual({
+      kind: 'toggle',
+      toggleTarget: {
+        tileX: 20,
+        bottomTileY: -1,
+        state: 'closed',
+        nextBottomTileId: STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+        nextTopTileId: STARTER_DOOR_OPEN_TOP_TILE_ID
+      },
+      withinRange: false,
+      canToggle: false
+    });
+  });
+
+  it('falls back to empty-doorway placement preview state when no complete paired door is targeted', () => {
+    const playerState = createPlayerState({
+      position: { x: 64, y: 0 }
+    });
+    const framedWorld = createWorld({
+      '-1,-2': 1,
+      '-1,-1': 1,
+      '1,-2': 1,
+      '1,-1': 1,
+      '0,0': 1
+    });
+
+    expect(evaluateStarterDoorItemPreview(framedWorld, playerState, 0, -1)).toEqual({
+      kind: 'placement',
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false,
+      canPlace: true
+    });
   });
 });

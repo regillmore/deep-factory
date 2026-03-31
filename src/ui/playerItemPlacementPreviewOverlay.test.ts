@@ -21,6 +21,28 @@ const createPreviewState = (
 });
 
 describe('resolvePlayerItemPlacementPreviewTone', () => {
+  it('reports toggle-ready when a selected door hovers a nearby complete paired door', () => {
+    expect(
+      resolvePlayerItemPlacementPreviewTone(
+        createPreviewState({
+          occupied: true,
+          doorToggleStatus: 'toggle-ready'
+        })
+      )
+    ).toBe('toggle-ready');
+  });
+
+  it('reports toggle-blocked when a selected door hovers a complete paired door beyond reach', () => {
+    expect(
+      resolvePlayerItemPlacementPreviewTone(
+        createPreviewState({
+          occupied: true,
+          doorToggleStatus: 'toggle-blocked'
+        })
+      )
+    ).toBe('toggle-blocked');
+  });
+
   it('reports placeable when the preview target can accept the selected item', () => {
     expect(resolvePlayerItemPlacementPreviewTone(createPreviewState({ canPlace: true }))).toBe('placeable');
   });
@@ -59,6 +81,38 @@ describe('resolvePlayerItemPlacementPreviewTone', () => {
 });
 
 describe('resolvePlayerItemPlacementPreviewPresentation', () => {
+  it('uses a solid cyan presentation for toggle-ready door interactions', () => {
+    expect(
+      resolvePlayerItemPlacementPreviewPresentation(
+        createPreviewState({
+          occupied: true,
+          doorToggleStatus: 'toggle-ready'
+        })
+      )
+    ).toMatchObject({
+      tone: 'toggle-ready',
+      borderStyle: 'solid',
+      borderColor: 'rgba(120, 210, 255, 0.95)',
+      background: 'rgba(120, 210, 255, 0.14)'
+    });
+  });
+
+  it('uses a dashed coral presentation for blocked door interactions', () => {
+    expect(
+      resolvePlayerItemPlacementPreviewPresentation(
+        createPreviewState({
+          occupied: true,
+          doorToggleStatus: 'toggle-blocked'
+        })
+      )
+    ).toMatchObject({
+      tone: 'toggle-blocked',
+      borderStyle: 'dashed',
+      borderColor: 'rgba(255, 166, 144, 0.96)',
+      background: 'rgba(255, 166, 144, 0.16)'
+    });
+  });
+
   it('uses a solid green presentation for placeable tiles', () => {
     expect(resolvePlayerItemPlacementPreviewPresentation(createPreviewState({ canPlace: true }))).toMatchObject({
       tone: 'placeable',

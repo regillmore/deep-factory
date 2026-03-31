@@ -11,9 +11,12 @@ export interface PlayerItemPlacementPreviewState {
   occupied: boolean;
   hasSolidFaceSupport: boolean;
   blockedByPlayer: boolean;
+  doorToggleStatus?: 'toggle-ready' | 'toggle-blocked';
 }
 
 export type PlayerItemPlacementPreviewTone =
+  | 'toggle-ready'
+  | 'toggle-blocked'
   | 'placeable'
   | 'occupied'
   | 'unsupported'
@@ -31,6 +34,12 @@ export interface PlayerItemPlacementPreviewPresentation {
 export const resolvePlayerItemPlacementPreviewTone = (
   preview: PlayerItemPlacementPreviewState
 ): PlayerItemPlacementPreviewTone => {
+  if (preview.doorToggleStatus === 'toggle-ready') {
+    return 'toggle-ready';
+  }
+  if (preview.doorToggleStatus === 'toggle-blocked') {
+    return 'toggle-blocked';
+  }
   if (preview.canPlace) {
     return 'placeable';
   }
@@ -51,6 +60,24 @@ export const resolvePlayerItemPlacementPreviewPresentation = (
 ): PlayerItemPlacementPreviewPresentation => {
   const tone = resolvePlayerItemPlacementPreviewTone(preview);
   switch (tone) {
+    case 'toggle-ready':
+      return {
+        tone,
+        borderColor: 'rgba(120, 210, 255, 0.95)',
+        borderStyle: 'solid',
+        background: 'rgba(120, 210, 255, 0.14)',
+        boxShadow:
+          '0 0 0 1px rgba(8, 18, 33, 0.4), 0 0 18px rgba(120, 210, 255, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.08)'
+      };
+    case 'toggle-blocked':
+      return {
+        tone,
+        borderColor: 'rgba(255, 166, 144, 0.96)',
+        borderStyle: 'dashed',
+        background: 'rgba(255, 166, 144, 0.16)',
+        boxShadow:
+          '0 0 0 1px rgba(33, 18, 12, 0.42), 0 0 18px rgba(255, 166, 144, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.06)'
+      };
     case 'placeable':
       return {
         tone,
