@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Later checkpoint claim, respawn, removal, and restore work all need one stable bed footprint contract instead of rediscovering anchor direction or support rules in each follow-up.
 - Consequence: Future bed interactions should resolve beds through that left-anchored pair and dual-floor support rule rather than treating them as single tiles or adding alternate placement orientations to the same item path.
 
+### 2026-03-31: Bed checkpoint claims resolve only from complete paired beds
+
+- Decision: Selected `Bed` interactions now claim checkpoints only when the targeted tile resolves a complete left-plus-right bed pair, and either half of that pair may serve as the interaction target.
+- Reason: Checkpoint claims, later respawn resolution, and later bed cleanup all need one safe interaction seam that rejects orphaned halves or mismatched snapshot remnants instead of recording unstable checkpoint anchors.
+- Consequence: Future bed checkpoint, respawn, removal, or restore work should resolve claimed beds through the shared complete-pair helper rather than trusting whichever individual half-tile happened to be hovered.
+
 ### 2026-03-31: Selected door interaction previews outline the full doorway pair
 
 - Decision: Selected `Door` toggle overlays now render from the resolved bottom-anchored pair across both top and bottom door tiles instead of outlining only the hovered half.

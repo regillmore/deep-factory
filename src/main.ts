@@ -391,9 +391,11 @@ import {
 } from './world/starterPlatformPlacement';
 import {
   evaluateStarterBedPlacement,
+  resolvePlacedStarterBedAnchor,
   STARTER_BED_ITEM_ID,
   STARTER_BED_LEFT_TILE_ID,
-  STARTER_BED_RIGHT_TILE_ID
+  STARTER_BED_RIGHT_TILE_ID,
+  type StarterBedAnchor
 } from './world/starterBedPlacement';
 import {
   evaluateStarterDoorItemPreview,
@@ -1925,6 +1927,7 @@ const bootstrap = async (): Promise<void> => {
   let entityRegistry = new EntityRegistry();
   let standalonePlayerEntityId: EntityId | null = null;
   let standalonePlayerDeathState: PlayerDeathState | null = null;
+  let claimedBedCheckpoint: StarterBedAnchor | null = null;
   let standalonePlayerInventoryState = createDefaultPlayerInventoryState();
   let standalonePlayerEquipmentState = createDefaultPlayerEquipmentState();
   let hostileSlimeEntityIds: EntityId[] = [];
@@ -3539,6 +3542,7 @@ const bootstrap = async (): Promise<void> => {
     entityRegistry = new EntityRegistry();
     standalonePlayerEntityId = null;
     standalonePlayerDeathState = null;
+    claimedBedCheckpoint = null;
     standalonePlayerDeathCount = 0;
     hostileSlimeEntityIds = [];
     passiveBunnyEntityIds = [];
@@ -5941,6 +5945,39 @@ const bootstrap = async (): Promise<void> => {
     });
     grassGrowthState = growthStep.nextGrowthState;
   };
+  const tryClaimSelectedStarterBedCheckpoint = (request: PlayerItemUseRequest): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+
+    const claimedAnchor = resolvePlacedStarterBedAnchor(
+      {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+      },
+      request.worldTileX,
+      request.worldTileY
+    );
+    if (claimedAnchor === null) {
+      return false;
+    }
+
+    const placementRange = evaluatePlayerHotbarTilePlacementRange(
+      standalonePlayerState,
+      request.worldTileX,
+      request.worldTileY
+    );
+    if (!placementRange.withinRange) {
+      return false;
+    }
+
+    claimedBedCheckpoint = claimedAnchor;
+    return true;
+  };
   const applySelectedStandalonePlayerItemUse = (request: PlayerItemUseRequest): boolean => {
     if (debugEditControlsVisible) {
       return false;
@@ -6053,6 +6090,9 @@ const bootstrap = async (): Promise<void> => {
 
         return true;
       }
+    }
+    if (selectedStack.itemId === STARTER_BED_ITEM_ID && tryClaimSelectedStarterBedCheckpoint(request)) {
+      return true;
     }
 
     const placementPreview = getSelectedStandalonePlayerItemPlacementPreviewAtTile(
@@ -7896,6 +7936,7 @@ const bootstrap = async (): Promise<void> => {
                 },
                 grounded: playerState.grounded,
                 facing: playerState.facing,
+                claimedBedCheckpoint,
                 health: playerHealth,
                 maxHealth: playerMaxHealth,
                 mana: playerMana,

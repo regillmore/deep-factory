@@ -12035,6 +12035,90 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('claims the latest complete placed bed from selected-bed mouse and touch interactions without consuming the stack', async () => {
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -4, 12, -4, 4);
+    savedWorld.setTile(3, -1, STARTER_BED_LEFT_TILE_ID);
+    savedWorld.setTile(4, -1, STARTER_BED_RIGHT_TILE_ID);
+    savedWorld.setTile(3, 0, 1);
+    savedWorld.setTile(4, 0, 1);
+    savedWorld.setTile(7, -1, STARTER_BED_LEFT_TILE_ID);
+    savedWorld.setTile(8, -1, STARTER_BED_RIGHT_TILE_ID);
+    savedWorld.setTile(7, 0, 1);
+    savedWorld.setTile(8, 0, 1);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 88, y: 0 },
+            facing: 'right',
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'bed', amount: 4 },
+              ...Array.from({ length: 5 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 4
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 3,
+        worldTileY: -1,
+        worldX: 56,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+    runFixedUpdate();
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.claimedBedCheckpoint).toEqual({
+      leftTileX: 3,
+      tileY: -1
+    });
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 8,
+        worldTileY: -1,
+        worldX: 136,
+        worldY: -8,
+        pointerType: 'touch'
+      }
+    ];
+    runFixedUpdate();
+    runRenderFrame(200 + 1000 / 60, 1);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.claimedBedCheckpoint).toEqual({
+      leftTileX: 7,
+      tileY: -1
+    });
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[4]).toEqual({
+      itemId: 'bed',
+      amount: 4
+    });
+  });
+
   it('toggles a nearby closed door pair open from the selected hotbar slot without consuming the door stack', async () => {
     setPersistedWorldSaveWithInventory(
       createPlayerInventoryState({
@@ -15027,6 +15111,68 @@ describe('main.ts shell state orchestration', () => {
 
     expect(freshWorldRenderFrameState?.grapplingHookCurrentPositions).toEqual([]);
     expect(getHotbarOverlaySlotButton(6).title).not.toContain('hook active');
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+  });
+
+  it('clears the claimed bed checkpoint when paused-menu New World replaces the session', async () => {
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -4, 12, -4, 4);
+    savedWorld.setTile(3, -1, STARTER_BED_LEFT_TILE_ID);
+    savedWorld.setTile(4, -1, STARTER_BED_RIGHT_TILE_ID);
+    savedWorld.setTile(3, 0, 1);
+    savedWorld.setTile(4, 0, 1);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 56, y: 0 },
+            grounded: true,
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'bed', amount: 2 },
+              ...Array.from({ length: 5 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 4
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 4,
+        worldTileY: -1,
+        worldX: 72,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate();
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.claimedBedCheckpoint).toEqual({
+      leftTileX: 3,
+      tileY: -1
+    });
+
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+    testRuntime.shellInstance?.options.onSenaryAction('main-menu');
+    runRenderFrame(200 + 1000 / 60, 1);
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.claimedBedCheckpoint ?? null).toBeNull();
     expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
   });
 

@@ -5,7 +5,9 @@ import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
 import {
   evaluateStarterBedPlacement,
   hasStarterBedGroundSupport,
+  isCompleteStarterBedAtAnchor,
   isStarterBedTileId,
+  resolvePlacedStarterBedAnchor,
   resolveStarterBedAnchor,
   STARTER_BED_ITEM_ID,
   STARTER_BED_LEFT_TILE_ID,
@@ -36,6 +38,45 @@ describe('starterBedPlacement', () => {
       tileY: -1
     });
     expect(resolveStarterBedAnchor(3, -1, 0)).toBeNull();
+  });
+
+  it('recognizes only complete placed bed pairs at the shared left anchor', () => {
+    const completeBedWorld = createWorld({
+      '3,-1': STARTER_BED_LEFT_TILE_ID,
+      '4,-1': STARTER_BED_RIGHT_TILE_ID
+    });
+    const mismatchedBedWorld = createWorld({
+      '3,-1': STARTER_BED_LEFT_TILE_ID,
+      '4,-1': 0
+    });
+
+    expect(isCompleteStarterBedAtAnchor(completeBedWorld, 3, -1)).toBe(true);
+    expect(isCompleteStarterBedAtAnchor(mismatchedBedWorld, 3, -1)).toBe(false);
+  });
+
+  it('resolves placed bed interactions only from complete pairs and accepts either half', () => {
+    const completeBedWorld = createWorld({
+      '3,-1': STARTER_BED_LEFT_TILE_ID,
+      '4,-1': STARTER_BED_RIGHT_TILE_ID
+    });
+    const orphanedHalfWorld = createWorld({
+      '3,-1': STARTER_BED_LEFT_TILE_ID
+    });
+    const mismatchedHalfWorld = createWorld({
+      '4,-1': STARTER_BED_RIGHT_TILE_ID,
+      '3,-1': 0
+    });
+
+    expect(resolvePlacedStarterBedAnchor(completeBedWorld, 3, -1)).toEqual({
+      leftTileX: 3,
+      tileY: -1
+    });
+    expect(resolvePlacedStarterBedAnchor(completeBedWorld, 4, -1)).toEqual({
+      leftTileX: 3,
+      tileY: -1
+    });
+    expect(resolvePlacedStarterBedAnchor(orphanedHalfWorld, 3, -1)).toBeNull();
+    expect(resolvePlacedStarterBedAnchor(mismatchedHalfWorld, 4, -1)).toBeNull();
   });
 
   it('requires ground support under both bed halves and accepts one-way platforms', () => {

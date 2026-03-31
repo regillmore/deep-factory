@@ -78,6 +78,31 @@ export const resolveStarterBedAnchor = (
   return null;
 };
 
+export const isCompleteStarterBedAtAnchor = (
+  world: StarterBedPlacementWorldView,
+  leftTileX: number,
+  worldTileY: number
+): boolean =>
+  world.getTile(leftTileX, worldTileY) === STARTER_BED_LEFT_TILE_ID &&
+  world.getTile(leftTileX + 1, worldTileY) === STARTER_BED_RIGHT_TILE_ID;
+
+export const resolvePlacedStarterBedAnchor = (
+  world: StarterBedPlacementWorldView,
+  worldTileX: number,
+  worldTileY: number
+): StarterBedAnchor | null => {
+  const anchor = resolveStarterBedAnchor(
+    worldTileX,
+    worldTileY,
+    world.getTile(worldTileX, worldTileY)
+  );
+  if (anchor === null) {
+    return null;
+  }
+
+  return isCompleteStarterBedAtAnchor(world, anchor.leftTileX, anchor.tileY) ? anchor : null;
+};
+
 export const hasStarterBedGroundSupport = (
   world: StarterBedPlacementWorldView,
   leftTileX: number,

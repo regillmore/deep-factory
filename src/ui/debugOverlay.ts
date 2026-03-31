@@ -230,6 +230,7 @@ interface DebugOverlayWallContact extends DebugOverlayTileContact {
 export interface DebugOverlayPlayerTelemetry {
   position: { x: number; y: number };
   velocity: { x: number; y: number };
+  claimedBedCheckpoint?: { leftTileX: number; tileY: number } | null;
   health?: number | null;
   maxHealth?: number | null;
   mana?: number | null;
