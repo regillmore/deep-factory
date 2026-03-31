@@ -13562,6 +13562,136 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('clears in-flight bow arrow reservations when paused-menu New World replaces the session', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 40, -4, 4);
+    const bowUseRequest = {
+      worldTileX: 18,
+      worldTileY: 0,
+      worldX: playerFocusPoint.x + 160,
+      worldY: playerFocusPoint.y,
+      pointerType: 'mouse' as const
+    };
+    seedSelectedBowTestSession(savedWorld, standalonePlayerState, 1);
+
+    await enterPersistedBowTestWorld();
+
+    testRuntime.playerItemUseRequests = [bowUseRequest];
+    runFixedUpdate(1 / 60);
+
+    testRuntime.playerItemUseRequests = [];
+    runFixedUpdate(DEFAULT_BOW_DRAW_COOLDOWN_SECONDS);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toHaveLength(1);
+    expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: empty');
+    expect(getHotbarOverlaySlotButton(6).title).toContain('1 arrow reserved in flight');
+
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+    testRuntime.latestRendererRenderFrameState = null;
+    testRuntime.shellInstance?.options.onSenaryAction('main-menu');
+    runRenderFrame(200 + 1000 / 60, 1);
+
+    const freshWorldRenderFrameState = testRuntime.latestRendererRenderFrameState as
+      | {
+          arrowCurrentPositions: Array<{
+            id: number;
+            position: { x: number; y: number };
+          }>;
+        }
+      | null;
+
+    expect(freshWorldRenderFrameState?.arrowCurrentPositions).toEqual([]);
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('reserved in flight');
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+  });
+
+  it('clears in-flight bow arrow reservations when a paused-menu import replaces the session', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 40, -4, 4);
+    const restoredWorldSeed = 0x12345678;
+    const restoredWorld = new TileWorld(0, restoredWorldSeed);
+    const restoreEnvelope = createWorldSaveEnvelope({
+      worldSnapshot: restoredWorld.createSnapshot(),
+      standalonePlayerState: createPlayerState({
+        position: { x: 72, y: 96 },
+        facing: 'left'
+      }),
+      standalonePlayerInventoryState: createSelectedBowInventoryState(1)
+    });
+    const bowUseRequest = {
+      worldTileX: 18,
+      worldTileY: 0,
+      worldX: playerFocusPoint.x + 160,
+      worldY: playerFocusPoint.y,
+      pointerType: 'mouse' as const
+    };
+    seedSelectedBowTestSession(savedWorld, standalonePlayerState, 1);
+
+    await enterPersistedBowTestWorld();
+
+    testRuntime.playerItemUseRequests = [bowUseRequest];
+    runFixedUpdate(1 / 60);
+
+    testRuntime.playerItemUseRequests = [];
+    runFixedUpdate(DEFAULT_BOW_DRAW_COOLDOWN_SECONDS);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toHaveLength(1);
+    expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: empty');
+    expect(getHotbarOverlaySlotButton(6).title).toContain('1 arrow reserved in flight');
+
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+    testRuntime.queuedWorldSaveImportResults = [
+      {
+        status: 'selected',
+        fileName: 'restore.json',
+        envelope: restoreEnvelope
+      }
+    ];
+
+    testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        importResult: {
+          status: 'accepted',
+          fileName: 'restore.json'
+        },
+        worldSeed: restoredWorldSeed
+      })
+    );
+
+    testRuntime.latestRendererRenderFrameState = null;
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    runRenderFrame(1000 / 30, 1);
+
+    const restoredWorldRenderFrameState = testRuntime.latestRendererRenderFrameState as
+      | {
+          arrowCurrentPositions: Array<{
+            id: number;
+            position: { x: number; y: number };
+          }>;
+        }
+      | null;
+
+    expect(restoredWorldRenderFrameState?.arrowCurrentPositions).toEqual([]);
+    expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: 1 arrow available');
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('reserved in flight');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('1');
+  });
+
   it('fires the grappling hook through the shared hidden-panel mouse item-use path without consuming it', async () => {
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,

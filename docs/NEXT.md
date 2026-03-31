@@ -2,10 +2,6 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-## Bow and arrow ranged combat
-
-617. Clear bow-ammo reservations on world-session replacement after task 615: release any in-flight reserved arrows when `New World`, import, or restore replaces a session that does not persist projectile entities, and cover reservation-cleanup regressions.
-
 ## Bed checkpoint respawn
 
 578. Add placeable bed items after starter building-block placement and save/load: define a bed hotbar item, validate two-tile bed placement footprints, and preserve placed bed tiles through world snapshots.

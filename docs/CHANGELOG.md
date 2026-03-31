@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-30
 
+- Task: Clear bow ammo reservations on world-session replacement.
+- Changes: Updated [src/main.ts](../src/main.ts) so fresh-world and paused save-restore replacement now release active bow-arrow projectile reservations through a shared cleanup seam before resetting session-owned entity state; updated [src/main.test.ts](../src/main.test.ts) with paused-menu `New World` and import regressions that prove in-flight arrow entities and reserved-ammo UI clear together on replacement; removed completed task `617` from [docs/NEXT.md](docs/NEXT.md), added replacement task `710`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts -t "clears in-flight bow arrow reservations"` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface reserved-arrow drop feedback on selected Arrow stacks.
 - Changes: Updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so selected `Arrow` stacks now pass droppable-versus-reserved drop readouts into the hotbar overlay while in-flight bow projectiles still hold ammo reservations, and runtime regressions now cover both fully blocked and partially droppable selected-arrow states; updated [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts) plus [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts) so the selected-arrow tooltip and hotbar `Drop 1` / `Drop` button titles reflect blocked-versus-droppable reserved-ammo limits instead of implying the full stack is always droppable; removed completed task `708` from [docs/NEXT.md](docs/NEXT.md), added replacement task `709`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/hotbarOverlay.test.ts`, `cmd /c npx vitest run src/main.test.ts -t Arrow`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

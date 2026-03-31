@@ -2447,6 +2447,15 @@ const bootstrap = async (): Promise<void> => {
       starterBugNetSwingFeedback: resolveHotbarOverlayStarterBugNetSwingFeedback()
     });
   };
+  const clearActiveBowArrowReservations = (syncOverlay = true): void => {
+    for (const entityId of arrowProjectileEntityIds) {
+      entityRegistry.despawn(entityId);
+    }
+    arrowProjectileEntityIds = [];
+    if (syncOverlay) {
+      syncHotbarOverlayState();
+    }
+  };
   const clearActiveGrapplingHookTraversal = (syncOverlay = true): void => {
     grapplingHookState = clearGrapplingHookState();
     if (grapplingHookEntityId !== null) {
@@ -3474,6 +3483,9 @@ const bootstrap = async (): Promise<void> => {
     return entityFrameStates;
   };
   const replaceWorldSessionEntityRegistry = (): void => {
+    // Replacement sessions do not persist arrow projectiles, so release any
+    // reservation-backed runtime bow state before swapping the entity registry.
+    clearActiveBowArrowReservations(false);
     // Replacement sessions do not persist hook traversal, so reuse the shared
     // detach seam before swapping the rest of the session-owned entity state.
     clearActiveGrapplingHookTraversal(false);

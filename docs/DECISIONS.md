@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-30: World-session replacement clears bow ammo reservations through shared projectile cleanup
+
+- Decision: Fresh-world and paused save-restore replacement now clear active arrow projectile entities through one shared bow cleanup seam before session-owned entity registries reset, so reserved ammo does not leak into replacement sessions that do not persist projectile entities.
+- Reason: Bow reservations are derived from runtime-only in-flight arrow projectiles, while new-world and save-restore replacement persist only inventory and restored session data.
+- Consequence: Future world-session replacement or bow-runtime cleanup should release arrow-projectile-backed reservations through that shared cleanup seam instead of carrying stale projectile ids or reserved-ammo feedback into restored inventory state.
+
 ### 2026-03-30: Selected Arrow drop feedback follows the same droppable unreserved-arrow limit as runtime
 
 - Decision: When `Arrow` is selected and in-flight bow projectiles reserve part or all of the carried stack, the selected-slot tooltip and hotbar `Drop 1` / `Drop` controls now describe the same droppable-versus-blocked limit that runtime drop actions enforce.
