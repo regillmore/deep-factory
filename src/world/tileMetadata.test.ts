@@ -70,6 +70,10 @@ import {
   resolveTileRenderUvRect
 } from './tileMetadata';
 import {
+  STARTER_BED_LEFT_TILE_ID,
+  STARTER_BED_RIGHT_TILE_ID
+} from './starterBedPlacement';
+import {
   STARTER_DOOR_BOTTOM_TILE_ID,
   STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
   STARTER_DOOR_OPEN_TOP_TILE_ID,
@@ -99,7 +103,7 @@ const describeAuthoredSourceFromPixels = (
 
 describe('tile metadata loader', () => {
   it('loads placeholder terrain autotile mappings from JSON', () => {
-    expect(TILE_METADATA.tilesById.size).toBeGreaterThanOrEqual(26);
+    expect(TILE_METADATA.tilesById.size).toBeGreaterThanOrEqual(28);
     expect(hasTerrainAutotileMetadata(1)).toBe(true);
     expect(hasTerrainAutotileMetadata(2)).toBe(true);
     expect(hasTerrainAutotileMetadata(13)).toBe(true);
@@ -1691,5 +1695,20 @@ describe('tile metadata loader', () => {
     expect(doesTileBlockLight(STARTER_DOOR_TOP_TILE_ID)).toBe(true);
     expect(doesTileBlockLight(STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toBe(false);
     expect(doesTileBlockLight(STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(false);
+  });
+
+  it('keeps placed bed halves non-solid and non-light-blocking in gameplay metadata', () => {
+    expect(resolveTileGameplayMetadata(STARTER_BED_LEFT_TILE_ID)).toEqual({
+      solid: false,
+      blocksLight: false
+    });
+    expect(resolveTileGameplayMetadata(STARTER_BED_RIGHT_TILE_ID)).toEqual({
+      solid: false,
+      blocksLight: false
+    });
+    expect(isTileSolid(STARTER_BED_LEFT_TILE_ID)).toBe(false);
+    expect(isTileSolid(STARTER_BED_RIGHT_TILE_ID)).toBe(false);
+    expect(doesTileBlockLight(STARTER_BED_LEFT_TILE_ID)).toBe(false);
+    expect(doesTileBlockLight(STARTER_BED_RIGHT_TILE_ID)).toBe(false);
   });
 });

@@ -1371,6 +1371,28 @@
       "render": {
         "atlasIndex": 33
       }
+    },
+    {
+      "id": 27,
+      "name": "bed_left",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false
+      },
+      "render": {
+        "atlasIndex": 27
+      }
+    },
+    {
+      "id": 28,
+      "name": "bed_right",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false
+      },
+      "render": {
+        "atlasIndex": 27
+      }
     }
   ]
 }

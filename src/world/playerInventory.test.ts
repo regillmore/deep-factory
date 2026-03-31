@@ -526,6 +526,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'DOOR',
       maxStackSize: 99
     });
+    expect(getPlayerInventoryItemDefinition('bed')).toEqual({
+      id: 'bed',
+      label: 'Bed',
+      hotbarLabel: 'BED',
+      maxStackSize: 99
+    });
     expect(getPlayerInventoryItemDefinition('healing-potion')).toEqual({
       id: 'healing-potion',
       label: 'Healing Potion',
@@ -622,6 +628,7 @@ describe('playerInventory', () => {
       'rope',
       'platform',
       'door',
+      'bed',
       'umbrella',
       'bug-net',
       'bunny',

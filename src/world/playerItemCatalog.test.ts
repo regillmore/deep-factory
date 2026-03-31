@@ -8,6 +8,7 @@ describe('playerItemCatalog', () => {
       'Acorn',
       'Anvil',
       'Arrow',
+      'Bed',
       'Bomb',
       'Bow',
       'Bug Net',
@@ -72,6 +73,7 @@ describe('playerItemCatalog', () => {
       'dirt-wall'
     ]);
     expect(searchPlayerItemCatalog('door').map((entry) => entry.itemId)).toEqual(['door']);
+    expect(searchPlayerItemCatalog('bed').map((entry) => entry.itemId)).toEqual(['bed']);
     expect(searchPlayerItemCatalog('plat').map((entry) => entry.itemId)).toEqual([
       'platform'
     ]);

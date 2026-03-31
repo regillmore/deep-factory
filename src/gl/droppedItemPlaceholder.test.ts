@@ -172,6 +172,13 @@ describe('droppedItemPlaceholder', () => {
     });
   });
 
+  it('provides a dedicated placeholder palette for bed pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('bed')).toEqual({
+      baseColor: [0.55, 0.31, 0.34],
+      accentColor: [0.94, 0.78, 0.72]
+    });
+  });
+
   it('provides a dedicated placeholder palette for grappling-hook pickups', () => {
     expect(getDroppedItemPlaceholderPalette('grappling-hook')).toEqual({
       baseColor: [0.36, 0.39, 0.48],

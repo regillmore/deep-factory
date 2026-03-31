@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-31: Beds use a fixed left-anchored two-tile footprint
+
+- Decision: Placeable `Bed` items now occupy a non-solid horizontal 1x2 pair anchored from the targeted left tile, require solid-or-platform support beneath both halves, and reject placements that overlap the player.
+- Reason: Later checkpoint claim, respawn, removal, and restore work all need one stable bed footprint contract instead of rediscovering anchor direction or support rules in each follow-up.
+- Consequence: Future bed interactions should resolve beds through that left-anchored pair and dual-floor support rule rather than treating them as single tiles or adding alternate placement orientations to the same item path.
+
 ### 2026-03-31: Selected door interaction previews outline the full doorway pair
 
 - Decision: Selected `Door` toggle overlays now render from the resolved bottom-anchored pair across both top and bottom door tiles instead of outlining only the hovered half.

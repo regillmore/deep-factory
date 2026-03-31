@@ -390,6 +390,12 @@ import {
   STARTER_PLATFORM_TILE_ID
 } from './world/starterPlatformPlacement';
 import {
+  evaluateStarterBedPlacement,
+  STARTER_BED_ITEM_ID,
+  STARTER_BED_LEFT_TILE_ID,
+  STARTER_BED_RIGHT_TILE_ID
+} from './world/starterBedPlacement';
+import {
   evaluateStarterDoorItemPreview,
   resolveStarterDoorToggleTarget,
   STARTER_DOOR_BOTTOM_TILE_ID,
@@ -6083,6 +6089,32 @@ const bootstrap = async (): Promise<void> => {
 
       return applySelectedStandalonePlayerHotbarSlotConsumption();
     }
+    if (selectedStack.itemId === STARTER_BED_ITEM_ID) {
+      const leftEditResult = applyWorldTileEdit(
+        placementPreview.placementTileX,
+        placementPreview.placementTileY,
+        STARTER_BED_LEFT_TILE_ID
+      );
+      if (!leftEditResult.changed) {
+        return false;
+      }
+
+      const rightEditResult = applyWorldTileEdit(
+        placementPreview.placementTileX + 1,
+        placementPreview.placementTileY,
+        STARTER_BED_RIGHT_TILE_ID
+      );
+      if (!rightEditResult.changed) {
+        applyWorldTileEdit(
+          placementPreview.placementTileX,
+          placementPreview.placementTileY,
+          leftEditResult.previousTileId
+        );
+        return false;
+      }
+
+      return applySelectedStandalonePlayerHotbarSlotConsumption();
+    }
 
     let placementTileId: number | null = null;
     let placementWallId: number | null = null;
@@ -6274,6 +6306,16 @@ const bootstrap = async (): Promise<void> => {
             worldTileY
           );
           break;
+        case STARTER_BED_ITEM_ID:
+          placement = evaluateStarterBedPlacement(
+            {
+              getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+            },
+            standalonePlayerState,
+            worldTileX,
+            worldTileY
+          );
+          break;
         case STARTER_DOOR_ITEM_ID: {
           const doorPreview = evaluateStarterDoorItemPreview(
             {
@@ -6323,6 +6365,16 @@ const bootstrap = async (): Promise<void> => {
       tileY: worldTileY,
       placementTileX,
       placementTileY,
+      ...(selectedStack.itemId === STARTER_BED_ITEM_ID
+        ? {
+            previewBounds: {
+              minTileX: placementTileX,
+              minTileY: placementTileY,
+              maxTileX: placementTileX + 1,
+              maxTileY: placementTileY
+            }
+          }
+        : {}),
       ...placement,
       canPlace: placement.canPlace && placementRange.withinRange
     };

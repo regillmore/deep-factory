@@ -8,6 +8,12 @@ export interface PlayerItemPlacementPreviewState {
   tileY: number;
   placementTileX: number;
   placementTileY: number;
+  previewBounds?: {
+    minTileX: number;
+    minTileY: number;
+    maxTileX: number;
+    maxTileY: number;
+  };
   canPlace: boolean;
   occupied: boolean;
   hasSolidFaceSupport: boolean;
@@ -152,6 +158,24 @@ export const resolvePlayerItemPlacementPreviewClientRect = (
   canvas: CanvasSizeLike,
   rect: ClientRectLike
 ): HoveredTileCursorClientRect => {
+  if (preview.previewBounds !== undefined) {
+    const minRect = computeHoveredTileCursorClientRect(
+      preview.previewBounds.minTileX,
+      preview.previewBounds.minTileY,
+      camera,
+      canvas,
+      rect
+    );
+    const maxRect = computeHoveredTileCursorClientRect(
+      preview.previewBounds.maxTileX,
+      preview.previewBounds.maxTileY,
+      camera,
+      canvas,
+      rect
+    );
+    return mergeClientRects(minRect, maxRect);
+  }
+
   if (preview.doorToggleStatus === undefined) {
     return computeHoveredTileCursorClientRect(preview.tileX, preview.tileY, camera, canvas, rect);
   }

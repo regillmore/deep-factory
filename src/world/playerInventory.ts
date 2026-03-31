@@ -21,6 +21,7 @@ export type PlayerInventoryItemId =
   | 'rope'
   | 'platform'
   | 'door'
+  | 'bed'
   | 'umbrella'
   | 'bug-net'
   | 'bunny'
@@ -96,6 +97,7 @@ export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
   'rope',
   'platform',
   'door',
+  'bed',
   'umbrella',
   'bug-net',
   'bunny',
@@ -231,6 +233,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     id: 'door',
     label: 'Door',
     hotbarLabel: 'DOOR',
+    maxStackSize: 99
+  },
+  bed: {
+    id: 'bed',
+    label: 'Bed',
+    hotbarLabel: 'BED',
     maxStackSize: 99
   },
   umbrella: {

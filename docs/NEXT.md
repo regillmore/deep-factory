@@ -4,10 +4,10 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bed checkpoint respawn
 
-578. Add placeable bed items after starter building-block placement and save/load: define a bed hotbar item, validate two-tile bed placement footprints, and preserve placed bed tiles through world snapshots.
 579. Add bed checkpoint-claim interactions after task 578 and death-and-respawn recovery: let nearby mixed-device interactions claim a placed bed as the latest checkpoint and cover claimed-bed session-state regressions.
 580. Add bed-based respawn resolution after task 579: respawn the player at the latest valid claimed bed when its stand area stays clear and fall back deterministically to world spawn when that checkpoint is obstructed.
 581. Persist claimed bed checkpoints after task 580 and save/load: export or import the claimed checkpoint reference, clear it when the matching bed is removed or mismatched after load, and cover snapshot restore regressions.
+722. Add bed pair removal-and-refund handling after task 578: let gameplay tile clears or starter-pickaxe removal clear both halves of a placed bed together, refund exactly one `Bed` on gameplay removals, and cover paired-removal regressions.
 
 ## Chest storage
 

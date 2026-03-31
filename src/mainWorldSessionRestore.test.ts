@@ -18,6 +18,10 @@ import { createSmallTreeGrowthState, type SmallTreeGrowthState } from './world/s
 import { createPlayerState, type PlayerState } from './world/playerState';
 import { CHUNK_SIZE } from './world/constants';
 import {
+  STARTER_BED_LEFT_TILE_ID,
+  STARTER_BED_RIGHT_TILE_ID
+} from './world/starterBedPlacement';
+import {
   STARTER_DOOR_BOTTOM_TILE_ID,
   STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
   STARTER_DOOR_OPEN_TOP_TILE_ID,
@@ -484,6 +488,56 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
     expect(restoreResult.restoredEnvelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'door',
+      amount: 2
+    });
+  });
+
+  it('restores placed bed pairs together with the remaining bed stack count', () => {
+    const world = new TileWorld(0);
+    expect(world.setTile(6, -1, STARTER_BED_LEFT_TILE_ID)).toBe(true);
+    expect(world.setTile(7, -1, STARTER_BED_RIGHT_TILE_ID)).toBe(true);
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [null, { itemId: 'bed', amount: 2 }, ...Array.from({ length: 8 }, () => null)],
+      selectedHotbarSlotIndex: 1
+    });
+    const envelope = createWorldSaveEnvelope({
+      worldSnapshot: world.createSnapshot(),
+      standalonePlayerState: createPlayerState(),
+      standalonePlayerDeathState: null,
+      standalonePlayerInventoryState,
+      droppedItemStates: [],
+      cameraFollowOffset: { x: 0, y: 0 }
+    });
+    let restoredWorldSnapshot: ReturnType<TileWorld['createSnapshot']> | null = null;
+    let restoredPlayerInventoryState: PlayerInventoryState | null = null;
+    const target = {
+      loadWorldSnapshot: vi.fn((snapshot) => {
+        restoredWorldSnapshot = snapshot;
+      }),
+      restoreStandalonePlayerState: vi.fn(),
+      restoreStandalonePlayerDeathState: vi.fn(),
+      restoreStandalonePlayerInventoryState: vi.fn((inventoryState) => {
+        restoredPlayerInventoryState = inventoryState;
+      }),
+      restoreStandalonePlayerEquipmentState: vi.fn(),
+      restoreDroppedItemStates: vi.fn(),
+      restoreCameraFollowOffset: vi.fn(),
+      restoreSmallTreeGrowthState: vi.fn()
+    };
+
+    const restoreResult = restoreWorldSessionFromSaveEnvelope({
+      target,
+      envelope
+    });
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(restoredWorldSnapshot!);
+    expect(restoredWorld.getTile(6, -1)).toBe(STARTER_BED_LEFT_TILE_ID);
+    expect(restoredWorld.getTile(7, -1)).toBe(STARTER_BED_RIGHT_TILE_ID);
+    expect(restoredPlayerInventoryState).toEqual(standalonePlayerInventoryState);
+    expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.restoredEnvelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'bed',
       amount: 2
     });
   });

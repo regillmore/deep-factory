@@ -113,6 +113,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
     baseColor: [0.45, 0.3, 0.16],
     accentColor: [0.8, 0.64, 0.4]
   },
+  bed: {
+    baseColor: [0.55, 0.31, 0.34],
+    accentColor: [0.94, 0.78, 0.72]
+  },
   umbrella: {
     baseColor: [0.53, 0.35, 0.16],
     accentColor: [0.96, 0.82, 0.48]

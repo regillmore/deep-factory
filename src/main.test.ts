@@ -110,6 +110,10 @@ import {
 } from './world/starterPickaxeMining';
 import { PLACEABLE_WOOD_BLOCK_TILE_ID } from './world/starterBlockPlacement';
 import {
+  STARTER_BED_LEFT_TILE_ID,
+  STARTER_BED_RIGHT_TILE_ID
+} from './world/starterBedPlacement';
+import {
   STARTER_DOOR_BOTTOM_TILE_ID,
   STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
   STARTER_DOOR_OPEN_TOP_TILE_ID,
@@ -8656,6 +8660,57 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('shows a valid bed placement preview across the full two-tile footprint', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'dirt-block', amount: 64 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'bed', amount: 3 },
+          ...Array.from({ length: 5 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 4
+      }),
+      createPlayerState({
+        position: { x: 40, y: 0 },
+        facing: 'right',
+        grounded: true
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('5', 'Digit5').prevented).toBe(true);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, 0), 1);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 3, y: -1 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 3,
+      tileY: -1,
+      placementTileX: 3,
+      placementTileY: -1,
+      previewBounds: {
+        minTileX: 3,
+        minTileY: -1,
+        maxTileX: 4,
+        maxTileY: -1
+      },
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+  });
+
   it('shows a toggle-ready door preview when the selected door hovers a nearby placed pair', async () => {
     setPersistedWorldSaveWithInventory(
       createPlayerInventoryState({
@@ -11912,6 +11967,70 @@ describe('main.ts shell state orchestration', () => {
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[4]).toEqual({
       itemId: 'door',
+      amount: 3
+    });
+  });
+
+  it('places a bed pair from the selected hotbar slot while the full debug-edit panel is hidden', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'dirt-block', amount: 64 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'bed', amount: 4 },
+          ...Array.from({ length: 5 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 4
+      }),
+      createPlayerState({
+        position: { x: 40, y: 0 },
+        facing: 'right',
+        grounded: true
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('5', 'Digit5').prevented).toBe(true);
+    expect(testRuntime.canvasInteractionMode).toBe('play');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.delete(worldTileKey(3, -1));
+    testRuntime.rendererTileIdsByWorldKey.delete(worldTileKey(4, -1));
+    testRuntime.rendererPersistentSetTileResult = true;
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 3,
+        worldTileY: -1,
+        worldX: 56,
+        worldY: -8,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 3,
+        worldTileY: -1,
+        tileId: STARTER_BED_LEFT_TILE_ID
+      },
+      {
+        worldTileX: 4,
+        worldTileY: -1,
+        tileId: STARTER_BED_RIGHT_TILE_ID
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[4]).toEqual({
+      itemId: 'bed',
       amount: 3
     });
   });

@@ -8,6 +8,10 @@ import { createPlayerEquipmentState } from './world/playerEquipment';
 import { createPlayerState } from './world/playerState';
 import { createSmallTreeGrowthState } from './world/smallTreeGrowth';
 import {
+  STARTER_BED_LEFT_TILE_ID,
+  STARTER_BED_RIGHT_TILE_ID
+} from './world/starterBedPlacement';
+import {
   STARTER_DOOR_BOTTOM_TILE_ID,
   STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
   STARTER_DOOR_OPEN_TOP_TILE_ID,
@@ -320,6 +324,38 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(restoredWorld.getTile(8, -1)).toBe(STARTER_DOOR_OPEN_BOTTOM_TILE_ID);
     expect(envelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'door',
+      amount: 2
+    });
+  });
+
+  it('captures placed bed pairs together with the remaining bed stack count', () => {
+    const world = new TileWorld(0);
+    expect(world.setTile(6, -1, STARTER_BED_LEFT_TILE_ID)).toBe(true);
+    expect(world.setTile(7, -1, STARTER_BED_RIGHT_TILE_ID)).toBe(true);
+
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [null, { itemId: 'bed', amount: 2 }, ...Array.from({ length: 8 }, () => null)],
+      selectedHotbarSlotIndex: 1
+    });
+    const source = {
+      createWorldSnapshot: vi.fn(() => world.createSnapshot()),
+      getStandalonePlayerState: vi.fn(() => createPlayerState()),
+      getStandalonePlayerDeathState: vi.fn(() => null),
+      getStandalonePlayerInventoryState: vi.fn(() => standalonePlayerInventoryState),
+      getStandalonePlayerEquipmentState: vi.fn(() => createPlayerEquipmentState()),
+      getDroppedItemStates: vi.fn(() => []),
+      getCameraFollowOffset: vi.fn(() => ({ x: 0, y: 0 })),
+      getSmallTreeGrowthState: vi.fn(() => createSmallTreeGrowthState())
+    };
+
+    const envelope = createWorldSessionSaveEnvelope({ source });
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(envelope.worldSnapshot);
+    expect(restoredWorld.getTile(6, -1)).toBe(STARTER_BED_LEFT_TILE_ID);
+    expect(restoredWorld.getTile(7, -1)).toBe(STARTER_BED_RIGHT_TILE_ID);
+    expect(envelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'bed',
       amount: 2
     });
   });

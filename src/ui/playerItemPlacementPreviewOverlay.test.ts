@@ -117,6 +117,44 @@ describe('resolvePlayerItemPlacementPreviewClientRect', () => {
     });
   });
 
+  it('expands placement previews across an explicit multi-tile footprint', () => {
+    const camera = new Camera2D();
+    camera.x = 0;
+    camera.y = 0;
+    camera.zoom = 2;
+
+    const canvas = { width: 800, height: 600 };
+    const rect = { left: 20, top: 40, width: 400, height: 300 };
+    const leftRect = computeHoveredTileCursorClientRect(3, -1, camera, canvas, rect);
+    const rightRect = computeHoveredTileCursorClientRect(4, -1, camera, canvas, rect);
+
+    expect(
+      resolvePlayerItemPlacementPreviewClientRect(
+        createPreviewState({
+          tileX: 3,
+          tileY: -1,
+          placementTileX: 3,
+          placementTileY: -1,
+          canPlace: true,
+          previewBounds: {
+            minTileX: 3,
+            minTileY: -1,
+            maxTileX: 4,
+            maxTileY: -1
+          }
+        }),
+        camera,
+        canvas,
+        rect
+      )
+    ).toEqual({
+      left: leftRect.left,
+      top: leftRect.top,
+      width: rightRect.left + rightRect.width - leftRect.left,
+      height: leftRect.height
+    });
+  });
+
   it('keeps ordinary placement previews on the hovered tile footprint', () => {
     const camera = new Camera2D();
     camera.x = 32;
