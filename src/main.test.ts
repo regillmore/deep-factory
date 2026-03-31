@@ -8796,6 +8796,74 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('shows selected-door slot feedback only for placed-door interactions', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'dirt-block', amount: 64 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'door', amount: 4 },
+          ...Array.from({ length: 5 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 4
+      }),
+      createPlayerState({
+        position: { x: 40, y: 0 },
+        facing: 'right',
+        grounded: true
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('5', 'Digit5').prevented).toBe(true);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, -2), STARTER_DOOR_TOP_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, -1), STARTER_DOOR_BOTTOM_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(20, -2), STARTER_DOOR_TOP_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(20, -1), STARTER_DOOR_BOTTOM_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(7, -2), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(7, -1), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(9, -2), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(9, -1), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(8, 0), 1);
+
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 4, y: -2 }
+    };
+    runRenderFrame();
+
+    expect(getHotbarOverlaySlotButton(4).title).toContain('placed door interaction in range');
+    expect(getHotbarOverlaySlotAmountLabel(4).textContent).toBe('READY');
+    expect(getHotbarOverlaySlotCooldownFill(4).style.height).toBe('100.0%');
+    expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('1');
+
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: 20, y: -1 }
+    };
+    runRenderFrame();
+
+    expect(getHotbarOverlaySlotButton(4).title).toContain('placed door interaction beyond reach');
+    expect(getHotbarOverlaySlotAmountLabel(4).textContent).toBe('RANGE');
+    expect(getHotbarOverlaySlotCooldownFill(4).style.height).toBe('100.0%');
+    expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('1');
+
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 8, y: -1 }
+    };
+    runRenderFrame();
+
+    expect(getHotbarOverlaySlotButton(4).title).not.toContain('placed door interaction');
+    expect(getHotbarOverlaySlotAmountLabel(4).textContent).toBe('4');
+    expect(getHotbarOverlaySlotCooldownFill(4).style.height).toBe('0.0%');
+    expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('0');
+  });
+
   it('shows a valid rope placement preview when the selected stack hangs below a solid anchor', async () => {
     setPersistedWorldSaveWithInventory();
     await import('./main');

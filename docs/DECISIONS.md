@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-31: Selected door slot feedback stays interaction-first
+
+- Decision: The selected `Door` hotbar slot now shows ready or range-blocked feedback only when the current hover target resolves a complete placed door pair, and otherwise falls back to the ordinary carried-stack readout instead of reusing empty-doorway placement copy.
+- Reason: Selected-door use already prioritizes paired toggle interactions over placement, but empty framed doorways are still placement targets, so the slot readout should distinguish real placed-door interactions from ordinary placement previews.
+- Consequence: Future selected-door slot verb or blocked-state work should extend this interaction-first readout seam instead of deriving slot copy from generic placement occupancy or support flags.
+
 ### 2026-03-31: Snapshot normalization strips malformed door remnants
 
 - Decision: `TileWorld.loadSnapshot()` now clears orphaned or mismatched starter-door halves from resident chunk data and pruned edited overrides before restored world state becomes authoritative.

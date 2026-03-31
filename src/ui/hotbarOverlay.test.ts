@@ -488,6 +488,49 @@ describe('HotbarOverlay', () => {
     expect(getDropStackButton(overlay).getAttribute('aria-disabled')).toBe('false');
   });
 
+  it('shows selected-door toggle feedback without reusing empty-doorway placement copy', () => {
+    const host = createHost();
+    const overlay = new HotbarOverlay({ host });
+
+    overlay.update(
+      createHotbarState([[6, createPlayerInventoryItemStack('door', 4)]], 6),
+      {
+        selectedDoorReadout: {
+          status: 'toggle-ready'
+        }
+      }
+    );
+
+    expect(getSlotAmountLabel(overlay, 6).textContent).toBe('READY');
+    expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#c9fff8');
+    expect(getSlotCooldownFill(overlay, 6).style.height).toBe('100.0%');
+    expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('1');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('placed door interaction in range');
+
+    overlay.update(
+      createHotbarState([[6, createPlayerInventoryItemStack('door', 4)]], 6),
+      {
+        selectedDoorReadout: {
+          status: 'toggle-blocked'
+        }
+      }
+    );
+
+    expect(getSlotAmountLabel(overlay, 6).textContent).toBe('RANGE');
+    expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#ffd0c8');
+    expect(getSlotCooldownFill(overlay, 6).style.height).toBe('100.0%');
+    expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('1');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('placed door interaction beyond reach');
+
+    overlay.update(createHotbarState([[6, createPlayerInventoryItemStack('door', 4)]], 6));
+
+    expect(getSlotAmountLabel(overlay, 6).textContent).toBe('4');
+    expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#ffe7a3');
+    expect(getSlotCooldownFill(overlay, 6).style.height).toBe('0.0%');
+    expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('0');
+    expect(getSlotRow(overlay).children[6]!.title).not.toContain('placed door interaction');
+  });
+
   it('shows selected grappling-hook active, latch-ready, range-blocked, and dead feedback states', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });

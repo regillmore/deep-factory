@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-31
 
+- Task: Add selected-door slot feedback.
+- Changes: Updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so selected `Door` hover state now drives ready-versus-range-blocked hotbar feedback only for complete placed-door interactions; updated [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts) plus [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts) with door-specific selected-slot titles, amount labels, and fills that fall back to the ordinary stack copy for empty-doorway placement previews; removed completed task `716` from [docs/NEXT.md](docs/NEXT.md), added replacement task `719`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/hotbarOverlay.test.ts src/main.test.ts -t door` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Clear malformed door remnants on snapshot restore.
 - Changes: Updated [src/world/world.ts](../src/world/world.ts) plus [src/world/world.test.ts](../src/world/world.test.ts) so `TileWorld.loadSnapshot()` now strips orphaned or mismatched door halves from resident and pruned edited snapshot data before restored world state becomes authoritative; updated [src/mainWorldSave.test.ts](../src/mainWorldSave.test.ts) plus [src/mainWorldSessionRestore.test.ts](../src/mainWorldSessionRestore.test.ts) so import-decode and restore flows cover malformed-door cleanup while preserving complete pairs; removed completed task `715` from [docs/NEXT.md](docs/NEXT.md), added replacement task `718`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/mainWorldSave.test.ts src/mainWorldSessionRestore.test.ts -t door` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

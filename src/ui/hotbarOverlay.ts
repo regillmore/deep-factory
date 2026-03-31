@@ -32,6 +32,7 @@ type SelectedGrapplingHookReadoutStatus =
   | 'dead'
   | 'latch-ready'
   | 'range-blocked';
+type SelectedDoorReadoutStatus = 'toggle-ready' | 'toggle-blocked';
 
 interface HotbarOverlayUpdateOptions {
   starterAxeSwingFeedback?:
@@ -56,6 +57,11 @@ interface HotbarOverlayUpdateOptions {
   selectedGrapplingHookReadout?:
     | {
         status: SelectedGrapplingHookReadoutStatus;
+      }
+    | null;
+  selectedDoorReadout?:
+    | {
+        status: SelectedDoorReadoutStatus;
       }
     | null;
   healingPotionCooldownFillNormalized?: number | null;
@@ -182,6 +188,32 @@ const SELECTED_GRAPPLING_HOOK_FILL_BACKGROUND: Record<
   dead: SELECTED_GRAPPLING_HOOK_DEAD_FILL_BACKGROUND,
   'latch-ready': SELECTED_GRAPPLING_HOOK_LATCH_READY_FILL_BACKGROUND,
   'range-blocked': SELECTED_GRAPPLING_HOOK_RANGE_BLOCK_FILL_BACKGROUND
+};
+const SELECTED_DOOR_TOGGLE_READY_FILL_BACKGROUND =
+  'linear-gradient(180deg, rgba(176, 255, 247, 0.05) 0%, rgba(102, 231, 222, 0.24) 35%, rgba(37, 176, 166, 0.62) 100%)';
+const SELECTED_DOOR_TOGGLE_READY_TITLE_TEXT = 'ready: placed door interaction in range';
+const SELECTED_DOOR_TOGGLE_READY_AMOUNT_TEXT = 'READY';
+const SELECTED_DOOR_TOGGLE_READY_AMOUNT_COLOR = '#c9fff8';
+const SELECTED_DOOR_TOGGLE_BLOCKED_FILL_BACKGROUND =
+  'linear-gradient(180deg, rgba(255, 212, 196, 0.08) 0%, rgba(255, 146, 122, 0.3) 35%, rgba(212, 88, 62, 0.66) 100%)';
+const SELECTED_DOOR_TOGGLE_BLOCKED_TITLE_TEXT = 'blocked: placed door interaction beyond reach';
+const SELECTED_DOOR_TOGGLE_BLOCKED_AMOUNT_TEXT = 'RANGE';
+const SELECTED_DOOR_TOGGLE_BLOCKED_AMOUNT_COLOR = '#ffd0c8';
+const SELECTED_DOOR_TITLE_TEXT: Record<SelectedDoorReadoutStatus, string> = {
+  'toggle-ready': SELECTED_DOOR_TOGGLE_READY_TITLE_TEXT,
+  'toggle-blocked': SELECTED_DOOR_TOGGLE_BLOCKED_TITLE_TEXT
+};
+const SELECTED_DOOR_AMOUNT_TEXT: Record<SelectedDoorReadoutStatus, string> = {
+  'toggle-ready': SELECTED_DOOR_TOGGLE_READY_AMOUNT_TEXT,
+  'toggle-blocked': SELECTED_DOOR_TOGGLE_BLOCKED_AMOUNT_TEXT
+};
+const SELECTED_DOOR_AMOUNT_COLOR: Record<SelectedDoorReadoutStatus, string> = {
+  'toggle-ready': SELECTED_DOOR_TOGGLE_READY_AMOUNT_COLOR,
+  'toggle-blocked': SELECTED_DOOR_TOGGLE_BLOCKED_AMOUNT_COLOR
+};
+const SELECTED_DOOR_FILL_BACKGROUND: Record<SelectedDoorReadoutStatus, string> = {
+  'toggle-ready': SELECTED_DOOR_TOGGLE_READY_FILL_BACKGROUND,
+  'toggle-blocked': SELECTED_DOOR_TOGGLE_BLOCKED_FILL_BACKGROUND
 };
 const MANA_CRYSTAL_DEAD_FILL_BACKGROUND =
   'linear-gradient(180deg, rgba(255, 170, 170, 0.08) 0%, rgba(255, 112, 112, 0.3) 35%, rgba(204, 52, 52, 0.68) 100%)';
@@ -567,6 +599,7 @@ export class HotbarOverlay {
     const selectedBowAmmoReadout = options.selectedBowAmmoReadout ?? null;
     const selectedArrowDropReadout = options.selectedArrowDropReadout ?? null;
     const selectedGrapplingHookReadout = options.selectedGrapplingHookReadout ?? null;
+    const selectedDoorReadout = options.selectedDoorReadout ?? null;
     const healingPotionCooldownFillNormalized =
       typeof options.healingPotionCooldownFillNormalized === 'number'
         ? clampUnitInterval(options.healingPotionCooldownFillNormalized)
@@ -662,6 +695,10 @@ export class HotbarOverlay {
         selected && stack.itemId === 'grappling-hook' && selectedGrapplingHookReadout !== null
           ? selectedGrapplingHookReadout
           : null;
+      const selectedDoorState =
+        selected && stack.itemId === 'door' && selectedDoorReadout !== null
+          ? selectedDoorReadout
+          : null;
       const selectedTimedItemFeedback =
         selected && stack.itemId === 'axe' && starterAxeSwingFeedback !== null
           ? {
@@ -722,6 +759,8 @@ export class HotbarOverlay {
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${selectedTimedItemFeedback.titleText})`
         : selectedGrapplingHookState !== null
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${SELECTED_GRAPPLING_HOOK_TITLE_TEXT[selectedGrapplingHookState.status]})`
+        : selectedDoorState !== null
+          ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${SELECTED_DOOR_TITLE_TEXT[selectedDoorState.status]})`
         : selectedBowCoolingDown
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${SELECTED_BOW_DRAW_COOLDOWN_TITLE_TEXT})`
         : selectedBowAmmo !== null
@@ -753,6 +792,8 @@ export class HotbarOverlay {
           ? HOTBAR_TIMED_ITEM_AMOUNT_TEXT[selectedTimedItemFeedback.phase]
           : selectedGrapplingHookState !== null
             ? SELECTED_GRAPPLING_HOOK_AMOUNT_TEXT[selectedGrapplingHookState.status]
+          : selectedDoorState !== null
+            ? SELECTED_DOOR_AMOUNT_TEXT[selectedDoorState.status]
           : selectedBowCoolingDown
             ? SELECTED_BOW_DRAW_COOLDOWN_AMOUNT_TEXT
           : selectedBowAmmo !== null
@@ -772,6 +813,8 @@ export class HotbarOverlay {
           ? HOTBAR_TIMED_ITEM_AMOUNT_COLOR[selectedTimedItemFeedback.phase]
           : selectedGrapplingHookState !== null
             ? SELECTED_GRAPPLING_HOOK_AMOUNT_COLOR[selectedGrapplingHookState.status]
+          : selectedDoorState !== null
+            ? SELECTED_DOOR_AMOUNT_COLOR[selectedDoorState.status]
           : selectedBowCoolingDown
             ? SELECTED_BOW_DRAW_COOLDOWN_AMOUNT_COLOR
           : selectedBowAmmo !== null && selectedBowAmmo.availableArrowCount <= 0
@@ -789,6 +832,8 @@ export class HotbarOverlay {
             ? selectedTimedItemFeedback.timingFillNormalized
             : selectedGrapplingHookState !== null
               ? 1
+            : selectedDoorState !== null
+              ? 1
             : selectedBowCoolingDown
               ? selectedBowDrawCooldownFillNormalized
             : selectedWandCoolingDown
@@ -804,6 +849,8 @@ export class HotbarOverlay {
             ? HOTBAR_TIMED_ITEM_FILL_BACKGROUND[selectedTimedItemFeedback.phase]
             : selectedGrapplingHookState !== null
               ? SELECTED_GRAPPLING_HOOK_FILL_BACKGROUND[selectedGrapplingHookState.status]
+            : selectedDoorState !== null
+              ? SELECTED_DOOR_FILL_BACKGROUND[selectedDoorState.status]
             : selectedBowCoolingDown
               ? SELECTED_BOW_DRAW_COOLDOWN_FILL_BACKGROUND
             : selectedWandCoolingDown
