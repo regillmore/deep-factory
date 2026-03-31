@@ -1,4 +1,9 @@
 import type { WorldAabb } from './collision';
+import {
+  findPlayerSpawnPoint,
+  type PlayerSpawnPoint,
+  type PlayerSpawnWorldView
+} from './playerSpawn';
 import { TILE_SIZE } from './constants';
 import type { PlayerInventoryItemId } from './playerInventory';
 import type { PlayerState } from './playerState';
@@ -27,6 +32,15 @@ export interface StarterBedPlacementEvaluation {
 export interface StarterBedAnchor {
   leftTileX: number;
   tileY: number;
+}
+
+export interface StarterBedRespawnWorldView
+  extends StarterBedPlacementWorldView,
+    Pick<PlayerSpawnWorldView, 'getLiquidLevel'> {}
+
+export interface StarterBedRespawnSize {
+  width: number;
+  height: number;
 }
 
 const doesAabbOverlap = (aabb: WorldAabb, other: WorldAabb): boolean =>
@@ -111,6 +125,39 @@ export const hasStarterBedGroundSupport = (
 ): boolean =>
   hasGroundSupportTile(world.getTile(leftTileX, worldTileY + 1), registry) &&
   hasGroundSupportTile(world.getTile(leftTileX + 1, worldTileY + 1), registry);
+
+export const findStarterBedRespawnPoint = (
+  world: StarterBedRespawnWorldView,
+  checkpoint: StarterBedAnchor | null,
+  size: StarterBedRespawnSize,
+  registry: TileMetadataRegistry = TILE_METADATA
+): PlayerSpawnPoint | null => {
+  if (checkpoint === null) {
+    return null;
+  }
+
+  if (!isCompleteStarterBedAtAnchor(world, checkpoint.leftTileX, checkpoint.tileY)) {
+    return null;
+  }
+
+  if (!hasStarterBedGroundSupport(world, checkpoint.leftTileX, checkpoint.tileY, registry)) {
+    return null;
+  }
+
+  return findPlayerSpawnPoint(
+    world,
+    {
+      width: size.width,
+      height: size.height,
+      originTileX: checkpoint.leftTileX,
+      originTileY: checkpoint.tileY + 1,
+      maxHorizontalOffsetTiles: 0,
+      maxVerticalOffsetTiles: 0,
+      allowOneWayPlatformSupport: true
+    },
+    registry
+  );
+};
 
 export const evaluateStarterBedPlacement = (
   world: StarterBedPlacementWorldView,

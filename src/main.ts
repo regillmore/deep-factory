@@ -391,6 +391,7 @@ import {
 } from './world/starterPlatformPlacement';
 import {
   evaluateStarterBedPlacement,
+  findStarterBedRespawnPoint,
   resolvePlacedStarterBedAnchor,
   STARTER_BED_ITEM_ID,
   STARTER_BED_LEFT_TILE_ID,
@@ -4969,8 +4970,22 @@ const bootstrap = async (): Promise<void> => {
     }
   };
 
+  const findClaimedBedCheckpointRespawnPoint = () =>
+    findStarterBedRespawnPoint(
+      {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY),
+        getLiquidLevel: (tileX, tileY) => renderer.getLiquidLevel(tileX, tileY)
+      },
+      claimedBedCheckpoint,
+      {
+        width: DEFAULT_PLAYER_WIDTH,
+        height: DEFAULT_PLAYER_HEIGHT
+      }
+    );
+
   const resolveCurrentWorldPlayerSpawn = (): void => {
-    resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
+    const worldSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
+    resolvedPlayerSpawn = findClaimedBedCheckpointRespawnPoint() ?? worldSpawn;
     playerSpawnNeedsRefresh = false;
   };
   const refreshResolvedPlayerSpawn = (): void => {
@@ -5976,6 +5991,7 @@ const bootstrap = async (): Promise<void> => {
     }
 
     claimedBedCheckpoint = claimedAnchor;
+    resolveCurrentWorldPlayerSpawn();
     return true;
   };
   const applySelectedStandalonePlayerItemUse = (request: PlayerItemUseRequest): boolean => {

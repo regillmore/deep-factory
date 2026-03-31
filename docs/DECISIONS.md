@@ -14,6 +14,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Checkpoint claims, later respawn resolution, and later bed cleanup all need one safe interaction seam that rejects orphaned halves or mismatched snapshot remnants instead of recording unstable checkpoint anchors.
 - Consequence: Future bed checkpoint, respawn, removal, or restore work should resolve claimed beds through the shared complete-pair helper rather than trusting whichever individual half-tile happened to be hovered.
 
+### 2026-03-31: Claimed bed respawns use one exact standing spot before world-spawn fallback
+
+- Decision: A claimed `Bed` checkpoint now respawns from the bed's left-half standing spot (`standingTileY = bed.tileY + 1`) only while the complete paired bed, both support tiles, and that exact standing area remain valid, and otherwise runtime falls back to the ordinary world spawn without clearing the raw claim.
+- Reason: Death respawn, embedded recovery, spawn-marker previews, and later recall-checkpoint work all need one deterministic bed respawn contract instead of each caller searching around the bed differently or silently discarding temporarily blocked claims.
+- Consequence: Future checkpoint, respawn, or recall follow-ups should reuse that shared bed-respawn helper and treat claimed bed checkpoints as raw anchors that may stay recorded even while fallback temporarily uses world spawn.
+
 ### 2026-03-31: Selected door interaction previews outline the full doorway pair
 
 - Decision: Selected `Door` toggle overlays now render from the resolved bottom-anchored pair across both top and bottom door tiles instead of outlining only the hovered half.

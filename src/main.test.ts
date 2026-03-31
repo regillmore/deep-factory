@@ -12119,6 +12119,229 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('respawns from the claimed bed checkpoint when that bed stand area stays clear', async () => {
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -4, 12, -4, 4);
+    savedWorld.setTile(3, -1, STARTER_BED_LEFT_TILE_ID);
+    savedWorld.setTile(4, -1, STARTER_BED_RIGHT_TILE_ID);
+    savedWorld.setTile(3, 0, 1);
+    savedWorld.setTile(4, 0, 1);
+    testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 0,
+      standingTileY: -1,
+      x: 8,
+      y: -16,
+      supportTileX: 0,
+      supportTileY: 0,
+      supportTileId: 1
+    });
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 56, y: 0 },
+            facing: 'right',
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'bed', amount: 1 },
+              ...Array.from({ length: 5 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 4
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 3,
+        worldTileY: -1,
+        worldX: 56,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+    runFixedUpdate();
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.claimedBedCheckpoint).toEqual({
+      leftTileX: 3,
+      tileY: -1
+    });
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    testRuntime.rendererStepPlayerStateImpl = () => ({
+      position: { x: 56, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 28 },
+      grounded: true,
+      facing: 'right' as const,
+      health: 0
+    });
+    testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'safe';
+    testRuntime.rendererPlayerCollisionContactsQueue = [
+      noContacts,
+      noContacts,
+      noContacts,
+      noContacts,
+      noContacts,
+      noContacts
+    ];
+
+    runFixedUpdate(0.1);
+    runRenderFrame();
+    runFixedUpdate(1);
+    runRenderFrame(200 + 1000 / 60, 1);
+
+    expect(testRuntime.latestDebugEditStatusStripState?.playerRespawn).toMatchObject({
+      kind: 'death',
+      spawnTile: {
+        x: 3,
+        y: 0
+      },
+      supportChunk: {
+        x: 0,
+        y: 0
+      },
+      supportLocal: {
+        x: 3,
+        y: 0
+      },
+      supportTileId: 1,
+      liquidSafetyStatus: 'safe'
+    });
+  });
+
+  it('falls back to the world spawn when a claimed bed checkpoint stand area is obstructed', async () => {
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -4, 12, -4, 4);
+    savedWorld.setTile(3, -1, STARTER_BED_LEFT_TILE_ID);
+    savedWorld.setTile(4, -1, STARTER_BED_RIGHT_TILE_ID);
+    savedWorld.setTile(3, -2, 1);
+    savedWorld.setTile(3, 0, 1);
+    savedWorld.setTile(4, 0, 1);
+    testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 0,
+      standingTileY: -1,
+      x: 8,
+      y: -16,
+      supportTileX: 0,
+      supportTileY: 0,
+      supportTileId: 1
+    });
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 56, y: 0 },
+            facing: 'right',
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'bed', amount: 1 },
+              ...Array.from({ length: 5 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 4
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 3,
+        worldTileY: -1,
+        worldX: 56,
+        worldY: -8,
+        pointerType: 'touch'
+      }
+    ];
+    runFixedUpdate();
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.claimedBedCheckpoint).toEqual({
+      leftTileX: 3,
+      tileY: -1
+    });
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    testRuntime.rendererStepPlayerStateImpl = () => ({
+      position: { x: 56, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 28 },
+      grounded: true,
+      facing: 'right' as const,
+      health: 0
+    });
+    testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'safe';
+    testRuntime.rendererPlayerCollisionContactsQueue = [
+      noContacts,
+      noContacts,
+      noContacts,
+      noContacts,
+      noContacts,
+      noContacts
+    ];
+
+    runFixedUpdate(0.1);
+    runRenderFrame();
+    runFixedUpdate(1);
+    runRenderFrame(200 + 1000 / 60, 1);
+
+    expect(testRuntime.latestDebugEditStatusStripState?.playerRespawn).toMatchObject({
+      kind: 'death',
+      spawnTile: {
+        x: 0,
+        y: -1
+      },
+      supportChunk: {
+        x: 0,
+        y: 0
+      },
+      supportLocal: {
+        x: 0,
+        y: 0
+      },
+      supportTileId: 1,
+      liquidSafetyStatus: 'safe'
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.claimedBedCheckpoint).toEqual({
+      leftTileX: 3,
+      tileY: -1
+    });
+  });
+
   it('toggles a nearby closed door pair open from the selected hotbar slot without consuming the door stack', async () => {
     setPersistedWorldSaveWithInventory(
       createPlayerInventoryState({
