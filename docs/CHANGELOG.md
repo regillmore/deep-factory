@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-31
+
+- Task: Clear malformed door remnants on snapshot restore.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts) plus [src/world/world.test.ts](../src/world/world.test.ts) so `TileWorld.loadSnapshot()` now strips orphaned or mismatched door halves from resident and pruned edited snapshot data before restored world state becomes authoritative; updated [src/mainWorldSave.test.ts](../src/mainWorldSave.test.ts) plus [src/mainWorldSessionRestore.test.ts](../src/mainWorldSessionRestore.test.ts) so import-decode and restore flows cover malformed-door cleanup while preserving complete pairs; removed completed task `715` from [docs/NEXT.md](docs/NEXT.md), added replacement task `718`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/mainWorldSave.test.ts src/mainWorldSessionRestore.test.ts -t door` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-30
 
 - Task: Add door interaction hover feedback.

@@ -488,6 +488,57 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     });
   });
 
+  it('strips malformed door remnants from restored world snapshots while preserving complete pairs', () => {
+    const malformedWorld = new TileWorld(0);
+    const doorBottomWorldTileY = -20;
+
+    expect(malformedWorld.setTile(2, doorBottomWorldTileY - 1, STARTER_DOOR_TOP_TILE_ID)).toBe(true);
+    expect(malformedWorld.setTile(4, doorBottomWorldTileY - 1, STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(true);
+    expect(malformedWorld.setTile(4, doorBottomWorldTileY, STARTER_DOOR_BOTTOM_TILE_ID)).toBe(true);
+    expect(malformedWorld.setTile(6, doorBottomWorldTileY - 1, STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(true);
+    expect(malformedWorld.setTile(6, doorBottomWorldTileY, STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toBe(true);
+
+    const envelope = {
+      ...createWorldSaveEnvelope({
+        worldSnapshot: new TileWorld(0).createSnapshot(),
+        standalonePlayerState: createPlayerState(),
+        standalonePlayerDeathState: null,
+        droppedItemStates: [],
+        cameraFollowOffset: { x: 0, y: 0 }
+      }),
+      worldSnapshot: malformedWorld.createSnapshot()
+    };
+
+    let restoredWorldSnapshot: ReturnType<TileWorld['createSnapshot']> | null = null;
+    const target = {
+      loadWorldSnapshot: vi.fn((snapshot) => {
+        restoredWorldSnapshot = snapshot;
+      }),
+      restoreStandalonePlayerState: vi.fn(),
+      restoreStandalonePlayerDeathState: vi.fn(),
+      restoreStandalonePlayerInventoryState: vi.fn(),
+      restoreStandalonePlayerEquipmentState: vi.fn(),
+      restoreDroppedItemStates: vi.fn(),
+      restoreCameraFollowOffset: vi.fn(),
+      restoreSmallTreeGrowthState: vi.fn()
+    };
+
+    const restoreResult = restoreWorldSessionFromSaveEnvelope({
+      target,
+      envelope
+    });
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(restoredWorldSnapshot!);
+    expect(restoredWorld.getTile(2, doorBottomWorldTileY - 1)).toBe(0);
+    expect(restoredWorld.getTile(4, doorBottomWorldTileY - 1)).toBe(0);
+    expect(restoredWorld.getTile(4, doorBottomWorldTileY)).toBe(0);
+    expect(restoredWorld.getTile(6, doorBottomWorldTileY - 1)).toBe(STARTER_DOOR_OPEN_TOP_TILE_ID);
+    expect(restoredWorld.getTile(6, doorBottomWorldTileY)).toBe(STARTER_DOOR_OPEN_BOTTOM_TILE_ID);
+    expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.restoredEnvelope.worldSnapshot).toEqual(restoredWorldSnapshot);
+  });
+
   it('restores crafted wood-wall inventory stacks through the session restore path', () => {
     const standalonePlayerInventoryState = createPlayerInventoryState({
       hotbar: [

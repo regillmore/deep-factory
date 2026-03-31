@@ -570,6 +570,67 @@ export class TileWorld {
     return true;
   }
 
+  private clearMalformedStarterDoorRemnantsFromLoadedSnapshot(): void {
+    const candidateCoords: Array<{ worldTileX: number; worldTileY: number }> = [];
+    const seenCoords = new Set<string>();
+    const collectDoorCoord = (worldTileX: number, worldTileY: number): void => {
+      const coordKey = `${worldTileX},${worldTileY}`;
+      if (seenCoords.has(coordKey)) {
+        return;
+      }
+
+      seenCoords.add(coordKey);
+      candidateCoords.push({ worldTileX, worldTileY });
+    };
+
+    for (const chunk of this.chunks.values()) {
+      const chunkWorldTileX = chunk.coord.x * CHUNK_SIZE;
+      const chunkWorldTileY = chunk.coord.y * CHUNK_SIZE;
+      for (let tileIndex = 0; tileIndex < chunk.tiles.length; tileIndex += 1) {
+        const tileId = chunk.tiles[tileIndex] ?? 0;
+        if (!isStarterDoorTileId(tileId)) {
+          continue;
+        }
+
+        collectDoorCoord(
+          chunkWorldTileX + (tileIndex % CHUNK_SIZE),
+          chunkWorldTileY + Math.floor(tileIndex / CHUNK_SIZE)
+        );
+      }
+    }
+
+    for (const [key, editedTiles] of this.editedChunkTiles) {
+      const coord = parseChunkCoordFromKey(key);
+      const chunkWorldTileX = coord.x * CHUNK_SIZE;
+      const chunkWorldTileY = coord.y * CHUNK_SIZE;
+      for (const [tileIndex, tileId] of editedTiles) {
+        if (!isStarterDoorTileId(tileId)) {
+          continue;
+        }
+
+        collectDoorCoord(
+          chunkWorldTileX + (tileIndex % CHUNK_SIZE),
+          chunkWorldTileY + Math.floor(tileIndex / CHUNK_SIZE)
+        );
+      }
+    }
+
+    const doorWorldView = {
+      getTile: (tileX: number, tileY: number) => this.getResolvedTileIdWithoutEnsuringChunk(tileX, tileY)
+    };
+    for (const { worldTileX, worldTileY } of candidateCoords) {
+      const tileId = this.getResidentOrEditedTileId(worldTileX, worldTileY);
+      if (!isStarterDoorTileId(tileId ?? 0)) {
+        continue;
+      }
+      if (resolveStarterDoorToggleTarget(doorWorldView, worldTileX, worldTileY) !== null) {
+        continue;
+      }
+
+      this.setEditedTileStateWithoutEnsuringChunk(worldTileX, worldTileY, 0, 0);
+    }
+  }
+
   private getResidentLiquidLevel(worldTileX: number, worldTileY: number): number | null {
     const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
     const chunk = this.getResidentChunk(chunkX, chunkY);
@@ -2028,6 +2089,7 @@ export class TileWorld {
         : (snapshot as { worldSeed: number }).worldSeed
     );
 
+    this.worldSeed = nextWorldSeed;
     this.chunks = nextChunks;
     this.editedChunkTiles = nextEditedChunkTiles;
     this.editedChunkWalls = nextEditedChunkWalls;
@@ -2038,7 +2100,7 @@ export class TileWorld {
     this.liquidChunkQuietStepCounts = new Map(
       Array.from(this.activeLiquidChunkKeys, (key): [string, number] => [key, 0])
     );
-    this.worldSeed = nextWorldSeed;
+    this.clearMalformedStarterDoorRemnantsFromLoadedSnapshot();
     this.liquidSimulationTick = expectLiquidSimulationTick(snapshot.liquidSimulationTick);
     this.lastLiquidSimulationStats = createLiquidSimulationStats();
     this.lastSidewaysLiquidCandidateChunkBounds = null;

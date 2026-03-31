@@ -1905,6 +1905,44 @@ describe('TileWorld', () => {
     expect(loaded.getLiquidLevel(liquidWorldTileX + 1, liquidWorldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
   });
 
+  it('strips malformed resident and pruned door remnants when loading snapshots', () => {
+    const source = new TileWorld(0);
+    const doorBottomWorldTileY = -20;
+    const residentOrphanTopTileX = 2;
+    const residentMismatchedTileX = 4;
+    const residentValidTileX = 6;
+    const prunedOrphanTopTileX = CHUNK_SIZE + 2;
+    const prunedMismatchedTileX = CHUNK_SIZE + 4;
+
+    expect(source.setTile(residentOrphanTopTileX, doorBottomWorldTileY - 1, STARTER_DOOR_TOP_TILE_ID)).toBe(true);
+    expect(source.setTile(residentMismatchedTileX, doorBottomWorldTileY - 1, STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(
+      true
+    );
+    expect(source.setTile(residentMismatchedTileX, doorBottomWorldTileY, STARTER_DOOR_BOTTOM_TILE_ID)).toBe(true);
+    expect(source.setTile(residentValidTileX, doorBottomWorldTileY - 1, STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(
+      true
+    );
+    expect(source.setTile(residentValidTileX, doorBottomWorldTileY, STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toBe(true);
+
+    expect(source.setTile(prunedOrphanTopTileX, doorBottomWorldTileY - 1, STARTER_DOOR_TOP_TILE_ID)).toBe(true);
+    expect(source.setTile(prunedMismatchedTileX, doorBottomWorldTileY - 1, STARTER_DOOR_TOP_TILE_ID)).toBe(true);
+    expect(source.setTile(prunedMismatchedTileX, doorBottomWorldTileY, STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toBe(true);
+
+    expect(source.pruneChunksOutside({ minChunkX: 0, minChunkY: -2, maxChunkX: 0, maxChunkY: 0 })).toBe(1);
+
+    const loaded = new TileWorld(0);
+    loaded.loadSnapshot(source.createSnapshot());
+
+    expect(loaded.getTile(residentOrphanTopTileX, doorBottomWorldTileY - 1)).toBe(0);
+    expect(loaded.getTile(residentMismatchedTileX, doorBottomWorldTileY - 1)).toBe(0);
+    expect(loaded.getTile(residentMismatchedTileX, doorBottomWorldTileY)).toBe(0);
+    expect(loaded.getTile(residentValidTileX, doorBottomWorldTileY - 1)).toBe(STARTER_DOOR_OPEN_TOP_TILE_ID);
+    expect(loaded.getTile(residentValidTileX, doorBottomWorldTileY)).toBe(STARTER_DOOR_OPEN_BOTTOM_TILE_ID);
+    expect(loaded.getTile(prunedOrphanTopTileX, doorBottomWorldTileY - 1)).toBe(0);
+    expect(loaded.getTile(prunedMismatchedTileX, doorBottomWorldTileY - 1)).toBe(0);
+    expect(loaded.getTile(prunedMismatchedTileX, doorBottomWorldTileY)).toBe(0);
+  });
+
   it('rejects snapshots with duplicate resident chunk coordinates', () => {
     const source = new TileWorld(0);
     const residentChunkSnapshot = encodeResidentChunkSnapshot(source.ensureChunk(0, 0));

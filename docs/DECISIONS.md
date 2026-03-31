@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-31: Snapshot normalization strips malformed door remnants
+
+- Decision: `TileWorld.loadSnapshot()` now clears orphaned or mismatched starter-door halves from resident chunk data and pruned edited overrides before restored world state becomes authoritative.
+- Reason: Live world edits already clean up half-door remnants, so imported or restored saves should not be able to resurrect malformed door states through raw snapshot payloads or hand-edited JSON.
+- Consequence: Future save, import, restore, or migration flows should continue routing world snapshots through shared `TileWorld` normalization instead of trusting raw paired-door tile payloads.
+
 ### 2026-03-30: Selected door previews prioritize paired-door interactions before placement copy
 
 - Decision: When selected `Door` hover targets resolve a complete paired door, preview state now reports toggle-ready or toggle-blocked interaction feedback before generic empty-doorway placement feedback.

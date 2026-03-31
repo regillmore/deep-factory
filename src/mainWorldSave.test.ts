@@ -495,6 +495,38 @@ describe('createWorldSaveEnvelope', () => {
     });
   });
 
+  it('strips malformed door remnants from imported save snapshots while preserving complete pairs', () => {
+    const malformedWorld = new TileWorld(0);
+    const doorBottomWorldTileY = -20;
+
+    expect(malformedWorld.setTile(2, doorBottomWorldTileY - 1, STARTER_DOOR_TOP_TILE_ID)).toBe(true);
+    expect(malformedWorld.setTile(4, doorBottomWorldTileY - 1, STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(true);
+    expect(malformedWorld.setTile(4, doorBottomWorldTileY, STARTER_DOOR_BOTTOM_TILE_ID)).toBe(true);
+    expect(malformedWorld.setTile(6, doorBottomWorldTileY - 1, STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(true);
+    expect(malformedWorld.setTile(6, doorBottomWorldTileY, STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toBe(true);
+
+    const rawEnvelope = {
+      ...createWorldSaveEnvelope({
+        worldSnapshot: new TileWorld(0).createSnapshot(),
+        standalonePlayerState: createPlayerState(),
+        standalonePlayerDeathState: null,
+        droppedItemStates: [],
+        cameraFollowOffset: { x: 0, y: 0 }
+      }),
+      worldSnapshot: malformedWorld.createSnapshot()
+    };
+
+    const decoded = decodeWorldSaveEnvelope(JSON.parse(JSON.stringify(rawEnvelope)));
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(decoded.worldSnapshot);
+    expect(restoredWorld.getTile(2, doorBottomWorldTileY - 1)).toBe(0);
+    expect(restoredWorld.getTile(4, doorBottomWorldTileY - 1)).toBe(0);
+    expect(restoredWorld.getTile(4, doorBottomWorldTileY)).toBe(0);
+    expect(restoredWorld.getTile(6, doorBottomWorldTileY - 1)).toBe(STARTER_DOOR_OPEN_TOP_TILE_ID);
+    expect(restoredWorld.getTile(6, doorBottomWorldTileY)).toBe(STARTER_DOOR_OPEN_BOTTOM_TILE_ID);
+  });
+
   it('round-trips a returned rope pickup stack after a placed rope tile is removed', () => {
     const world = new TileWorld(0);
     expect(world.setTile(1, -1, STARTER_ROPE_TILE_ID)).toBe(true);
