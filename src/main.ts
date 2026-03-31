@@ -394,6 +394,7 @@ import {
   resolveStarterDoorToggleTarget,
   STARTER_DOOR_BOTTOM_TILE_ID,
   STARTER_DOOR_ITEM_ID,
+  STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
   STARTER_DOOR_TOP_TILE_ID
 } from './world/starterDoorPlacement';
 import {
@@ -4171,7 +4172,6 @@ const bootstrap = async (): Promise<void> => {
       return false;
     }
 
-    refundRemovedPlacedTile(doorTarget.tileX, doorTarget.bottomTileY, STARTER_DOOR_ITEM_ID);
     return true;
   };
   const destroyWorldTileThroughGameplayRefundPaths = (
@@ -4239,6 +4239,15 @@ const bootstrap = async (): Promise<void> => {
       event.tileId !== STARTER_PLATFORM_TILE_ID
     ) {
       refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_PLATFORM_ITEM_ID);
+      return;
+    }
+
+    if (
+      (event.previousTileId === STARTER_DOOR_BOTTOM_TILE_ID ||
+        event.previousTileId === STARTER_DOOR_OPEN_BOTTOM_TILE_ID) &&
+      event.tileId !== event.previousTileId
+    ) {
+      refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_DOOR_ITEM_ID);
       return;
     }
 

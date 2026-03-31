@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-30
 
+- Task: Add gameplay support-collapse door refunds.
+- Changes: Updated [src/main.ts](../src/main.ts) so gameplay-origin removal of a placed door pair now refunds exactly one `Door` from the shared bottom-half tile-edit listener path, which lets direct mining, bomb clears, and gameplay support-collapse cleanup reuse the same refund behavior while debug-origin cleanup stays refund-free; updated [src/main.test.ts](../src/main.test.ts) with gameplay support-collapse and debug-break no-refund regressions; removed completed task `714` from [docs/NEXT.md](docs/NEXT.md), added replacement task `716`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add half-door cleanup.
 - Changes: Updated [src/world/starterDoorPlacement.ts](../src/world/starterDoorPlacement.ts) plus [src/world/starterDoorPlacement.test.ts](../src/world/starterDoorPlacement.test.ts) with a shared bottom-anchored door-pair helper, and updated [src/world/world.ts](../src/world/world.ts) plus [src/world/world.test.ts](../src/world/world.test.ts) so direct gameplay or debug tile edits that remove one half of a placed door now clear the remaining mate through the same world-owned edit path instead of leaving orphaned door tiles behind; removed completed task `713` from [docs/NEXT.md](docs/NEXT.md), added replacement task `715`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/starterDoorPlacement.test.ts src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

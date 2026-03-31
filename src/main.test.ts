@@ -17212,6 +17212,72 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('refunds exactly one door when a gameplay support removal clears a neighboring door pair', async () => {
+    setPersistedWorldSaveWithInventory();
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const supportWorldTileX = 1;
+    const supportWorldTileY = 1;
+    const doorWorldTileX = 1;
+    const doorBottomWorldTileY = 0;
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(doorWorldTileX, doorBottomWorldTileY - 1),
+      STARTER_DOOR_OPEN_TOP_TILE_ID
+    );
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(doorWorldTileX, doorBottomWorldTileY),
+      STARTER_DOOR_OPEN_BOTTOM_TILE_ID
+    );
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(supportWorldTileX, supportWorldTileY),
+      STARTER_PLATFORM_TILE_ID
+    );
+    testRuntime.rendererNextSetTileEditEvents = [
+      createTileEditEvent(supportWorldTileX, supportWorldTileY, STARTER_PLATFORM_TILE_ID, 0),
+      createTileEditEvent(
+        doorWorldTileX,
+        doorBottomWorldTileY - 1,
+        STARTER_DOOR_OPEN_TOP_TILE_ID,
+        0
+      ),
+      createTileEditEvent(
+        doorWorldTileX,
+        doorBottomWorldTileY,
+        STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+        0
+      )
+    ];
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: supportWorldTileX,
+        worldTileY: supportWorldTileY,
+        worldX: 24,
+        worldY: 24,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: 24 },
+        itemId: 'platform',
+        amount: 1
+      },
+      {
+        position: { x: 24, y: 8 },
+        itemId: 'door',
+        amount: 1
+      }
+    ]);
+  });
+
   it('cascades a mined dirt-block refund across overlapping matching world pickups before spawning a new entity', async () => {
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
@@ -17833,6 +17899,73 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererNextSetTileEditEvents = [
       createTileEditEvent(supportWorldTileX, supportWorldTileY, 1, 0, 0, 0, 'debug-break'),
       createTileEditEvent(torchWorldTileX, torchWorldTileY, 10, 0, 0, 0, 'debug-break')
+    ];
+    testRuntime.rendererSetTileResult = true;
+
+    runFixedUpdate();
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([]);
+  });
+
+  it('does not spawn a door pickup entity when a debug-break support removal clears a neighboring door pair', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const supportWorldTileX = 20;
+    const supportWorldTileY = -20;
+    const doorWorldTileX = 20;
+    const doorBottomWorldTileY = -21;
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: supportWorldTileX,
+        worldTileY: supportWorldTileY,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(supportWorldTileX, supportWorldTileY),
+      STARTER_PLATFORM_TILE_ID
+    );
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(doorWorldTileX, doorBottomWorldTileY - 1),
+      STARTER_DOOR_TOP_TILE_ID
+    );
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(doorWorldTileX, doorBottomWorldTileY),
+      STARTER_DOOR_BOTTOM_TILE_ID
+    );
+    testRuntime.rendererNextSetTileEditEvents = [
+      createTileEditEvent(
+        supportWorldTileX,
+        supportWorldTileY,
+        STARTER_PLATFORM_TILE_ID,
+        0,
+        0,
+        0,
+        'debug-break'
+      ),
+      createTileEditEvent(
+        doorWorldTileX,
+        doorBottomWorldTileY - 1,
+        STARTER_DOOR_TOP_TILE_ID,
+        0,
+        0,
+        0,
+        'debug-break'
+      ),
+      createTileEditEvent(
+        doorWorldTileX,
+        doorBottomWorldTileY,
+        STARTER_DOOR_BOTTOM_TILE_ID,
+        0,
+        0,
+        0,
+        'debug-break'
+      )
     ];
     testRuntime.rendererSetTileResult = true;
 

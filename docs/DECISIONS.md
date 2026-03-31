@@ -14,11 +14,11 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Direct single-tile door edits can come from debug breaks, undo/redo replay, or future gameplay tools, and leaving the untouched half behind would create orphaned door tiles that later pair logic intentionally ignores.
 - Consequence: Future direct door-edit flows should keep using ordinary world tile writes and rely on world-owned mate cleanup instead of preserving half-door remnants or reimplementing paired cleanup in each caller.
 
-### 2026-03-30: Gameplay door refunds resolve from one paired removal seam
+### 2026-03-30: Gameplay door refunds follow gameplay-origin bottom-half door clears
 
-- Decision: Starter-pickaxe and bomb-driven gameplay removal now resolve complete door pairs through one bottom-anchored pair-clear seam and refund exactly one `Door` pickup from that anchor.
-- Reason: Either half of a placed door can be targeted directly and bomb blasts can overlap both tiles at once, so per-tile removal would duplicate refunds or leave door cleanup behavior split across multiple paths.
-- Consequence: Future gameplay door-removal or refund work should call that shared pair-removal seam instead of removing individual door tiles or attaching refunds directly to generic per-tile edit notifications.
+- Decision: Starter-pickaxe, bomb, and gameplay support-collapse door removal now refund exactly one `Door` from the gameplay-origin tile-edit notification that removes a paired door's bottom half, while top-half door removals stay refund-free.
+- Reason: Direct pair clears and support-collapse cleanup already converge on the same bottom-anchored door contract, so one bottom-half notification gives every gameplay removal path the same single-door refund without duplicating refund logic, and debug-origin cleanup can still stay silent by preserving its edit origin.
+- Consequence: Future gameplay door-removal or support-collapse work should preserve one gameplay-origin bottom-half clear per removed pair and let the shared tile-edit listener own the refund instead of spawning door drops separately in each initiating tool path.
 
 ### 2026-03-30: Open-door blocking and cleanup follow the paired doorway support state
 
