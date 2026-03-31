@@ -40,7 +40,3 @@ These items are intentionally scoped to fit a focused implementation pass with t
 596. Add a fishing-rod cast foundation after inventory basics and save/load: define a non-stackable fishing-rod hotbar item, validate mixed-device water-only cast targets, and cover blocked-versus-cast regressions.
 597. Add fishing bobber bite timing after task 596: spawn a bobber entity for valid casts, advance deterministic wait-and-bite windows over water, and cover cancel or recast cleanup regressions.
 598. Add fish-item catches after task 597: convert successful bite resolution into fish items added to inventory, reject full-inventory catches cleanly, and cover deterministic catch plus carried-fish save or restore regressions.
-
-## Bomb utility
-
-706. Fade thrown-bomb fuse-warning opacity during the late blink after task 699: route warning-phase alpha through the shared entity-pass shader path while keeping earlier flight opaque, and cover blink-alpha regressions.

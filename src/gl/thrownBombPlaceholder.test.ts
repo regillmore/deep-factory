@@ -83,6 +83,7 @@ describe('thrownBombPlaceholder', () => {
     expect(resolveThrownBombFuseWarningVisuals(thrownBombState, bombPalette)).toEqual({
       blinkActive: false,
       minimumLightFactor: 0.45,
+      alpha: 1,
       baseColor: [0.19, 0.2, 0.24],
       accentColor: [0.88, 0.36, 0.18]
     });
@@ -102,6 +103,7 @@ describe('thrownBombPlaceholder', () => {
     ).toEqual({
       blinkActive: true,
       minimumLightFactor: 0.85,
+      alpha: 1,
       baseColor: [0.52, 0.16, 0.08],
       accentColor: [1, 0.95, 0.68]
     });
@@ -119,6 +121,7 @@ describe('thrownBombPlaceholder', () => {
     ).toEqual({
       blinkActive: false,
       minimumLightFactor: 0.45,
+      alpha: 1,
       baseColor: [0.19, 0.2, 0.24],
       accentColor: [0.88, 0.36, 0.18]
     });
@@ -136,6 +139,7 @@ describe('thrownBombPlaceholder', () => {
     ).toEqual({
       blinkActive: true,
       minimumLightFactor: 0.85,
+      alpha: 1,
       baseColor: [0.52, 0.16, 0.08],
       accentColor: [1, 0.95, 0.68]
     });
@@ -153,6 +157,7 @@ describe('thrownBombPlaceholder', () => {
     ).toEqual({
       blinkActive: false,
       minimumLightFactor: 0.45,
+      alpha: 0.55,
       baseColor: [0.19, 0.2, 0.24],
       accentColor: [0.88, 0.36, 0.18]
     });

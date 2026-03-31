@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-30: Thrown-bomb late-fuse opacity fades only on fast warning off-beats
+
+- Decision: Thrown-bomb fuse warnings now keep full opacity during ordinary flight and the slow warning cadence, and only lower alpha on the fast late-fuse off-beats through the shared palette-shader uniform.
+- Reason: Early warning beats still need a readable in-flight silhouette, while the final rapid blink needs a stronger urgency cue without introducing a bomb-only render path or frame-owned fade timer.
+- Consequence: Future thrown-bomb warning tuning should extend the shared warning-visual helper and palette-shader alpha path instead of fading the whole fuse window or layering on a second opacity system.
+
 ### 2026-03-30: Gameplay door refunds resolve from one paired removal seam
 
 - Decision: Starter-pickaxe and bomb-driven gameplay removal now resolve complete door pairs through one bottom-anchored pair-clear seam and refund exactly one `Door` pickup from that anchor.

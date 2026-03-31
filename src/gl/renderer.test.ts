@@ -3423,7 +3423,63 @@ describe('Renderer atlas telemetry', () => {
     expect(warningVisuals.blinkActive).toBe(true);
     expect(uniform1f.mock.calls).toHaveLength(2);
     expect(uniform1f.mock.calls[0]?.[1]).toBeCloseTo(warningVisuals.minimumLightFactor, 6);
-    expect(uniform1f.mock.calls[1]?.[1]).toBe(1);
+    expect(uniform1f.mock.calls[1]?.[1]).toBeCloseTo(warningVisuals.alpha, 6);
+    expect(uniform3f.mock.calls).toEqual([
+      [
+        expect.anything(),
+        warningVisuals.baseColor[0],
+        warningVisuals.baseColor[1],
+        warningVisuals.baseColor[2]
+      ],
+      [
+        expect.anything(),
+        warningVisuals.accentColor[0],
+        warningVisuals.accentColor[1],
+        warningVisuals.accentColor[2]
+      ]
+    ]);
+  });
+
+  it('fades late off-beat thrown-bomb placeholders through the shared alpha uniform', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
+    });
+    await renderer.initialize();
+
+    const uniform1f = vi.mocked(gl.uniform1f);
+    const uniform3f = vi.mocked(gl.uniform3f);
+    uniform1f.mockClear();
+    uniform3f.mockClear();
+
+    const currentState = createThrownBombState({
+      position: { x: 80, y: 60 },
+      velocity: { x: 120, y: -30 },
+      radius: 6,
+      secondsRemaining: 0.22
+    });
+    const warningVisuals = resolveThrownBombFuseWarningVisuals(
+      currentState,
+      getDroppedItemPlaceholderPalette('bomb')
+    );
+
+    renderer.render(new Camera2D(), {
+      entities: [createThrownBombEntityFrameState(currentState, { id: 58 })],
+      renderAlpha: 1,
+      timeMs: 0
+    });
+
+    expect(warningVisuals.blinkActive).toBe(false);
+    expect(warningVisuals.alpha).toBeLessThan(1);
+    expect(uniform1f.mock.calls).toHaveLength(2);
+    expect(uniform1f.mock.calls[0]?.[1]).toBeCloseTo(warningVisuals.minimumLightFactor, 6);
+    expect(uniform1f.mock.calls[1]?.[1]).toBeCloseTo(warningVisuals.alpha, 6);
     expect(uniform3f.mock.calls).toEqual([
       [
         expect.anything(),

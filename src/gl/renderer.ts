@@ -1852,7 +1852,7 @@ export class Renderer {
       this.uDroppedItemLight,
       Math.max(warningVisuals.minimumLightFactor, nearbyLightSample.level / MAX_LIGHT_LEVEL)
     );
-    gl.uniform1f(this.uDroppedItemAlpha, 1);
+    gl.uniform1f(this.uDroppedItemAlpha, warningVisuals.alpha);
     gl.uniform3f(
       this.uDroppedItemBaseColor,
       warningVisuals.baseColor[0],
