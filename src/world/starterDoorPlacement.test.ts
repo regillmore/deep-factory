@@ -5,8 +5,11 @@ import {
   evaluateStarterDoorPlacement,
   hasStarterDoorDoorwaySupport,
   isStarterDoorTileId,
+  resolveStarterDoorToggleTarget,
   STARTER_DOOR_BOTTOM_TILE_ID,
   STARTER_DOOR_ITEM_ID,
+  STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+  STARTER_DOOR_OPEN_TOP_TILE_ID,
   STARTER_DOOR_TOP_TILE_ID
 } from './starterDoorPlacement';
 import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
@@ -16,12 +19,16 @@ const createWorld = (tiles: Record<string, number> = {}) => ({
 });
 
 describe('starterDoorPlacement', () => {
-  it('exports the shared door item and paired closed-door tile ids', () => {
+  it('exports the shared door item plus closed and open paired door tile ids', () => {
     expect(STARTER_DOOR_ITEM_ID).toBe('door');
     expect(STARTER_DOOR_BOTTOM_TILE_ID).toBe(23);
     expect(STARTER_DOOR_TOP_TILE_ID).toBe(24);
+    expect(STARTER_DOOR_OPEN_BOTTOM_TILE_ID).toBe(25);
+    expect(STARTER_DOOR_OPEN_TOP_TILE_ID).toBe(26);
     expect(isStarterDoorTileId(STARTER_DOOR_BOTTOM_TILE_ID)).toBe(true);
     expect(isStarterDoorTileId(STARTER_DOOR_TOP_TILE_ID)).toBe(true);
+    expect(isStarterDoorTileId(STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toBe(true);
+    expect(isStarterDoorTileId(STARTER_DOOR_OPEN_TOP_TILE_ID)).toBe(true);
     expect(isStarterDoorTileId(19)).toBe(false);
   });
 
@@ -109,5 +116,44 @@ describe('starterDoorPlacement', () => {
       blockedByPlayer: true,
       canPlace: false
     });
+  });
+
+  it('resolves a complete paired door toggle target from either tile and rejects mismatched pairs', () => {
+    const closedDoorWorld = createWorld({
+      '0,-2': STARTER_DOOR_TOP_TILE_ID,
+      '0,-1': STARTER_DOOR_BOTTOM_TILE_ID
+    });
+    const openDoorWorld = createWorld({
+      '0,-2': STARTER_DOOR_OPEN_TOP_TILE_ID,
+      '0,-1': STARTER_DOOR_OPEN_BOTTOM_TILE_ID
+    });
+    const mismatchedDoorWorld = createWorld({
+      '0,-2': STARTER_DOOR_OPEN_TOP_TILE_ID,
+      '0,-1': STARTER_DOOR_BOTTOM_TILE_ID
+    });
+
+    expect(resolveStarterDoorToggleTarget(closedDoorWorld, 0, -1)).toEqual({
+      tileX: 0,
+      bottomTileY: -1,
+      state: 'closed',
+      nextBottomTileId: STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+      nextTopTileId: STARTER_DOOR_OPEN_TOP_TILE_ID
+    });
+    expect(resolveStarterDoorToggleTarget(closedDoorWorld, 0, -2)).toEqual({
+      tileX: 0,
+      bottomTileY: -1,
+      state: 'closed',
+      nextBottomTileId: STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+      nextTopTileId: STARTER_DOOR_OPEN_TOP_TILE_ID
+    });
+    expect(resolveStarterDoorToggleTarget(openDoorWorld, 0, -1)).toEqual({
+      tileX: 0,
+      bottomTileY: -1,
+      state: 'open',
+      nextBottomTileId: STARTER_DOOR_BOTTOM_TILE_ID,
+      nextTopTileId: STARTER_DOOR_TOP_TILE_ID
+    });
+    expect(resolveStarterDoorToggleTarget(mismatchedDoorWorld, 0, -1)).toBeNull();
+    expect(resolveStarterDoorToggleTarget(createWorld(), 0, -1)).toBeNull();
   });
 });

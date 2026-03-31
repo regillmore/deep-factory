@@ -1349,6 +1349,28 @@
       "render": {
         "atlasIndex": 33
       }
+    },
+    {
+      "id": 25,
+      "name": "open_door_bottom",
+      "gameplay": {
+        "solid": true,
+        "blocksLight": true
+      },
+      "render": {
+        "atlasIndex": 33
+      }
+    },
+    {
+      "id": 26,
+      "name": "open_door_top",
+      "gameplay": {
+        "solid": true,
+        "blocksLight": true
+      },
+      "render": {
+        "atlasIndex": 33
+      }
     }
   ]
 }

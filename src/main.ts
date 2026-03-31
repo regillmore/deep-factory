@@ -391,6 +391,7 @@ import {
 } from './world/starterPlatformPlacement';
 import {
   evaluateStarterDoorPlacement,
+  resolveStarterDoorToggleTarget,
   STARTER_DOOR_BOTTOM_TILE_ID,
   STARTER_DOOR_ITEM_ID,
   STARTER_DOOR_TOP_TILE_ID
@@ -5910,6 +5911,59 @@ const bootstrap = async (): Promise<void> => {
     }
     if (selectedStack.itemId === HEART_CRYSTAL_ITEM_ID) {
       return tryUseSelectedHeartCrystal();
+    }
+    if (selectedStack.itemId === STARTER_DOOR_ITEM_ID) {
+      const standalonePlayerState = getStandalonePlayerState();
+      if (
+        standalonePlayerState === null ||
+        standalonePlayerDeathState !== null ||
+        isStandalonePlayerDead(standalonePlayerState)
+      ) {
+        return false;
+      }
+
+      const toggleTarget = resolveStarterDoorToggleTarget(
+        {
+          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+        },
+        request.worldTileX,
+        request.worldTileY
+      );
+      if (toggleTarget !== null) {
+        const placementRange = evaluatePlayerHotbarTilePlacementRange(
+          standalonePlayerState,
+          request.worldTileX,
+          request.worldTileY
+        );
+        if (!placementRange.withinRange) {
+          return false;
+        }
+
+        const bottomEditResult = applyWorldTileEdit(
+          toggleTarget.tileX,
+          toggleTarget.bottomTileY,
+          toggleTarget.nextBottomTileId
+        );
+        if (!bottomEditResult.changed) {
+          return false;
+        }
+
+        const topEditResult = applyWorldTileEdit(
+          toggleTarget.tileX,
+          toggleTarget.bottomTileY - 1,
+          toggleTarget.nextTopTileId
+        );
+        if (!topEditResult.changed) {
+          applyWorldTileEdit(
+            toggleTarget.tileX,
+            toggleTarget.bottomTileY,
+            bottomEditResult.previousTileId
+          );
+          return false;
+        }
+
+        return true;
+      }
     }
 
     const placementPreview = getSelectedStandalonePlayerItemPlacementPreviewAtTile(

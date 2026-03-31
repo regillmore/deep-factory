@@ -93,7 +93,7 @@ const describeAuthoredSourceFromPixels = (
 
 describe('tile metadata loader', () => {
   it('loads placeholder terrain autotile mappings from JSON', () => {
-    expect(TILE_METADATA.tilesById.size).toBeGreaterThanOrEqual(22);
+    expect(TILE_METADATA.tilesById.size).toBeGreaterThanOrEqual(26);
     expect(hasTerrainAutotileMetadata(1)).toBe(true);
     expect(hasTerrainAutotileMetadata(2)).toBe(true);
     expect(hasTerrainAutotileMetadata(13)).toBe(true);
@@ -166,10 +166,19 @@ describe('tile metadata loader', () => {
       solid: true,
       blocksLight: true
     });
+    expect(resolveTileGameplayMetadata(25)).toEqual({
+      solid: true,
+      blocksLight: true
+    });
+    expect(resolveTileGameplayMetadata(26)).toEqual({
+      solid: true,
+      blocksLight: true
+    });
     expect(isTileSolid(1)).toBe(true);
     expect(isTileSolid(4)).toBe(false);
     expect(isTileSolid(19)).toBe(true);
     expect(isTileSolid(23)).toBe(true);
+    expect(isTileSolid(25)).toBe(true);
     expect(isTileClimbable(11)).toBe(true);
     expect(isTileClimbable(10)).toBe(false);
     expect(isTileOneWayPlatform(20)).toBe(true);
@@ -177,6 +186,7 @@ describe('tile metadata loader', () => {
     expect(doesTileBlockLight(1)).toBe(true);
     expect(doesTileBlockLight(4)).toBe(false);
     expect(doesTileBlockLight(19)).toBe(true);
+    expect(doesTileBlockLight(25)).toBe(true);
     expect(getTileEmissiveLightLevel(10)).toBe(12);
     expect(getTileLiquidKind(1)).toBe(null);
     expect(getTileLiquidKind(7)).toBe('water');
@@ -206,6 +216,8 @@ describe('tile metadata loader', () => {
     expect(resolveTileRenderUvRect(22)).toEqual(atlasIndexToUvRect(38));
     expect(resolveTileRenderUvRect(23)).toEqual(atlasIndexToUvRect(33));
     expect(resolveTileRenderUvRect(24)).toEqual(atlasIndexToUvRect(33));
+    expect(resolveTileRenderUvRect(25)).toEqual(atlasIndexToUvRect(33));
+    expect(resolveTileRenderUvRect(26)).toEqual(atlasIndexToUvRect(33));
     expect(hasAnimatedTileRenderMetadata(10)).toBe(true);
     expect(hasAnimatedTileRenderMetadata(18)).toBe(true);
     expect(getAnimatedTileRenderFrameCount(10)).toBe(2);

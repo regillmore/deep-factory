@@ -12,6 +12,10 @@ import {
 export const STARTER_DOOR_ITEM_ID: PlayerInventoryItemId = 'door';
 export const STARTER_DOOR_BOTTOM_TILE_ID = 23;
 export const STARTER_DOOR_TOP_TILE_ID = 24;
+export const STARTER_DOOR_OPEN_BOTTOM_TILE_ID = 25;
+export const STARTER_DOOR_OPEN_TOP_TILE_ID = 26;
+
+export type StarterDoorState = 'closed' | 'open';
 
 export interface StarterDoorPlacementWorldView {
   getTile(worldTileX: number, worldTileY: number): number;
@@ -22,6 +26,14 @@ export interface StarterDoorPlacementEvaluation {
   hasSolidFaceSupport: boolean;
   blockedByPlayer: boolean;
   canPlace: boolean;
+}
+
+export interface StarterDoorToggleTarget {
+  tileX: number;
+  bottomTileY: number;
+  state: StarterDoorState;
+  nextBottomTileId: number;
+  nextTopTileId: number;
 }
 
 const doesAabbOverlap = (aabb: WorldAabb, other: WorldAabb): boolean =>
@@ -48,7 +60,70 @@ const getPlayerBodyAabb = (playerState: Pick<PlayerState, 'position' | 'size'>):
 };
 
 export const isStarterDoorTileId = (tileId: number): boolean =>
-  tileId === STARTER_DOOR_BOTTOM_TILE_ID || tileId === STARTER_DOOR_TOP_TILE_ID;
+  tileId === STARTER_DOOR_BOTTOM_TILE_ID ||
+  tileId === STARTER_DOOR_TOP_TILE_ID ||
+  tileId === STARTER_DOOR_OPEN_BOTTOM_TILE_ID ||
+  tileId === STARTER_DOOR_OPEN_TOP_TILE_ID;
+
+const isStarterDoorBottomTileId = (tileId: number): boolean =>
+  tileId === STARTER_DOOR_BOTTOM_TILE_ID || tileId === STARTER_DOOR_OPEN_BOTTOM_TILE_ID;
+
+const isStarterDoorTopTileId = (tileId: number): boolean =>
+  tileId === STARTER_DOOR_TOP_TILE_ID || tileId === STARTER_DOOR_OPEN_TOP_TILE_ID;
+
+const resolveStarterDoorStateFromPair = (
+  bottomTileId: number,
+  topTileId: number
+): StarterDoorState | null => {
+  if (
+    bottomTileId === STARTER_DOOR_BOTTOM_TILE_ID &&
+    topTileId === STARTER_DOOR_TOP_TILE_ID
+  ) {
+    return 'closed';
+  }
+  if (
+    bottomTileId === STARTER_DOOR_OPEN_BOTTOM_TILE_ID &&
+    topTileId === STARTER_DOOR_OPEN_TOP_TILE_ID
+  ) {
+    return 'open';
+  }
+  return null;
+};
+
+export const resolveStarterDoorToggleTarget = (
+  world: StarterDoorPlacementWorldView,
+  worldTileX: number,
+  worldTileY: number
+): StarterDoorToggleTarget | null => {
+  const targetedTileId = world.getTile(worldTileX, worldTileY);
+  if (!isStarterDoorTileId(targetedTileId)) {
+    return null;
+  }
+
+  let bottomTileY = worldTileY;
+  if (isStarterDoorTopTileId(targetedTileId)) {
+    bottomTileY += 1;
+  } else if (!isStarterDoorBottomTileId(targetedTileId)) {
+    return null;
+  }
+
+  const bottomTileId = world.getTile(worldTileX, bottomTileY);
+  const topTileId = world.getTile(worldTileX, bottomTileY - 1);
+  const state = resolveStarterDoorStateFromPair(bottomTileId, topTileId);
+  if (state === null) {
+    return null;
+  }
+
+  return {
+    tileX: worldTileX,
+    bottomTileY,
+    state,
+    nextBottomTileId:
+      state === 'closed' ? STARTER_DOOR_OPEN_BOTTOM_TILE_ID : STARTER_DOOR_BOTTOM_TILE_ID,
+    nextTopTileId:
+      state === 'closed' ? STARTER_DOOR_OPEN_TOP_TILE_ID : STARTER_DOOR_TOP_TILE_ID
+  };
+};
 
 export const hasStarterDoorDoorwaySupport = (
   world: StarterDoorPlacementWorldView,

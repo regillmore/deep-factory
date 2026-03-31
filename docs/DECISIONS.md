@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-30: Door interactions toggle only complete paired door states in place
+
+- Decision: Selected `Door` use now treats either targeted top or bottom door tile as a request to toggle the full paired doorway in place between closed and open tile ids, and leaves the carried stack untouched.
+- Reason: Mixed-device interactions need one stable pair-resolution seam that both placement and later collision or refund work can reuse, while incomplete or mismatched pairs should fail safely instead of rewriting half a door.
+- Consequence: Future door preview, collision, cleanup, refund, and save/load follow-ups should resolve doors through that complete bottom-anchored pair-toggle contract rather than editing individual door tiles or consuming inventory on interaction.
+
 ### 2026-03-30: Closed doors place as framed two-tile doorway pairs
 
 - Decision: Door placement now treats the targeted cell as the bottom of a paired closed-door top/bottom write, requiring both door cells to be empty, solid left and right side columns across both rows, and a solid-or-platform floor below before consuming one `Door`.
