@@ -158,9 +158,18 @@ describe('tile metadata loader', () => {
       solid: false,
       blocksLight: false
     });
+    expect(resolveTileGameplayMetadata(23)).toEqual({
+      solid: true,
+      blocksLight: true
+    });
+    expect(resolveTileGameplayMetadata(24)).toEqual({
+      solid: true,
+      blocksLight: true
+    });
     expect(isTileSolid(1)).toBe(true);
     expect(isTileSolid(4)).toBe(false);
     expect(isTileSolid(19)).toBe(true);
+    expect(isTileSolid(23)).toBe(true);
     expect(isTileClimbable(11)).toBe(true);
     expect(isTileClimbable(10)).toBe(false);
     expect(isTileOneWayPlatform(20)).toBe(true);
@@ -195,6 +204,8 @@ describe('tile metadata loader', () => {
     expect(resolveTileRenderUvRect(20)).toEqual(atlasIndexToUvRect(21));
     expect(resolveTileRenderUvRect(21)).toEqual(atlasIndexToUvRect(37));
     expect(resolveTileRenderUvRect(22)).toEqual(atlasIndexToUvRect(38));
+    expect(resolveTileRenderUvRect(23)).toEqual(atlasIndexToUvRect(33));
+    expect(resolveTileRenderUvRect(24)).toEqual(atlasIndexToUvRect(33));
     expect(hasAnimatedTileRenderMetadata(10)).toBe(true);
     expect(hasAnimatedTileRenderMetadata(18)).toBe(true);
     expect(getAnimatedTileRenderFrameCount(10)).toBe(2);

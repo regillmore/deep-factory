@@ -16,6 +16,7 @@ describe('playerItemCatalog', () => {
       'Copper Ore',
       'Dirt Block',
       'Dirt Wall',
+      'Door',
       'Furnace',
       'Gel',
       'Grappling Hook',
@@ -70,6 +71,7 @@ describe('playerItemCatalog', () => {
     expect(searchPlayerItemCatalog('dirt wall').map((entry) => entry.itemId)).toEqual([
       'dirt-wall'
     ]);
+    expect(searchPlayerItemCatalog('door').map((entry) => entry.itemId)).toEqual(['door']);
     expect(searchPlayerItemCatalog('plat').map((entry) => entry.itemId)).toEqual([
       'platform'
     ]);

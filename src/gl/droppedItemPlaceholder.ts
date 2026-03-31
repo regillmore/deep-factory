@@ -109,6 +109,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
     baseColor: [0.47, 0.31, 0.16],
     accentColor: [0.82, 0.66, 0.41]
   },
+  door: {
+    baseColor: [0.45, 0.3, 0.16],
+    accentColor: [0.8, 0.64, 0.4]
+  },
   umbrella: {
     baseColor: [0.53, 0.35, 0.16],
     accentColor: [0.96, 0.82, 0.48]

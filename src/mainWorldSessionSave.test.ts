@@ -7,6 +7,10 @@ import { createPlayerInventoryState } from './world/playerInventory';
 import { createPlayerEquipmentState } from './world/playerEquipment';
 import { createPlayerState } from './world/playerState';
 import { createSmallTreeGrowthState } from './world/smallTreeGrowth';
+import {
+  STARTER_DOOR_BOTTOM_TILE_ID,
+  STARTER_DOOR_TOP_TILE_ID
+} from './world/starterDoorPlacement';
 import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
 import { TileWorld } from './world/world';
 import { createWorldSessionSaveEnvelope } from './mainWorldSessionSave';
@@ -271,6 +275,38 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(envelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'wood-wall',
       amount: 5
+    });
+  });
+
+  it('captures a placed closed-door pair together with the remaining door stack count', () => {
+    const world = new TileWorld(0);
+    expect(world.setTile(6, -2, STARTER_DOOR_TOP_TILE_ID)).toBe(true);
+    expect(world.setTile(6, -1, STARTER_DOOR_BOTTOM_TILE_ID)).toBe(true);
+
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [null, { itemId: 'door', amount: 2 }, ...Array.from({ length: 8 }, () => null)],
+      selectedHotbarSlotIndex: 1
+    });
+    const source = {
+      createWorldSnapshot: vi.fn(() => world.createSnapshot()),
+      getStandalonePlayerState: vi.fn(() => createPlayerState()),
+      getStandalonePlayerDeathState: vi.fn(() => null),
+      getStandalonePlayerInventoryState: vi.fn(() => standalonePlayerInventoryState),
+      getStandalonePlayerEquipmentState: vi.fn(() => createPlayerEquipmentState()),
+      getDroppedItemStates: vi.fn(() => []),
+      getCameraFollowOffset: vi.fn(() => ({ x: 0, y: 0 })),
+      getSmallTreeGrowthState: vi.fn(() => createSmallTreeGrowthState())
+    };
+
+    const envelope = createWorldSessionSaveEnvelope({ source });
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(envelope.worldSnapshot);
+    expect(restoredWorld.getTile(6, -2)).toBe(STARTER_DOOR_TOP_TILE_ID);
+    expect(restoredWorld.getTile(6, -1)).toBe(STARTER_DOOR_BOTTOM_TILE_ID);
+    expect(envelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'door',
+      amount: 2
     });
   });
 

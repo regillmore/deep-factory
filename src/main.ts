@@ -390,6 +390,12 @@ import {
   STARTER_PLATFORM_TILE_ID
 } from './world/starterPlatformPlacement';
 import {
+  evaluateStarterDoorPlacement,
+  STARTER_DOOR_BOTTOM_TILE_ID,
+  STARTER_DOOR_ITEM_ID,
+  STARTER_DOOR_TOP_TILE_ID
+} from './world/starterDoorPlacement';
+import {
   chopSmallTreeAtAnchor,
   createStarterAxeChoppingState,
   evaluateStarterAxeChoppingTarget,
@@ -5913,6 +5919,33 @@ const bootstrap = async (): Promise<void> => {
     if (!placementPreview?.canPlace) {
       return false;
     }
+    if (selectedStack.itemId === STARTER_DOOR_ITEM_ID) {
+      const bottomEditResult = applyWorldTileEdit(
+        placementPreview.placementTileX,
+        placementPreview.placementTileY,
+        STARTER_DOOR_BOTTOM_TILE_ID
+      );
+      if (!bottomEditResult.changed) {
+        return false;
+      }
+
+      const topTileY = placementPreview.placementTileY - 1;
+      const topEditResult = applyWorldTileEdit(
+        placementPreview.placementTileX,
+        topTileY,
+        STARTER_DOOR_TOP_TILE_ID
+      );
+      if (!topEditResult.changed) {
+        applyWorldTileEdit(
+          placementPreview.placementTileX,
+          placementPreview.placementTileY,
+          bottomEditResult.previousTileId
+        );
+        return false;
+      }
+
+      return applySelectedStandalonePlayerHotbarSlotConsumption();
+    }
 
     let placementTileId: number | null = null;
     let placementWallId: number | null = null;
@@ -6100,6 +6133,16 @@ const bootstrap = async (): Promise<void> => {
             {
               getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
             },
+            worldTileX,
+            worldTileY
+          );
+          break;
+        case STARTER_DOOR_ITEM_ID:
+          placement = evaluateStarterDoorPlacement(
+            {
+              getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+            },
+            standalonePlayerState,
             worldTileX,
             worldTileY
           );

@@ -109,6 +109,10 @@ import {
   STARTER_PICKAXE_SWING_WINDUP_SECONDS
 } from './world/starterPickaxeMining';
 import { PLACEABLE_WOOD_BLOCK_TILE_ID } from './world/starterBlockPlacement';
+import {
+  STARTER_DOOR_BOTTOM_TILE_ID,
+  STARTER_DOOR_TOP_TILE_ID
+} from './world/starterDoorPlacement';
 import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
 import { STARTER_PLATFORM_TILE_ID } from './world/starterPlatformPlacement';
 import {
@@ -11630,6 +11634,73 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[4]).toEqual({
       itemId: 'platform',
       amount: 11
+    });
+  });
+
+  it('places a closed door pair from the selected hotbar slot while the full debug-edit panel is hidden', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'dirt-block', amount: 64 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'door', amount: 4 },
+          ...Array.from({ length: 5 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 4
+      }),
+      createPlayerState({
+        position: { x: 40, y: 0 },
+        facing: 'right',
+        grounded: true
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('5', 'Digit5').prevented).toBe(true);
+    expect(testRuntime.canvasInteractionMode).toBe('play');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, -2), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, -1), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(5, -2), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(5, -1), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.delete(worldTileKey(4, -2));
+    testRuntime.rendererTileIdsByWorldKey.delete(worldTileKey(4, -1));
+    testRuntime.rendererPersistentSetTileResult = true;
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 4,
+        worldTileY: -1,
+        worldX: 72,
+        worldY: -8,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 4,
+        worldTileY: -1,
+        tileId: STARTER_DOOR_BOTTOM_TILE_ID
+      },
+      {
+        worldTileX: 4,
+        worldTileY: -2,
+        tileId: STARTER_DOOR_TOP_TILE_ID
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[4]).toEqual({
+      itemId: 'door',
+      amount: 3
     });
   });
 

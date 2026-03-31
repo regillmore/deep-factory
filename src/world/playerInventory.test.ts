@@ -520,6 +520,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'PLAT',
       maxStackSize: 999
     });
+    expect(getPlayerInventoryItemDefinition('door')).toEqual({
+      id: 'door',
+      label: 'Door',
+      hotbarLabel: 'DOOR',
+      maxStackSize: 99
+    });
     expect(getPlayerInventoryItemDefinition('healing-potion')).toEqual({
       id: 'healing-potion',
       label: 'Healing Potion',
@@ -615,6 +621,7 @@ describe('playerInventory', () => {
       'torch',
       'rope',
       'platform',
+      'door',
       'umbrella',
       'bug-net',
       'bunny',

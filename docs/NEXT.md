@@ -18,9 +18,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Door utility
 
-586. Add placeable door items after starter building-block placement and save/load: define a stackable door hotbar item, validate two-tile doorway placement footprints, and preserve placed closed-door state through world snapshots.
 587. Add mixed-device door open-or-close interactions after task 586: toggle nearby placed doors between closed and open states without consuming the carried stack and cover paired tile-state regressions.
 588. Add door collision and cleanup rules after task 587: swap blocking behavior with the current open-or-closed state, clear unsupported doors deterministically, and preserve open or closed door state through snapshot restore.
+711. Add door pickup refunds after task 588: let starter-pickaxe or equivalent shared utility removal clear placed doors through one paired-door path and return exactly one `Door` item without duplicate refunds.
 
 ## Recall mirror recovery
 

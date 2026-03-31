@@ -165,6 +165,13 @@ describe('droppedItemPlaceholder', () => {
     });
   });
 
+  it('provides a dedicated placeholder palette for door pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('door')).toEqual({
+      baseColor: [0.45, 0.3, 0.16],
+      accentColor: [0.8, 0.64, 0.4]
+    });
+  });
+
   it('provides a dedicated placeholder palette for grappling-hook pickups', () => {
     expect(getDroppedItemPlaceholderPalette('grappling-hook')).toEqual({
       baseColor: [0.36, 0.39, 0.48],

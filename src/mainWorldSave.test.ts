@@ -19,6 +19,10 @@ import {
   DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS
 } from './world/playerState';
 import { createSmallTreeGrowthState } from './world/smallTreeGrowth';
+import {
+  STARTER_DOOR_BOTTOM_TILE_ID,
+  STARTER_DOOR_TOP_TILE_ID
+} from './world/starterDoorPlacement';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import { STARTER_PLATFORM_TILE_ID } from './world/starterPlatformPlacement';
 import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
@@ -440,6 +444,40 @@ describe('createWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerInventoryState.hotbar[3]).toEqual({
       itemId: 'platform',
       amount: 9
+    });
+  });
+
+  it('preserves a placed closed-door pair together with the consumed door stack count', () => {
+    const world = new TileWorld(0);
+    expect(world.setTile(4, -2, STARTER_DOOR_TOP_TILE_ID)).toBe(true);
+    expect(world.setTile(4, -1, STARTER_DOOR_BOTTOM_TILE_ID)).toBe(true);
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [null, null, null, { itemId: 'door', amount: 3 }, ...Array.from({ length: 6 }, () => null)],
+      selectedHotbarSlotIndex: 3
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(decoded.worldSnapshot);
+    expect(restoredWorld.getTile(4, -2)).toBe(STARTER_DOOR_TOP_TILE_ID);
+    expect(restoredWorld.getTile(4, -1)).toBe(STARTER_DOOR_BOTTOM_TILE_ID);
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[3]).toEqual({
+      itemId: 'door',
+      amount: 3
     });
   });
 

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-30: Closed doors place as framed two-tile doorway pairs
+
+- Decision: Door placement now treats the targeted cell as the bottom of a paired closed-door top/bottom write, requiring both door cells to be empty, solid left and right side columns across both rows, and a solid-or-platform floor below before consuming one `Door`.
+- Reason: The first door slice needs one stable closed-state footprint that matches the simplified 1x2 doorway model and gives later open/close, collision, and cleanup work one shared frame rule to extend.
+- Consequence: Future door interaction, cleanup, and refund work should operate on that paired bottom-anchored closed-door footprint instead of treating doors as single tiles or redefining what counts as doorway support.
+
 ### 2026-03-30: World-session replacement clears bow ammo reservations through shared projectile cleanup
 
 - Decision: Fresh-world and paused save-restore replacement now clear active arrow projectile entities through one shared bow cleanup seam before session-owned entity registries reset, so reserved ammo does not leak into replacement sessions that do not persist projectile entities.
