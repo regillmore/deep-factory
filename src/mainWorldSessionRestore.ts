@@ -5,8 +5,12 @@ import { consolidateDroppedItemStates, type DroppedItemState } from './world/dro
 import type { PlayerInventoryState } from './world/playerInventory';
 import type { PlayerEquipmentState } from './world/playerEquipment';
 import type { SmallTreeGrowthState } from './world/smallTreeGrowth';
+import {
+  isCompleteStarterBedAtAnchor,
+  type StarterBedAnchor
+} from './world/starterBedPlacement';
 import type { PlayerState } from './world/playerState';
-import type { TileWorldSnapshot } from './world/world';
+import { TileWorld, type TileWorldSnapshot } from './world/world';
 
 export interface WorldSessionRestoreTarget {
   loadWorldSnapshot(snapshot: TileWorldSnapshot): void;
@@ -15,6 +19,7 @@ export interface WorldSessionRestoreTarget {
   restoreStandalonePlayerInventoryState(inventoryState: PlayerInventoryState): void;
   restoreStandalonePlayerEquipmentState(equipmentState: PlayerEquipmentState): void;
   restoreDroppedItemStates(droppedItemStates: DroppedItemState[]): void;
+  restoreClaimedBedCheckpoint(claimedBedCheckpoint: StarterBedAnchor | null): void;
   restoreCameraFollowOffset(cameraFollowOffset: CameraFollowOffset): void;
   restoreSmallTreeGrowthState(smallTreeGrowthState: SmallTreeGrowthState): void;
 }
@@ -27,6 +32,7 @@ export interface RestoreWorldSessionFromSaveEnvelopeOptions {
 export interface RestoreWorldSessionFromSaveEnvelopeResult {
   restoredEnvelope: WorldSaveEnvelope;
   didNormalizeDroppedItemStates: boolean;
+  didNormalizeClaimedBedCheckpoint: boolean;
 }
 
 const areDroppedItemStatesEqual = (
@@ -55,6 +61,38 @@ const areDroppedItemStatesEqual = (
   return true;
 };
 
+const areClaimedBedCheckpointsEqual = (
+  left: StarterBedAnchor | null,
+  right: StarterBedAnchor | null
+): boolean =>
+  left === right ||
+  (left !== null &&
+    right !== null &&
+    left.leftTileX === right.leftTileX &&
+    left.tileY === right.tileY);
+
+const normalizeRestoredClaimedBedCheckpoint = (
+  worldSnapshot: TileWorldSnapshot,
+  claimedBedCheckpoint: StarterBedAnchor | null
+): StarterBedAnchor | null => {
+  if (claimedBedCheckpoint === null) {
+    return null;
+  }
+
+  const restoredWorld = new TileWorld(0);
+  restoredWorld.loadSnapshot(worldSnapshot);
+  return isCompleteStarterBedAtAnchor(
+    restoredWorld,
+    claimedBedCheckpoint.leftTileX,
+    claimedBedCheckpoint.tileY
+  )
+    ? {
+        leftTileX: claimedBedCheckpoint.leftTileX,
+        tileY: claimedBedCheckpoint.tileY
+      }
+    : null;
+};
+
 export const restoreWorldSessionFromSaveEnvelope = ({
   target,
   envelope
@@ -66,6 +104,7 @@ export const restoreWorldSessionFromSaveEnvelope = ({
     standalonePlayerInventoryState: envelope.session.standalonePlayerInventoryState,
     standalonePlayerEquipmentState: envelope.session.standalonePlayerEquipmentState,
     droppedItemStates: envelope.session.droppedItemStates,
+    claimedBedCheckpoint: envelope.session.claimedBedCheckpoint,
     cameraFollowOffset: envelope.session.cameraFollowOffset,
     smallTreeGrowthState: envelope.session.smallTreeGrowthState,
     migration: envelope.migration
@@ -77,7 +116,15 @@ export const restoreWorldSessionFromSaveEnvelope = ({
     normalizedEnvelope.session.droppedItemStates,
     consolidatedDroppedItemStates
   );
-  const restoredEnvelope = didNormalizeDroppedItemStates
+  const normalizedClaimedBedCheckpoint = normalizeRestoredClaimedBedCheckpoint(
+    normalizedEnvelope.worldSnapshot,
+    normalizedEnvelope.session.claimedBedCheckpoint
+  );
+  const didNormalizeClaimedBedCheckpoint = !areClaimedBedCheckpointsEqual(
+    normalizedEnvelope.session.claimedBedCheckpoint,
+    normalizedClaimedBedCheckpoint
+  );
+  const restoredEnvelope = didNormalizeDroppedItemStates || didNormalizeClaimedBedCheckpoint
     ? createWorldSaveEnvelope({
         worldSnapshot: normalizedEnvelope.worldSnapshot,
         standalonePlayerState: normalizedEnvelope.session.standalonePlayerState,
@@ -85,6 +132,7 @@ export const restoreWorldSessionFromSaveEnvelope = ({
         standalonePlayerInventoryState: normalizedEnvelope.session.standalonePlayerInventoryState,
         standalonePlayerEquipmentState: normalizedEnvelope.session.standalonePlayerEquipmentState,
         droppedItemStates: consolidatedDroppedItemStates,
+        claimedBedCheckpoint: normalizedClaimedBedCheckpoint,
         cameraFollowOffset: normalizedEnvelope.session.cameraFollowOffset,
         smallTreeGrowthState: normalizedEnvelope.session.smallTreeGrowthState,
         migration: normalizedEnvelope.migration
@@ -101,11 +149,13 @@ export const restoreWorldSessionFromSaveEnvelope = ({
     restoredEnvelope.session.standalonePlayerEquipmentState
   );
   target.restoreDroppedItemStates(restoredEnvelope.session.droppedItemStates);
+  target.restoreClaimedBedCheckpoint(restoredEnvelope.session.claimedBedCheckpoint);
   target.restoreCameraFollowOffset(restoredEnvelope.session.cameraFollowOffset);
   target.restoreSmallTreeGrowthState(restoredEnvelope.session.smallTreeGrowthState);
 
   return {
     restoredEnvelope,
-    didNormalizeDroppedItemStates
+    didNormalizeDroppedItemStates,
+    didNormalizeClaimedBedCheckpoint
   };
 };

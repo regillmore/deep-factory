@@ -29,6 +29,7 @@ import {
   createSmallTreeGrowthState,
   type SmallTreeGrowthState
 } from './world/smallTreeGrowth';
+import type { StarterBedAnchor } from './world/starterBedPlacement';
 import { TileWorld, type TileWorldSnapshot } from './world/world';
 
 export const WORLD_SAVE_ENVELOPE_KIND = 'deep-factory.world-save';
@@ -45,6 +46,7 @@ export interface WorldSaveSessionState {
   standalonePlayerInventoryState: PlayerInventoryState;
   standalonePlayerEquipmentState: PlayerEquipmentState;
   droppedItemStates: DroppedItemState[];
+  claimedBedCheckpoint: StarterBedAnchor | null;
   cameraFollowOffset: CameraFollowOffset;
   smallTreeGrowthState: SmallTreeGrowthState;
 }
@@ -64,6 +66,7 @@ export interface CreateWorldSaveEnvelopeOptions {
   standalonePlayerInventoryState?: PlayerInventoryState;
   standalonePlayerEquipmentState?: PlayerEquipmentState;
   droppedItemStates?: readonly DroppedItemState[];
+  claimedBedCheckpoint?: StarterBedAnchor | null;
   cameraFollowOffset?: CameraFollowOffset;
   smallTreeGrowthState?: SmallTreeGrowthState;
   migration?: WorldSaveEnvelopeMigrationMetadata;
@@ -78,6 +81,15 @@ const expectFiniteNumber = (value: unknown, label: string): number => {
   }
 
   return value;
+};
+
+const expectInteger = (value: unknown, label: string): number => {
+  const normalizedValue = expectFiniteNumber(value, label);
+  if (!Number.isInteger(normalizedValue)) {
+    throw new Error(`${label} must be an integer`);
+  }
+
+  return normalizedValue;
 };
 
 const expectPositiveFiniteNumber = (value: unknown, label: string): number => {
@@ -370,6 +382,23 @@ const normalizeDroppedItemStates = (value: unknown, label: string): DroppedItemS
   });
 };
 
+const normalizeStarterBedCheckpoint = (value: unknown, label: string): StarterBedAnchor => {
+  if (!isRecord(value)) {
+    throw new Error(`${label} must be an object`);
+  }
+
+  return {
+    leftTileX: expectInteger(value.leftTileX, `${label}.leftTileX`),
+    tileY: expectInteger(value.tileY, `${label}.tileY`)
+  };
+};
+
+const normalizeStandaloneStarterBedCheckpoint = (
+  value: unknown,
+  label: string
+): StarterBedAnchor | null =>
+  value === undefined || value === null ? null : normalizeStarterBedCheckpoint(value, label);
+
 const normalizeSmallTreeGrowthState = (
   value: unknown,
   label: string
@@ -444,6 +473,7 @@ export const createWorldSaveEnvelope = ({
   standalonePlayerInventoryState = createDefaultPlayerInventoryState(),
   standalonePlayerEquipmentState = createDefaultPlayerEquipmentState(),
   droppedItemStates = [],
+  claimedBedCheckpoint = null,
   cameraFollowOffset = { x: 0, y: 0 },
   smallTreeGrowthState = createSmallTreeGrowthState(),
   migration = createDefaultWorldSaveEnvelopeMigrationMetadata()
@@ -472,6 +502,10 @@ export const createWorldSaveEnvelope = ({
         'standalonePlayerEquipmentState'
       ),
       droppedItemStates: normalizeDroppedItemStates(droppedItemStates, 'droppedItemStates'),
+      claimedBedCheckpoint: normalizeStandaloneStarterBedCheckpoint(
+        claimedBedCheckpoint,
+        'claimedBedCheckpoint'
+      ),
       cameraFollowOffset: normalizeCameraFollowOffset(cameraFollowOffset, 'cameraFollowOffset'),
       smallTreeGrowthState: normalizeStandaloneSmallTreeGrowthState(
         smallTreeGrowthState,
@@ -522,6 +556,10 @@ export const decodeWorldSaveEnvelope = (value: unknown): WorldSaveEnvelope => {
       droppedItemStates: normalizeDroppedItemStates(
         value.session.droppedItemStates,
         'session.droppedItemStates'
+      ),
+      claimedBedCheckpoint: normalizeStandaloneStarterBedCheckpoint(
+        value.session.claimedBedCheckpoint,
+        'session.claimedBedCheckpoint'
       ),
       cameraFollowOffset: normalizeCameraFollowOffset(
         value.session.cameraFollowOffset,

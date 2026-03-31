@@ -77,6 +77,10 @@ describe('createWorldSaveEnvelope', () => {
         amount: 6
       })
     ];
+    const claimedBedCheckpoint = {
+      leftTileX: 5,
+      tileY: -1
+    };
     const cameraFollowOffset = { x: 24, y: -12 };
     const smallTreeGrowthState = {
       ticksUntilNextGrowth: 17,
@@ -90,6 +94,7 @@ describe('createWorldSaveEnvelope', () => {
       standalonePlayerInventoryState,
       standalonePlayerEquipmentState,
       droppedItemStates,
+      claimedBedCheckpoint,
       cameraFollowOffset,
       smallTreeGrowthState
     });
@@ -103,6 +108,7 @@ describe('createWorldSaveEnvelope', () => {
       standalonePlayerInventoryState,
       standalonePlayerEquipmentState,
       droppedItemStates,
+      claimedBedCheckpoint,
       cameraFollowOffset,
       smallTreeGrowthState
     });
@@ -114,6 +120,7 @@ describe('createWorldSaveEnvelope', () => {
     standalonePlayerInventoryState.hotbar[0]!.amount = 1;
     standalonePlayerEquipmentState.head = null;
     droppedItemStates[0]!.amount = 1;
+    claimedBedCheckpoint.leftTileX = 99;
     cameraFollowOffset.x = 128;
     smallTreeGrowthState.ticksUntilNextGrowth = 1;
 
@@ -134,6 +141,10 @@ describe('createWorldSaveEnvelope', () => {
       position: { x: 24, y: -14 },
       itemId: 'torch',
       amount: 6
+    });
+    expect(envelope.session.claimedBedCheckpoint).toEqual({
+      leftTileX: 5,
+      tileY: -1
     });
     expect(envelope.session.cameraFollowOffset.x).toBe(24);
     expect(envelope.session.smallTreeGrowthState).toEqual({
@@ -857,6 +868,10 @@ describe('decodeWorldSaveEnvelope', () => {
         standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
         standalonePlayerEquipmentState: createDefaultPlayerEquipmentState(),
         droppedItemStates: [],
+        claimedBedCheckpoint: {
+          leftTileX: 7,
+          tileY: -2
+        },
         cameraFollowOffset: {
           x: -18,
           y: 9
@@ -931,6 +946,36 @@ describe('decodeWorldSaveEnvelope', () => {
 
     expect(decoded.session.standalonePlayerState).toEqual(standalonePlayerState);
     expect(decoded.session.standalonePlayerDeathState).toEqual(standalonePlayerDeathState);
+  });
+
+  it('round-trips claimed bed checkpoints through save decode', () => {
+    const world = new TileWorld(0);
+    const claimedBedCheckpoint = {
+      leftTileX: 6,
+      tileY: -1
+    };
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+            claimedBedCheckpoint,
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    claimedBedCheckpoint.leftTileX = 12;
+
+    expect(decoded.session.claimedBedCheckpoint).toEqual({
+      leftTileX: 6,
+      tileY: -1
+    });
   });
 
   it('round-trips healing-potion stacks together with current player health through save decode', () => {
@@ -1225,6 +1270,7 @@ describe('decodeWorldSaveEnvelope', () => {
       createDefaultPlayerEquipmentState()
     );
     expect(decoded.session.droppedItemStates).toEqual([]);
+    expect(decoded.session.claimedBedCheckpoint).toBeNull();
     expect(decoded.session.smallTreeGrowthState).toEqual(createSmallTreeGrowthState());
   });
 

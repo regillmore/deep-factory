@@ -12117,6 +12117,159 @@ describe('main.ts shell state orchestration', () => {
       itemId: 'bed',
       amount: 4
     });
+    expect(readPersistedWorldSaveEnvelope()?.session.claimedBedCheckpoint).toEqual({
+      leftTileX: 7,
+      tileY: -1
+    });
+  });
+
+  it('restores a persisted claimed bed checkpoint and uses it for later respawns without re-claiming', async () => {
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -4, 12, -4, 4);
+    savedWorld.setTile(3, -1, STARTER_BED_LEFT_TILE_ID);
+    savedWorld.setTile(4, -1, STARTER_BED_RIGHT_TILE_ID);
+    savedWorld.setTile(3, 0, 1);
+    savedWorld.setTile(4, 0, 1);
+    testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 0,
+      standingTileY: -1,
+      x: 8,
+      y: -16,
+      supportTileX: 0,
+      supportTileY: 0,
+      supportTileId: 1
+    });
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 56, y: 0 },
+            facing: 'right',
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'bed', amount: 1 },
+              ...Array.from({ length: 5 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 4
+          }),
+          claimedBedCheckpoint: {
+            leftTileX: 3,
+            tileY: -1
+          }
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.claimedBedCheckpoint).toEqual({
+      leftTileX: 3,
+      tileY: -1
+    });
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    testRuntime.rendererStepPlayerStateImpl = () => ({
+      position: { x: 56, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 28 },
+      grounded: true,
+      facing: 'right' as const,
+      health: 0
+    });
+    testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'safe';
+    testRuntime.rendererPlayerCollisionContactsQueue = [
+      noContacts,
+      noContacts,
+      noContacts,
+      noContacts,
+      noContacts,
+      noContacts
+    ];
+
+    runFixedUpdate(0.1);
+    runRenderFrame();
+    runFixedUpdate(1);
+    runRenderFrame(200 + 1000 / 60, 1);
+
+    expect(testRuntime.latestDebugEditStatusStripState?.playerRespawn).toMatchObject({
+      kind: 'death',
+      spawnTile: {
+        x: 3,
+        y: 0
+      },
+      supportChunk: {
+        x: 0,
+        y: 0
+      },
+      supportLocal: {
+        x: 3,
+        y: 0
+      },
+      supportTileId: 1,
+      liquidSafetyStatus: 'safe'
+    });
+  });
+
+  it('clears a restored claimed bed checkpoint when the saved world no longer contains that complete pair', async () => {
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -4, 12, -4, 4);
+    savedWorld.setTile(3, -1, STARTER_BED_LEFT_TILE_ID);
+    savedWorld.setTile(3, 0, 1);
+    savedWorld.setTile(4, 0, 1);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 56, y: 0 },
+            facing: 'right',
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'bed', amount: 1 },
+              ...Array.from({ length: 5 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 4
+          }),
+          claimedBedCheckpoint: {
+            leftTileX: 3,
+            tileY: -1
+          }
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(readPersistedWorldSaveEnvelope()?.session.claimedBedCheckpoint ?? null).toBeNull();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.claimedBedCheckpoint ?? null).toBeNull();
   });
 
   it('respawns from the claimed bed checkpoint when that bed stand area stays clear', async () => {

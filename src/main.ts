@@ -1971,6 +1971,18 @@ const bootstrap = async (): Promise<void> => {
   const smallTreeSaplingTileId = getSmallTreeSaplingTileId();
   const trackedSmallTreeGrowthAnchors = new Map<string, SmallTreeGrowthTrackedAnchor>();
   const trackedSmallTreeGrowthResidentChunkKeys = new Set<string>();
+  const cloneClaimedBedCheckpoint = (
+    checkpoint: StarterBedAnchor | null
+  ): StarterBedAnchor | null =>
+    checkpoint === null
+      ? null
+      : {
+          leftTileX: checkpoint.leftTileX,
+          tileY: checkpoint.tileY
+        };
+  const setClaimedBedCheckpoint = (nextCheckpoint: StarterBedAnchor | null): void => {
+    claimedBedCheckpoint = cloneClaimedBedCheckpoint(nextCheckpoint);
+  };
 
   const createSmallTreeGrowthAnchorKey = (anchorTileX: number, anchorTileY: number): string =>
     `${anchorTileX},${anchorTileY}`;
@@ -3034,6 +3046,7 @@ const bootstrap = async (): Promise<void> => {
         getStandalonePlayerInventoryState,
         getStandalonePlayerEquipmentState,
         getDroppedItemStates,
+        getClaimedBedCheckpoint: () => cloneClaimedBedCheckpoint(claimedBedCheckpoint),
         getCameraFollowOffset: () => cameraFollowOffset,
         getSmallTreeGrowthState: () => ({
           ticksUntilNextGrowth: smallTreeGrowthState.ticksUntilNextGrowth,
@@ -3543,7 +3556,7 @@ const bootstrap = async (): Promise<void> => {
     entityRegistry = new EntityRegistry();
     standalonePlayerEntityId = null;
     standalonePlayerDeathState = null;
-    claimedBedCheckpoint = null;
+    setClaimedBedCheckpoint(null);
     standalonePlayerDeathCount = 0;
     hostileSlimeEntityIds = [];
     passiveBunnyEntityIds = [];
@@ -5990,7 +6003,7 @@ const bootstrap = async (): Promise<void> => {
       return false;
     }
 
-    claimedBedCheckpoint = claimedAnchor;
+    setClaimedBedCheckpoint(claimedAnchor);
     resolveCurrentWorldPlayerSpawn();
     return true;
   };
@@ -8795,6 +8808,9 @@ const bootstrap = async (): Promise<void> => {
           restoreDroppedItemStates: (droppedItemStates) => {
             restoreDroppedItemEntityStates(droppedItemStates);
           },
+          restoreClaimedBedCheckpoint: (nextClaimedBedCheckpoint) => {
+            setClaimedBedCheckpoint(nextClaimedBedCheckpoint);
+          },
           restoreCameraFollowOffset: (nextCameraFollowOffset) => {
             cameraFollowOffset = {
               x: nextCameraFollowOffset.x,
@@ -9049,6 +9065,9 @@ const bootstrap = async (): Promise<void> => {
           restoreDroppedItemStates: (droppedItemStates) => {
             restoreDroppedItemEntityStates(droppedItemStates);
           },
+          restoreClaimedBedCheckpoint: (nextClaimedBedCheckpoint) => {
+            setClaimedBedCheckpoint(nextClaimedBedCheckpoint);
+          },
           restoreCameraFollowOffset: (nextCameraFollowOffset) => {
             cameraFollowOffset = {
               x: nextCameraFollowOffset.x,
@@ -9064,7 +9083,10 @@ const bootstrap = async (): Promise<void> => {
         }
       });
       worldSessionStarted = true;
-      if (restoreResult.didNormalizeDroppedItemStates) {
+      if (
+        restoreResult.didNormalizeDroppedItemStates ||
+        restoreResult.didNormalizeClaimedBedCheckpoint
+      ) {
         worldSavePersistenceAvailable = savePersistedWorldSaveEnvelope(
           worldSessionShellStateStorage,
           restoreResult.restoredEnvelope

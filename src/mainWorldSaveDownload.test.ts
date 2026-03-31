@@ -21,6 +21,7 @@ const createTestEnvelope = (): WorldSaveEnvelope => ({
     standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
     standalonePlayerEquipmentState: createDefaultPlayerEquipmentState(),
     droppedItemStates: [],
+    claimedBedCheckpoint: null,
     cameraFollowOffset: {
       x: 12,
       y: -6

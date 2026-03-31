@@ -20,6 +20,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Death respawn, embedded recovery, spawn-marker previews, and later recall-checkpoint work all need one deterministic bed respawn contract instead of each caller searching around the bed differently or silently discarding temporarily blocked claims.
 - Consequence: Future checkpoint, respawn, or recall follow-ups should reuse that shared bed-respawn helper and treat claimed bed checkpoints as raw anchors that may stay recorded even while fallback temporarily uses world spawn.
 
+### 2026-03-31: Saved bed checkpoints restore only when the same bed pair still exists
+
+- Decision: Claimed `Bed` checkpoints now persist as raw session save anchors, but save restore clears that anchor whenever the loaded snapshot no longer contains the same complete left-plus-right bed pair at that recorded location.
+- Reason: Save/load needs to preserve intentional checkpoint claims across browser resume or export/import, while still rejecting stale anchors from removed beds or malformed snapshot remnants before runtime respawn logic trusts them again.
+- Consequence: Future bed save/load or restore cleanup work should keep persisting raw claimed anchors, then validate them against the restored paired-bed footprint instead of silently dropping all saved claims or trusting malformed loaded bed tiles.
+
 ### 2026-03-31: Selected door interaction previews outline the full doorway pair
 
 - Decision: Selected `Door` toggle overlays now render from the resolved bottom-anchored pair across both top and bottom door tiles instead of outlining only the hovered half.

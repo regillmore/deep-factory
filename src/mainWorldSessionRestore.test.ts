@@ -34,6 +34,8 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
   it('loads cloned world and session state into the target in restore order', () => {
     const world = new TileWorld(0);
     expect(world.setTile(0, 0, 6)).toBe(true);
+    expect(world.setTile(6, -1, STARTER_BED_LEFT_TILE_ID)).toBe(true);
+    expect(world.setTile(7, -1, STARTER_BED_RIGHT_TILE_ID)).toBe(true);
     const standalonePlayerState = createPlayerState({
       position: { x: 72, y: 96 },
       velocity: { x: -14, y: 28 },
@@ -75,6 +77,10 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
         amount: 6
       })
     ];
+    const claimedBedCheckpoint = {
+      leftTileX: 6,
+      tileY: -1
+    };
     const cameraFollowOffset = { x: 18, y: -12 };
     const smallTreeGrowthState = {
       ticksUntilNextGrowth: 14,
@@ -87,6 +93,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       standalonePlayerInventoryState,
       standalonePlayerEquipmentState,
       droppedItemStates,
+      claimedBedCheckpoint,
       cameraFollowOffset,
       smallTreeGrowthState
     });
@@ -97,6 +104,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     let restoredPlayerInventoryState: PlayerInventoryState | null = null;
     let restoredPlayerEquipmentState: PlayerEquipmentState | null = null;
     let restoredDroppedItemStates: DroppedItemState[] | null = null;
+    let restoredClaimedBedCheckpoint: typeof claimedBedCheckpoint | null = null;
     let restoredCameraFollowOffset: typeof cameraFollowOffset | null = null;
     let restoredSmallTreeGrowthState: SmallTreeGrowthState | null = null;
     const target = {
@@ -124,6 +132,10 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
         callOrder.push('drops');
         restoredDroppedItemStates = nextDroppedItemStates;
       }),
+      restoreClaimedBedCheckpoint: vi.fn((nextClaimedBedCheckpoint) => {
+        callOrder.push('claimed-bed');
+        restoredClaimedBedCheckpoint = nextClaimedBedCheckpoint;
+      }),
       restoreCameraFollowOffset: vi.fn((offset) => {
         callOrder.push('camera');
         restoredCameraFollowOffset = offset;
@@ -146,6 +158,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       'inventory',
       'equipment',
       'drops',
+      'claimed-bed',
       'camera',
       'small-tree-growth'
     ]);
@@ -155,9 +168,11 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     expect(target.restoreStandalonePlayerInventoryState).toHaveBeenCalledTimes(1);
     expect(target.restoreStandalonePlayerEquipmentState).toHaveBeenCalledTimes(1);
     expect(target.restoreDroppedItemStates).toHaveBeenCalledTimes(1);
+    expect(target.restoreClaimedBedCheckpoint).toHaveBeenCalledTimes(1);
     expect(target.restoreCameraFollowOffset).toHaveBeenCalledTimes(1);
     expect(target.restoreSmallTreeGrowthState).toHaveBeenCalledTimes(1);
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.didNormalizeClaimedBedCheckpoint).toBe(false);
     expect(restoreResult.restoredEnvelope).toEqual(envelope);
     expect(restoreResult.restoredEnvelope).not.toBe(envelope);
 
@@ -167,6 +182,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     envelope.session.standalonePlayerInventoryState.hotbar[0]!.amount = 1;
     envelope.session.standalonePlayerEquipmentState.body = null;
     envelope.session.droppedItemStates[0]!.amount = 1;
+    claimedBedCheckpoint.leftTileX = 18;
     envelope.session.cameraFollowOffset.x = 999;
     envelope.session.smallTreeGrowthState.ticksUntilNextGrowth = 1;
 
@@ -182,6 +198,10 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     expect(restoredPlayerInventoryState).toEqual(standalonePlayerInventoryState);
     expect(restoredPlayerEquipmentState).toEqual(standalonePlayerEquipmentState);
     expect(restoredDroppedItemStates).toEqual(droppedItemStates);
+    expect(restoredClaimedBedCheckpoint).toEqual({
+      leftTileX: 6,
+      tileY: -1
+    });
     expect(restoredCameraFollowOffset).toEqual({ x: 18, y: -12 });
     expect(restoredSmallTreeGrowthState).toEqual({
       ticksUntilNextGrowth: 14,
@@ -205,6 +225,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       restoreStandalonePlayerInventoryState: vi.fn(),
       restoreStandalonePlayerEquipmentState: vi.fn(),
       restoreDroppedItemStates: vi.fn(),
+      restoreClaimedBedCheckpoint: vi.fn(),
       restoreCameraFollowOffset: vi.fn(),
       restoreSmallTreeGrowthState: vi.fn()
     };
@@ -224,9 +245,11 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       createDefaultPlayerEquipmentState()
     );
     expect(target.restoreDroppedItemStates).toHaveBeenCalledWith([]);
+    expect(target.restoreClaimedBedCheckpoint).toHaveBeenCalledWith(null);
     expect(target.restoreCameraFollowOffset).toHaveBeenCalledWith({ x: -24, y: 10 });
     expect(target.restoreSmallTreeGrowthState).toHaveBeenCalledWith(createSmallTreeGrowthState());
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.didNormalizeClaimedBedCheckpoint).toBe(false);
     expect(restoreResult.restoredEnvelope).toEqual(envelope);
   });
 
@@ -269,6 +292,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       restoreDroppedItemStates: vi.fn((nextDroppedItemStates) => {
         restoredDroppedItemStates = nextDroppedItemStates;
       }),
+      restoreClaimedBedCheckpoint: vi.fn(),
       restoreCameraFollowOffset: vi.fn(),
       restoreSmallTreeGrowthState: vi.fn()
     };
@@ -297,6 +321,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     ]);
     expect(restoredDroppedItemStates).not.toBe(envelope.session.droppedItemStates);
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(true);
+    expect(restoreResult.didNormalizeClaimedBedCheckpoint).toBe(false);
     expect(restoreResult.restoredEnvelope.session.droppedItemStates).toEqual([
       {
         position: { x: 24, y: -14 },
@@ -351,6 +376,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       }),
       restoreStandalonePlayerEquipmentState: vi.fn(),
       restoreDroppedItemStates: vi.fn(),
+      restoreClaimedBedCheckpoint: vi.fn(),
       restoreCameraFollowOffset: vi.fn(),
       restoreSmallTreeGrowthState: vi.fn()
     };
@@ -367,6 +393,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     }
     expect(restoredPlayerInventoryState).toEqual(standalonePlayerInventoryState);
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.didNormalizeClaimedBedCheckpoint).toBe(false);
     expect(restoreResult.restoredEnvelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'dirt-wall',
       amount: 9
@@ -408,6 +435,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       }),
       restoreStandalonePlayerEquipmentState: vi.fn(),
       restoreDroppedItemStates: vi.fn(),
+      restoreClaimedBedCheckpoint: vi.fn(),
       restoreCameraFollowOffset: vi.fn(),
       restoreSmallTreeGrowthState: vi.fn()
     };
@@ -424,6 +452,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     }
     expect(restoredPlayerInventoryState).toEqual(standalonePlayerInventoryState);
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.didNormalizeClaimedBedCheckpoint).toBe(false);
     expect(restoreResult.restoredEnvelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'wood-wall',
       amount: 5
@@ -469,6 +498,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       }),
       restoreStandalonePlayerEquipmentState: vi.fn(),
       restoreDroppedItemStates: vi.fn(),
+      restoreClaimedBedCheckpoint: vi.fn(),
       restoreCameraFollowOffset: vi.fn(),
       restoreSmallTreeGrowthState: vi.fn()
     };
@@ -486,6 +516,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     expect(restoredWorld.getTile(8, -1)).toBe(STARTER_DOOR_OPEN_BOTTOM_TILE_ID);
     expect(restoredPlayerInventoryState).toEqual(standalonePlayerInventoryState);
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.didNormalizeClaimedBedCheckpoint).toBe(false);
     expect(restoreResult.restoredEnvelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'door',
       amount: 2
@@ -521,6 +552,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       }),
       restoreStandalonePlayerEquipmentState: vi.fn(),
       restoreDroppedItemStates: vi.fn(),
+      restoreClaimedBedCheckpoint: vi.fn(),
       restoreCameraFollowOffset: vi.fn(),
       restoreSmallTreeGrowthState: vi.fn()
     };
@@ -536,6 +568,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     expect(restoredWorld.getTile(7, -1)).toBe(STARTER_BED_RIGHT_TILE_ID);
     expect(restoredPlayerInventoryState).toEqual(standalonePlayerInventoryState);
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.didNormalizeClaimedBedCheckpoint).toBe(false);
     expect(restoreResult.restoredEnvelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'bed',
       amount: 2
@@ -573,6 +606,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       restoreStandalonePlayerInventoryState: vi.fn(),
       restoreStandalonePlayerEquipmentState: vi.fn(),
       restoreDroppedItemStates: vi.fn(),
+      restoreClaimedBedCheckpoint: vi.fn(),
       restoreCameraFollowOffset: vi.fn(),
       restoreSmallTreeGrowthState: vi.fn()
     };
@@ -590,6 +624,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     expect(restoredWorld.getTile(6, doorBottomWorldTileY - 1)).toBe(STARTER_DOOR_OPEN_TOP_TILE_ID);
     expect(restoredWorld.getTile(6, doorBottomWorldTileY)).toBe(STARTER_DOOR_OPEN_BOTTOM_TILE_ID);
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.didNormalizeClaimedBedCheckpoint).toBe(false);
     expect(restoreResult.restoredEnvelope.worldSnapshot).toEqual(restoredWorldSnapshot);
   });
 
@@ -620,6 +655,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       }),
       restoreStandalonePlayerEquipmentState: vi.fn(),
       restoreDroppedItemStates: vi.fn(),
+      restoreClaimedBedCheckpoint: vi.fn(),
       restoreCameraFollowOffset: vi.fn(),
       restoreSmallTreeGrowthState: vi.fn()
     };
@@ -631,8 +667,49 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
 
     expect(restoredPlayerInventoryState).toEqual(standalonePlayerInventoryState);
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.didNormalizeClaimedBedCheckpoint).toBe(false);
     expect(restoreResult.restoredEnvelope.session.standalonePlayerInventoryState).toEqual(
       standalonePlayerInventoryState
     );
+  });
+
+  it('clears a restored claimed bed checkpoint when the loaded snapshot no longer contains that complete pair', () => {
+    const world = new TileWorld(0);
+    expect(world.setTile(6, -1, STARTER_BED_LEFT_TILE_ID)).toBe(true);
+    const envelope = createWorldSaveEnvelope({
+      worldSnapshot: world.createSnapshot(),
+      standalonePlayerState: createPlayerState(),
+      standalonePlayerDeathState: null,
+      droppedItemStates: [],
+      claimedBedCheckpoint: {
+        leftTileX: 6,
+        tileY: -1
+      },
+      cameraFollowOffset: { x: 0, y: 0 }
+    });
+    let restoredClaimedBedCheckpoint: { leftTileX: number; tileY: number } | null = null;
+    const target = {
+      loadWorldSnapshot: vi.fn(),
+      restoreStandalonePlayerState: vi.fn(),
+      restoreStandalonePlayerDeathState: vi.fn(),
+      restoreStandalonePlayerInventoryState: vi.fn(),
+      restoreStandalonePlayerEquipmentState: vi.fn(),
+      restoreDroppedItemStates: vi.fn(),
+      restoreClaimedBedCheckpoint: vi.fn((nextClaimedBedCheckpoint) => {
+        restoredClaimedBedCheckpoint = nextClaimedBedCheckpoint;
+      }),
+      restoreCameraFollowOffset: vi.fn(),
+      restoreSmallTreeGrowthState: vi.fn()
+    };
+
+    const restoreResult = restoreWorldSessionFromSaveEnvelope({
+      target,
+      envelope
+    });
+
+    expect(restoredClaimedBedCheckpoint).toBeNull();
+    expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.didNormalizeClaimedBedCheckpoint).toBe(true);
+    expect(restoreResult.restoredEnvelope.session.claimedBedCheckpoint).toBeNull();
   });
 });

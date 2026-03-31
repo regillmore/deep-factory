@@ -70,6 +70,10 @@ describe('createWorldSessionSaveEnvelope', () => {
         amount: 6
       })
     ];
+    const claimedBedCheckpoint = {
+      leftTileX: 6,
+      tileY: -1
+    };
     const cameraFollowOffset = { x: 18, y: -12 };
     const smallTreeGrowthState = {
       ticksUntilNextGrowth: 14,
@@ -82,6 +86,7 @@ describe('createWorldSessionSaveEnvelope', () => {
       getStandalonePlayerInventoryState: vi.fn(() => standalonePlayerInventoryState),
       getStandalonePlayerEquipmentState: vi.fn(() => standalonePlayerEquipmentState),
       getDroppedItemStates: vi.fn(() => droppedItemStates),
+      getClaimedBedCheckpoint: vi.fn(() => claimedBedCheckpoint),
       getCameraFollowOffset: vi.fn(() => cameraFollowOffset),
       getSmallTreeGrowthState: vi.fn(() => smallTreeGrowthState)
     };
@@ -94,6 +99,7 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(source.getStandalonePlayerInventoryState).toHaveBeenCalledTimes(1);
     expect(source.getStandalonePlayerEquipmentState).toHaveBeenCalledTimes(1);
     expect(source.getDroppedItemStates).toHaveBeenCalledTimes(1);
+    expect(source.getClaimedBedCheckpoint).toHaveBeenCalledTimes(1);
     expect(source.getCameraFollowOffset).toHaveBeenCalledTimes(1);
     expect(source.getSmallTreeGrowthState).toHaveBeenCalledTimes(1);
     expect(envelope.session).toEqual({
@@ -102,6 +108,7 @@ describe('createWorldSessionSaveEnvelope', () => {
       standalonePlayerInventoryState,
       standalonePlayerEquipmentState,
       droppedItemStates,
+      claimedBedCheckpoint,
       cameraFollowOffset,
       smallTreeGrowthState
     });
@@ -114,6 +121,7 @@ describe('createWorldSessionSaveEnvelope', () => {
     standalonePlayerState.position.x = 999;
     standalonePlayerInventoryState.hotbar[0]!.amount = 1;
     standalonePlayerEquipmentState.head = null;
+    claimedBedCheckpoint.leftTileX = 18;
     cameraFollowOffset.x = 999;
     smallTreeGrowthState.ticksUntilNextGrowth = 1;
 
@@ -146,6 +154,10 @@ describe('createWorldSessionSaveEnvelope', () => {
       })
     );
     expect(envelope.session.droppedItemStates).toEqual(droppedItemStates);
+    expect(envelope.session.claimedBedCheckpoint).toEqual({
+      leftTileX: 6,
+      tileY: -1
+    });
     expect(envelope.session.cameraFollowOffset.x).toBe(18);
     expect(envelope.session.smallTreeGrowthState).toEqual({
       ticksUntilNextGrowth: 14,
@@ -169,6 +181,7 @@ describe('createWorldSessionSaveEnvelope', () => {
         })
       ),
       getDroppedItemStates: vi.fn(() => []),
+      getClaimedBedCheckpoint: vi.fn(() => null),
       getCameraFollowOffset: vi.fn(() => ({ x: -24, y: 10 })),
       getSmallTreeGrowthState: vi.fn(() => ({
         ticksUntilNextGrowth: 9,
@@ -198,6 +211,7 @@ describe('createWorldSessionSaveEnvelope', () => {
       })
     );
     expect(envelope.session.droppedItemStates).toEqual([]);
+    expect(envelope.session.claimedBedCheckpoint).toBeNull();
     expect(envelope.session.cameraFollowOffset).toEqual({ x: -24, y: 10 });
     expect(envelope.session.smallTreeGrowthState).toEqual({
       ticksUntilNextGrowth: 9,
@@ -228,6 +242,7 @@ describe('createWorldSessionSaveEnvelope', () => {
       getStandalonePlayerInventoryState: vi.fn(() => standalonePlayerInventoryState),
       getStandalonePlayerEquipmentState: vi.fn(() => createPlayerEquipmentState()),
       getDroppedItemStates: vi.fn(() => []),
+      getClaimedBedCheckpoint: vi.fn(() => null),
       getCameraFollowOffset: vi.fn(() => ({ x: 0, y: 0 })),
       getSmallTreeGrowthState: vi.fn(() => createSmallTreeGrowthState())
     };
@@ -267,6 +282,7 @@ describe('createWorldSessionSaveEnvelope', () => {
       getStandalonePlayerInventoryState: vi.fn(() => standalonePlayerInventoryState),
       getStandalonePlayerEquipmentState: vi.fn(() => createPlayerEquipmentState()),
       getDroppedItemStates: vi.fn(() => []),
+      getClaimedBedCheckpoint: vi.fn(() => null),
       getCameraFollowOffset: vi.fn(() => ({ x: 0, y: 0 })),
       getSmallTreeGrowthState: vi.fn(() => createSmallTreeGrowthState())
     };
@@ -310,6 +326,7 @@ describe('createWorldSessionSaveEnvelope', () => {
       getStandalonePlayerInventoryState: vi.fn(() => standalonePlayerInventoryState),
       getStandalonePlayerEquipmentState: vi.fn(() => createPlayerEquipmentState()),
       getDroppedItemStates: vi.fn(() => []),
+      getClaimedBedCheckpoint: vi.fn(() => null),
       getCameraFollowOffset: vi.fn(() => ({ x: 0, y: 0 })),
       getSmallTreeGrowthState: vi.fn(() => createSmallTreeGrowthState())
     };
@@ -344,6 +361,7 @@ describe('createWorldSessionSaveEnvelope', () => {
       getStandalonePlayerInventoryState: vi.fn(() => standalonePlayerInventoryState),
       getStandalonePlayerEquipmentState: vi.fn(() => createPlayerEquipmentState()),
       getDroppedItemStates: vi.fn(() => []),
+      getClaimedBedCheckpoint: vi.fn(() => null),
       getCameraFollowOffset: vi.fn(() => ({ x: 0, y: 0 })),
       getSmallTreeGrowthState: vi.fn(() => createSmallTreeGrowthState())
     };
@@ -376,6 +394,7 @@ describe('createWorldSessionSaveEnvelope', () => {
       getStandalonePlayerInventoryState: vi.fn(() => standalonePlayerInventoryState),
       getStandalonePlayerEquipmentState: vi.fn(() => createPlayerEquipmentState()),
       getDroppedItemStates: vi.fn(() => []),
+      getClaimedBedCheckpoint: vi.fn(() => null),
       getCameraFollowOffset: vi.fn(() => ({ x: 0, y: 0 })),
       getSmallTreeGrowthState: vi.fn(() => createSmallTreeGrowthState())
     };
