@@ -13,6 +13,7 @@ export interface PlayerItemPlacementPreviewState {
   hasSolidFaceSupport: boolean;
   blockedByPlayer: boolean;
   doorToggleStatus?: 'toggle-ready' | 'toggle-blocked';
+  doorToggleVerb?: 'open' | 'close';
 }
 
 export type PlayerItemPlacementPreviewTone =

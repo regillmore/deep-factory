@@ -496,7 +496,8 @@ describe('HotbarOverlay', () => {
       createHotbarState([[6, createPlayerInventoryItemStack('door', 4)]], 6),
       {
         selectedDoorReadout: {
-          status: 'toggle-ready'
+          status: 'toggle-ready',
+          verb: 'open'
         }
       }
     );
@@ -505,13 +506,14 @@ describe('HotbarOverlay', () => {
     expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#c9fff8');
     expect(getSlotCooldownFill(overlay, 6).style.height).toBe('100.0%');
     expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('1');
-    expect(getSlotRow(overlay).children[6]!.title).toContain('placed door interaction in range');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('Open placed door in range');
 
     overlay.update(
       createHotbarState([[6, createPlayerInventoryItemStack('door', 4)]], 6),
       {
         selectedDoorReadout: {
-          status: 'toggle-blocked'
+          status: 'toggle-blocked',
+          verb: 'close'
         }
       }
     );
@@ -520,7 +522,7 @@ describe('HotbarOverlay', () => {
     expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#ffd0c8');
     expect(getSlotCooldownFill(overlay, 6).style.height).toBe('100.0%');
     expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('1');
-    expect(getSlotRow(overlay).children[6]!.title).toContain('placed door interaction beyond reach');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('Close placed door beyond reach');
 
     overlay.update(createHotbarState([[6, createPlayerInventoryItemStack('door', 4)]], 6));
 

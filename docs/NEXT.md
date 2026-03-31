@@ -18,9 +18,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Door utility
 
-718. Add selected-door interaction verb copy after task 717: show `Open` versus `Close` tooltip copy for nearby placed-door interactions on the selected hotbar slot and cover verb-feedback regressions.
 719. Add selected-door dead blocked slot feedback after task 718: show `DEAD` on the selected hotbar slot when selected-door use is blocked because the player is dead, and cover dead-state regressions.
 720. Highlight both tiles of selected-door placement previews after task 717: render the full 1x2 doorway footprint for empty framed-door placement previews and cover paired-placement overlay regressions.
+721. Add selected-door action badge copy after tasks 718 and 719: surface `OPEN` or `CLOSE` on the selected hotbar slot for in-range placed-door interactions while preserving `RANGE` and `DEAD` blocked states, and cover selected-slot precedence regressions.
 
 ## Recall mirror recovery
 

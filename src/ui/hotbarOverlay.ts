@@ -33,6 +33,7 @@ type SelectedGrapplingHookReadoutStatus =
   | 'latch-ready'
   | 'range-blocked';
 type SelectedDoorReadoutStatus = 'toggle-ready' | 'toggle-blocked';
+type SelectedDoorReadoutVerb = 'open' | 'close';
 
 interface HotbarOverlayUpdateOptions {
   starterAxeSwingFeedback?:
@@ -62,6 +63,7 @@ interface HotbarOverlayUpdateOptions {
   selectedDoorReadout?:
     | {
         status: SelectedDoorReadoutStatus;
+        verb: SelectedDoorReadoutVerb;
       }
     | null;
   healingPotionCooldownFillNormalized?: number | null;
@@ -191,17 +193,15 @@ const SELECTED_GRAPPLING_HOOK_FILL_BACKGROUND: Record<
 };
 const SELECTED_DOOR_TOGGLE_READY_FILL_BACKGROUND =
   'linear-gradient(180deg, rgba(176, 255, 247, 0.05) 0%, rgba(102, 231, 222, 0.24) 35%, rgba(37, 176, 166, 0.62) 100%)';
-const SELECTED_DOOR_TOGGLE_READY_TITLE_TEXT = 'ready: placed door interaction in range';
 const SELECTED_DOOR_TOGGLE_READY_AMOUNT_TEXT = 'READY';
 const SELECTED_DOOR_TOGGLE_READY_AMOUNT_COLOR = '#c9fff8';
 const SELECTED_DOOR_TOGGLE_BLOCKED_FILL_BACKGROUND =
   'linear-gradient(180deg, rgba(255, 212, 196, 0.08) 0%, rgba(255, 146, 122, 0.3) 35%, rgba(212, 88, 62, 0.66) 100%)';
-const SELECTED_DOOR_TOGGLE_BLOCKED_TITLE_TEXT = 'blocked: placed door interaction beyond reach';
 const SELECTED_DOOR_TOGGLE_BLOCKED_AMOUNT_TEXT = 'RANGE';
 const SELECTED_DOOR_TOGGLE_BLOCKED_AMOUNT_COLOR = '#ffd0c8';
-const SELECTED_DOOR_TITLE_TEXT: Record<SelectedDoorReadoutStatus, string> = {
-  'toggle-ready': SELECTED_DOOR_TOGGLE_READY_TITLE_TEXT,
-  'toggle-blocked': SELECTED_DOOR_TOGGLE_BLOCKED_TITLE_TEXT
+const SELECTED_DOOR_VERB_TEXT: Record<SelectedDoorReadoutVerb, string> = {
+  open: 'Open',
+  close: 'Close'
 };
 const SELECTED_DOOR_AMOUNT_TEXT: Record<SelectedDoorReadoutStatus, string> = {
   'toggle-ready': SELECTED_DOOR_TOGGLE_READY_AMOUNT_TEXT,
@@ -215,6 +215,13 @@ const SELECTED_DOOR_FILL_BACKGROUND: Record<SelectedDoorReadoutStatus, string> =
   'toggle-ready': SELECTED_DOOR_TOGGLE_READY_FILL_BACKGROUND,
   'toggle-blocked': SELECTED_DOOR_TOGGLE_BLOCKED_FILL_BACKGROUND
 };
+const formatSelectedDoorTitleText = (
+  status: SelectedDoorReadoutStatus,
+  verb: SelectedDoorReadoutVerb
+): string =>
+  status === 'toggle-ready'
+    ? `ready: ${SELECTED_DOOR_VERB_TEXT[verb]} placed door in range`
+    : `blocked: ${SELECTED_DOOR_VERB_TEXT[verb]} placed door beyond reach`;
 const MANA_CRYSTAL_DEAD_FILL_BACKGROUND =
   'linear-gradient(180deg, rgba(255, 170, 170, 0.08) 0%, rgba(255, 112, 112, 0.3) 35%, rgba(204, 52, 52, 0.68) 100%)';
 const MANA_CRYSTAL_MAX_MANA_CAP_FILL_BACKGROUND =
@@ -760,7 +767,10 @@ export class HotbarOverlay {
         : selectedGrapplingHookState !== null
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${SELECTED_GRAPPLING_HOOK_TITLE_TEXT[selectedGrapplingHookState.status]})`
         : selectedDoorState !== null
-          ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${SELECTED_DOOR_TITLE_TEXT[selectedDoorState.status]})`
+          ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${formatSelectedDoorTitleText(
+              selectedDoorState.status,
+              selectedDoorState.verb
+            )})`
         : selectedBowCoolingDown
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${SELECTED_BOW_DRAW_COOLDOWN_TITLE_TEXT})`
         : selectedBowAmmo !== null

@@ -8698,7 +8698,8 @@ describe('main.ts shell state orchestration', () => {
       occupied: true,
       hasSolidFaceSupport: true,
       blockedByPlayer: false,
-      doorToggleStatus: 'toggle-ready'
+      doorToggleStatus: 'toggle-ready',
+      doorToggleVerb: 'open'
     });
   });
 
@@ -8744,7 +8745,8 @@ describe('main.ts shell state orchestration', () => {
       occupied: true,
       hasSolidFaceSupport: true,
       blockedByPlayer: false,
-      doorToggleStatus: 'toggle-blocked'
+      doorToggleStatus: 'toggle-blocked',
+      doorToggleVerb: 'open'
     });
   });
 
@@ -8822,8 +8824,8 @@ describe('main.ts shell state orchestration', () => {
     expect(dispatchKeydown('5', 'Digit5').prevented).toBe(true);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, -2), STARTER_DOOR_TOP_TILE_ID);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, -1), STARTER_DOOR_BOTTOM_TILE_ID);
-    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(20, -2), STARTER_DOOR_TOP_TILE_ID);
-    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(20, -1), STARTER_DOOR_BOTTOM_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(20, -2), STARTER_DOOR_OPEN_TOP_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(20, -1), STARTER_DOOR_OPEN_BOTTOM_TILE_ID);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(7, -2), 1);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(7, -1), 1);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(9, -2), 1);
@@ -8836,7 +8838,7 @@ describe('main.ts shell state orchestration', () => {
     };
     runRenderFrame();
 
-    expect(getHotbarOverlaySlotButton(4).title).toContain('placed door interaction in range');
+    expect(getHotbarOverlaySlotButton(4).title).toContain('Open placed door in range');
     expect(getHotbarOverlaySlotAmountLabel(4).textContent).toBe('READY');
     expect(getHotbarOverlaySlotCooldownFill(4).style.height).toBe('100.0%');
     expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('1');
@@ -8847,7 +8849,7 @@ describe('main.ts shell state orchestration', () => {
     };
     runRenderFrame();
 
-    expect(getHotbarOverlaySlotButton(4).title).toContain('placed door interaction beyond reach');
+    expect(getHotbarOverlaySlotButton(4).title).toContain('Close placed door beyond reach');
     expect(getHotbarOverlaySlotAmountLabel(4).textContent).toBe('RANGE');
     expect(getHotbarOverlaySlotCooldownFill(4).style.height).toBe('100.0%');
     expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('1');
@@ -8858,7 +8860,7 @@ describe('main.ts shell state orchestration', () => {
     };
     runRenderFrame();
 
-    expect(getHotbarOverlaySlotButton(4).title).not.toContain('placed door interaction');
+    expect(getHotbarOverlaySlotButton(4).title).not.toContain('placed door');
     expect(getHotbarOverlaySlotAmountLabel(4).textContent).toBe('4');
     expect(getHotbarOverlaySlotCooldownFill(4).style.height).toBe('0.0%');
     expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('0');

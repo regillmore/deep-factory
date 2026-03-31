@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-31
 
+- Task: Add selected-door interaction verb copy.
+- Changes: Updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so selected `Door` hover previews now carry the targeted pair's next action into hotbar readout state, letting nearby closed doors report `Open` copy and nearby open doors report `Close` copy without changing placement-preview fallback behavior; updated [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts) plus [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts) so selected-door slot titles now include that verb-specific interaction copy while keeping the existing `READY` and `RANGE` visual states; updated [src/ui/playerItemPlacementPreviewOverlay.ts](../src/ui/playerItemPlacementPreviewOverlay.ts) with the shared preview-state verb field, removed completed task `718` from [docs/NEXT.md](docs/NEXT.md), added replacement task `721`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/hotbarOverlay.test.ts src/main.test.ts -t door` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Highlight both tiles of selected-door toggle previews.
 - Changes: Updated [src/ui/playerItemPlacementPreviewOverlay.ts](../src/ui/playerItemPlacementPreviewOverlay.ts) plus [src/ui/playerItemPlacementPreviewOverlay.test.ts](../src/ui/playerItemPlacementPreviewOverlay.test.ts) so selected `Door` toggle previews now resolve a shared client-space rectangle from the paired doorway anchor and outline both top and bottom door halves together for ready-versus-blocked interaction states; removed completed task `717` from [docs/NEXT.md](docs/NEXT.md), added replacement task `720`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/playerItemPlacementPreviewOverlay.test.ts src/main.test.ts -t door` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -2238,20 +2238,29 @@ const bootstrap = async (): Promise<void> => {
     selectedPlacementPreview: PlayerItemPlacementPreviewState | null = null
   ): {
     status: 'toggle-ready' | 'toggle-blocked';
+    verb: 'open' | 'close';
   } | null => {
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
     if (selectedStack?.itemId !== STARTER_DOOR_ITEM_ID) {
       return null;
     }
 
-    if (selectedPlacementPreview?.doorToggleStatus === 'toggle-ready') {
+    if (
+      selectedPlacementPreview?.doorToggleStatus === 'toggle-ready' &&
+      selectedPlacementPreview.doorToggleVerb !== undefined
+    ) {
       return {
-        status: 'toggle-ready'
+        status: 'toggle-ready',
+        verb: selectedPlacementPreview.doorToggleVerb
       };
     }
-    if (selectedPlacementPreview?.doorToggleStatus === 'toggle-blocked') {
+    if (
+      selectedPlacementPreview?.doorToggleStatus === 'toggle-blocked' &&
+      selectedPlacementPreview.doorToggleVerb !== undefined
+    ) {
       return {
-        status: 'toggle-blocked'
+        status: 'toggle-blocked',
+        verb: selectedPlacementPreview.doorToggleVerb
       };
     }
     return null;
@@ -6282,7 +6291,8 @@ const bootstrap = async (): Promise<void> => {
               hasSolidFaceSupport: true,
               blockedByPlayer: false,
               canPlace: false,
-              doorToggleStatus: doorPreview.canToggle ? 'toggle-ready' : 'toggle-blocked'
+              doorToggleStatus: doorPreview.canToggle ? 'toggle-ready' : 'toggle-blocked',
+              doorToggleVerb: doorPreview.toggleTarget.state === 'closed' ? 'open' : 'close'
             };
             break;
           }

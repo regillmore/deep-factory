@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Hovering either half of a placed door still targets one paired interaction, so the world overlay should show the full affected footprint rather than whichever half the pointer last touched.
 - Consequence: Future selected-door interaction or paired-preview work should derive overlay bounds from the shared door-pair anchor instead of the currently hovered half-tile.
 
+### 2026-03-31: Selected door slot verb copy follows the targeted pair state
+
+- Decision: The selected `Door` hotbar tooltip now derives `Open` versus `Close` copy from the resolved paired-door state while keeping the existing ready-versus-range blocked readout fills.
+- Reason: Interaction-first door feedback should tell players what the selected use will do to the targeted pair, not just whether that interaction is currently in range.
+- Consequence: Future selected-door verb, blocked-state, or badge-copy work should extend that same resolved pair-state seam instead of inventing verb text from generic placement preview state or hovered half-tiles.
+
 ### 2026-03-31: Selected door slot feedback stays interaction-first
 
 - Decision: The selected `Door` hotbar slot now shows ready or range-blocked feedback only when the current hover target resolves a complete placed door pair, and otherwise falls back to the ordinary carried-stack readout instead of reusing empty-doorway placement copy.
