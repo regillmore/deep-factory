@@ -2817,10 +2817,16 @@ const getHotbarOverlayRoot = (): InstanceType<typeof testRuntime.FakeHTMLElement
 };
 const getHotbarOverlaySlotRow = (): InstanceType<typeof testRuntime.FakeHTMLElement> =>
   getHotbarOverlayRoot().children[1] as InstanceType<typeof testRuntime.FakeHTMLElement>;
+const getHotbarOverlayActionRow = (): InstanceType<typeof testRuntime.FakeHTMLElement> =>
+  getHotbarOverlayRoot().children[0] as InstanceType<typeof testRuntime.FakeHTMLElement>;
 const getHotbarOverlaySlotButton = (
   slotIndex: number
 ): InstanceType<typeof testRuntime.FakeHTMLElement> =>
   getHotbarOverlaySlotRow().children[slotIndex] as InstanceType<typeof testRuntime.FakeHTMLElement>;
+const getHotbarOverlayDropOneButton = (): InstanceType<typeof testRuntime.FakeHTMLElement> =>
+  getHotbarOverlayActionRow().children[1] as InstanceType<typeof testRuntime.FakeHTMLElement>;
+const getHotbarOverlayDropStackButton = (): InstanceType<typeof testRuntime.FakeHTMLElement> =>
+  getHotbarOverlayActionRow().children[2] as InstanceType<typeof testRuntime.FakeHTMLElement>;
 const getHotbarOverlaySlotAmountLabel = (
   slotIndex: number
 ): InstanceType<typeof testRuntime.FakeHTMLElement> =>
@@ -12580,6 +12586,12 @@ describe('main.ts shell state orchestration', () => {
     runFixedUpdate(DEFAULT_BOW_DRAW_COOLDOWN_SECONDS);
 
     expect(dispatchKeydown('8', 'Digit8').prevented).toBe(true);
+    expect(getHotbarOverlaySlotButton(7).title).toContain('drop: blocked');
+    expect(getHotbarOverlaySlotButton(7).title).toContain('1 arrow reserved in flight');
+    expect(getHotbarOverlayDropOneButton().title).toContain('Drop one Arrow blocked');
+    expect(getHotbarOverlayDropOneButton().style.opacity).toBe('0.45');
+    expect(getHotbarOverlayDropStackButton().title).toContain('Drop Arrow stack blocked');
+    expect(getHotbarOverlayDropStackButton().style.opacity).toBe('0.45');
     expect(dispatchKeydown('Backspace', 'Backspace', { shiftKey: true }).prevented).toBe(true);
 
     dispatchWindowEvent('pagehide');
@@ -12616,6 +12628,12 @@ describe('main.ts shell state orchestration', () => {
     runFixedUpdate(DEFAULT_BOW_DRAW_COOLDOWN_SECONDS);
 
     expect(dispatchKeydown('8', 'Digit8').prevented).toBe(true);
+    expect(getHotbarOverlaySlotButton(7).title).toContain('drop: 1 arrow droppable');
+    expect(getHotbarOverlaySlotButton(7).title).toContain('1 arrow reserved in flight');
+    expect(getHotbarOverlayDropOneButton().title).toContain('1 arrow droppable');
+    expect(getHotbarOverlayDropOneButton().style.opacity).toBe('1');
+    expect(getHotbarOverlayDropStackButton().title).toContain('Drop 1 unreserved arrow');
+    expect(getHotbarOverlayDropStackButton().style.opacity).toBe('1');
     expect(dispatchKeydown('Backspace', 'Backspace').prevented).toBe(true);
 
     dispatchWindowEvent('pagehide');

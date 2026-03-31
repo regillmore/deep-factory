@@ -2152,6 +2152,17 @@ const bootstrap = async (): Promise<void> => {
       reservedArrowCount
     };
   };
+  const resolveHotbarOverlaySelectedArrowDropReadout = () => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== ARROW_ITEM_ID) {
+      return null;
+    }
+
+    return {
+      droppableArrowCount: Math.min(selectedStack.amount, resolveAvailableBowArrowCount()),
+      reservedArrowCount: resolveReservedBowArrowCount()
+    };
+  };
   const resolveReservedBowArrowCount = (): number => getArrowProjectileEntityStates().length;
   const resolveAvailableBowArrowCount = (): number =>
     Math.max(
@@ -2420,6 +2431,7 @@ const bootstrap = async (): Promise<void> => {
       selectedBowDrawCooldownFillNormalized:
         resolveHotbarOverlaySelectedBowDrawCooldownFillNormalized(),
       selectedBowAmmoReadout: resolveHotbarOverlaySelectedBowAmmoReadout(),
+      selectedArrowDropReadout: resolveHotbarOverlaySelectedArrowDropReadout(),
       selectedGrapplingHookReadout:
         resolveHotbarOverlaySelectedGrapplingHookReadout(selectedGrapplingHookPreview),
       healingPotionCooldownFillNormalized:

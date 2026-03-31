@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-30: Selected Arrow drop feedback follows the same droppable unreserved-arrow limit as runtime
+
+- Decision: When `Arrow` is selected and in-flight bow projectiles reserve part or all of the carried stack, the selected-slot tooltip and hotbar `Drop 1` / `Drop` controls now describe the same droppable-versus-blocked limit that runtime drop actions enforce.
+- Reason: The shared drop logic already preserves reserved ammo in inventory, so the selected-arrow UI should stop implying that the full carried stack can always leave inventory while shots are still unresolved.
+- Consequence: Future arrow drop, transfer, or removal UI should reuse the same droppable unreserved-arrow calculation and reserved-arrow copy instead of deriving availability from the raw selected stack amount alone.
+
 ### 2026-03-30: Reserved arrows cannot leave inventory through hotbar drops
 
 - Decision: Hotbar `Drop 1` now blocks when every carried `Arrow` is already reserved by in-flight bow projectiles, and hotbar `Drop` now removes only the selected stack's unreserved arrow count instead of dropping reserved ammo too.

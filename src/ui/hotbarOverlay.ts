@@ -47,6 +47,12 @@ interface HotbarOverlayUpdateOptions {
         reservedArrowCount: number;
       }
     | null;
+  selectedArrowDropReadout?:
+    | {
+        droppableArrowCount: number;
+        reservedArrowCount: number;
+      }
+    | null;
   selectedGrapplingHookReadout?:
     | {
         status: SelectedGrapplingHookReadoutStatus;
@@ -310,6 +316,59 @@ const formatSelectedBowAmmoTitleText = (
     : baseTitle;
 };
 
+const formatSelectedArrowDropTitleText = (
+  droppableArrowCount: number,
+  reservedArrowCount: number
+): string => {
+  if (droppableArrowCount <= 0) {
+    return `drop: blocked (${formatSelectedBowAmmoCountLabel(
+      reservedArrowCount,
+      'arrow'
+    )} reserved in flight)`;
+  }
+
+  return `drop: ${formatSelectedBowAmmoCountLabel(
+    droppableArrowCount,
+    'arrow'
+  )} droppable (${formatSelectedBowAmmoCountLabel(reservedArrowCount, 'arrow')} reserved in flight)`;
+};
+
+const formatSelectedArrowDropOneButtonTitleText = (
+  shortcutLabel: string,
+  droppableArrowCount: number,
+  reservedArrowCount: number
+): string =>
+  droppableArrowCount <= 0
+    ? `Drop one Arrow blocked (${formatSelectedBowAmmoCountLabel(
+        reservedArrowCount,
+        'arrow'
+      )} reserved in flight)`
+    : `Drop one Arrow (${shortcutLabel}; ${formatSelectedBowAmmoCountLabel(
+        droppableArrowCount,
+        'arrow'
+      )} droppable, ${formatSelectedBowAmmoCountLabel(
+        reservedArrowCount,
+        'arrow'
+      )} reserved in flight)`;
+
+const formatSelectedArrowDropStackButtonTitleText = (
+  shortcutLabel: string,
+  droppableArrowCount: number,
+  reservedArrowCount: number
+): string =>
+  droppableArrowCount <= 0
+    ? `Drop Arrow stack blocked (${formatSelectedBowAmmoCountLabel(
+        reservedArrowCount,
+        'arrow'
+      )} reserved in flight)`
+    : `Drop ${formatSelectedBowAmmoCountLabel(
+        droppableArrowCount,
+        'unreserved arrow'
+      )} (${shortcutLabel}; ${formatSelectedBowAmmoCountLabel(
+        reservedArrowCount,
+        'arrow'
+      )} reserved in flight)`;
+
 export class HotbarOverlay {
   private root: HTMLDivElement;
   private actionRow: HTMLDivElement;
@@ -506,6 +565,7 @@ export class HotbarOverlay {
         ? clampUnitInterval(options.selectedBowDrawCooldownFillNormalized)
         : null;
     const selectedBowAmmoReadout = options.selectedBowAmmoReadout ?? null;
+    const selectedArrowDropReadout = options.selectedArrowDropReadout ?? null;
     const selectedGrapplingHookReadout = options.selectedGrapplingHookReadout ?? null;
     const healingPotionCooldownFillNormalized =
       typeof options.healingPotionCooldownFillNormalized === 'number'
@@ -577,6 +637,27 @@ export class HotbarOverlay {
               )
             }
           : null;
+      const selectedArrowDropLimit =
+        selected &&
+        stack.itemId === 'arrow' &&
+        selectedArrowDropReadout !== null
+          ? {
+              droppableArrowCount: Math.max(
+                0,
+                Math.min(
+                  stack.amount,
+                  Math.floor(selectedArrowDropReadout.droppableArrowCount)
+                )
+              ),
+              reservedArrowCount: Math.max(
+                0,
+                Math.floor(selectedArrowDropReadout.reservedArrowCount)
+              )
+            }
+          : null;
+      const selectedArrowShowingDropLimit =
+        selectedArrowDropLimit !== null &&
+        selectedArrowDropLimit.droppableArrowCount < stack.amount;
       const selectedGrapplingHookState =
         selected && stack.itemId === 'grappling-hook' && selectedGrapplingHookReadout !== null
           ? selectedGrapplingHookReadout
@@ -647,6 +728,11 @@ export class HotbarOverlay {
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${formatSelectedBowAmmoTitleText(
               selectedBowAmmo.availableArrowCount,
               selectedBowAmmo.reservedArrowCount
+            )})`
+        : selectedArrowShowingDropLimit
+          ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${formatSelectedArrowDropTitleText(
+              selectedArrowDropLimit.droppableArrowCount,
+              selectedArrowDropLimit.reservedArrowCount
             )})`
         : selectedWandCoolingDown
             ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${STARTER_WAND_COOLDOWN_TITLE_TEXT})`
@@ -731,7 +817,25 @@ export class HotbarOverlay {
     }
 
     const selectedStack = state.hotbar[state.selectedHotbarSlotIndex] ?? null;
-    this.dropEnabled = selectedStack !== null;
+    const selectedArrowButtonDropReadout =
+      selectedStack !== null &&
+      selectedStack.itemId === 'arrow' &&
+      selectedArrowDropReadout !== null
+        ? {
+            droppableArrowCount: Math.max(
+              0,
+              Math.min(
+                selectedStack.amount,
+                Math.floor(selectedArrowDropReadout.droppableArrowCount)
+              )
+            ),
+            reservedArrowCount: Math.max(0, Math.floor(selectedArrowDropReadout.reservedArrowCount))
+          }
+        : null;
+    this.dropEnabled =
+      selectedStack !== null &&
+      (selectedArrowButtonDropReadout === null ||
+        selectedArrowButtonDropReadout.droppableArrowCount > 0);
     this.moveSelectedLeftEnabled = state.selectedHotbarSlotIndex > 0;
     this.moveSelectedRightEnabled = state.selectedHotbarSlotIndex < this.slots.length - 1;
 
@@ -783,11 +887,25 @@ export class HotbarOverlay {
     this.dropOneButton.title =
       selectedStack === null
         ? 'Selected hotbar slot is empty'
-        : `Drop one ${getPlayerInventoryItemDefinition(selectedStack.itemId).label} (${getDropOneSelectedHotbarItemShortcutLabel()})`;
+        : selectedArrowButtonDropReadout !== null &&
+            selectedArrowButtonDropReadout.droppableArrowCount < selectedStack.amount
+          ? formatSelectedArrowDropOneButtonTitleText(
+              getDropOneSelectedHotbarItemShortcutLabel(),
+              selectedArrowButtonDropReadout.droppableArrowCount,
+              selectedArrowButtonDropReadout.reservedArrowCount
+            )
+          : `Drop one ${getPlayerInventoryItemDefinition(selectedStack.itemId).label} (${getDropOneSelectedHotbarItemShortcutLabel()})`;
     this.dropStackButton.title =
       selectedStack === null
         ? 'Selected hotbar slot is empty'
-        : `Drop ${getPlayerInventoryItemDefinition(selectedStack.itemId).label} stack (${getDropSelectedHotbarStackShortcutLabel()})`;
+        : selectedArrowButtonDropReadout !== null &&
+            selectedArrowButtonDropReadout.droppableArrowCount < selectedStack.amount
+          ? formatSelectedArrowDropStackButtonTitleText(
+              getDropSelectedHotbarStackShortcutLabel(),
+              selectedArrowButtonDropReadout.droppableArrowCount,
+              selectedArrowButtonDropReadout.reservedArrowCount
+            )
+          : `Drop ${getPlayerInventoryItemDefinition(selectedStack.itemId).label} stack (${getDropSelectedHotbarStackShortcutLabel()})`;
   }
 
   dispose(): void {

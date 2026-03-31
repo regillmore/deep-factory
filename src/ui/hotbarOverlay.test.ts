@@ -440,6 +440,54 @@ describe('HotbarOverlay', () => {
     expect(getSlotRow(overlay).children[6]!.title).not.toContain('ammo:');
   });
 
+  it('shows blocked selected-arrow drop feedback when every carried arrow is reserved in flight', () => {
+    const host = createHost();
+    const overlay = new HotbarOverlay({ host });
+
+    overlay.update(
+      createHotbarState([[7, createPlayerInventoryItemStack('arrow', 1)]], 7),
+      {
+        selectedArrowDropReadout: {
+          droppableArrowCount: 0,
+          reservedArrowCount: 1
+        }
+      }
+    );
+
+    expect(getSlotRow(overlay).children[7]!.title).toContain('drop: blocked');
+    expect(getSlotRow(overlay).children[7]!.title).toContain('1 arrow reserved in flight');
+    expect(getDropOneButton(overlay).title).toContain('Drop one Arrow blocked');
+    expect(getDropOneButton(overlay).title).toContain('1 arrow reserved in flight');
+    expect(getDropOneButton(overlay).getAttribute('aria-disabled')).toBe('true');
+    expect(getDropStackButton(overlay).title).toContain('Drop Arrow stack blocked');
+    expect(getDropStackButton(overlay).title).toContain('1 arrow reserved in flight');
+    expect(getDropStackButton(overlay).getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('shows partial selected-arrow drop feedback when only some carried arrows are unreserved', () => {
+    const host = createHost();
+    const overlay = new HotbarOverlay({ host });
+
+    overlay.update(
+      createHotbarState([[7, createPlayerInventoryItemStack('arrow', 2)]], 7),
+      {
+        selectedArrowDropReadout: {
+          droppableArrowCount: 1,
+          reservedArrowCount: 1
+        }
+      }
+    );
+
+    expect(getSlotRow(overlay).children[7]!.title).toContain('drop: 1 arrow droppable');
+    expect(getSlotRow(overlay).children[7]!.title).toContain('1 arrow reserved in flight');
+    expect(getDropOneButton(overlay).title).toContain('1 arrow droppable');
+    expect(getDropOneButton(overlay).title).toContain('1 arrow reserved in flight');
+    expect(getDropOneButton(overlay).getAttribute('aria-disabled')).toBe('false');
+    expect(getDropStackButton(overlay).title).toContain('Drop 1 unreserved arrow');
+    expect(getDropStackButton(overlay).title).toContain('1 arrow reserved in flight');
+    expect(getDropStackButton(overlay).getAttribute('aria-disabled')).toBe('false');
+  });
+
   it('shows selected grappling-hook active, latch-ready, range-blocked, and dead feedback states', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });

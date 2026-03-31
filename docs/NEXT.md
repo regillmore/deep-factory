@@ -5,7 +5,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Bow and arrow ranged combat
 
 617. Clear bow-ammo reservations on world-session replacement after task 615: release any in-flight reserved arrows when `New World`, import, or restore replaces a session that does not persist projectile entities, and cover reservation-cleanup regressions.
-708. Surface reserved-arrow drop limits on selected `Arrow` stacks after task 623: show blocked-versus-droppable drop feedback while bow projectiles still hold ammo reservations, and cover selected-arrow tooltip regressions.
 
 ## Bed checkpoint respawn
 
