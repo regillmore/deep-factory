@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-30: Reserved arrows cannot leave inventory through hotbar drops
+
+- Decision: Hotbar `Drop 1` now blocks when every carried `Arrow` is already reserved by in-flight bow projectiles, and hotbar `Drop` now removes only the selected stack's unreserved arrow count instead of dropping reserved ammo too.
+- Reason: Active bow projectiles treat carried arrows as reserved backing ammo until they resolve, so inventory drop actions should preserve that same reservation invariant instead of letting players remove in-flight ammo from inventory out of band.
+- Consequence: Future arrow-transfer or arrow-removal flows should keep at least the current reserved-arrow count in inventory until those projectiles resolve, rather than treating `Arrow` stacks as fully disposable while shots are still in flight.
+
 ### 2026-03-29: Selected bow slot feedback follows available unreserved arrows
 
 - Decision: The selected bow hotbar readout now shows remaining available arrows after subtracting active projectile reservations, and its tooltip calls out any arrows still reserved in flight instead of mirroring the raw carried stack.

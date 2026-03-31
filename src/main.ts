@@ -4216,6 +4216,45 @@ const bootstrap = async (): Promise<void> => {
       spawnDroppedItemEntity(droppedItemState);
     }
   };
+  const resolveDroppableSelectedStandalonePlayerHotbarStackAmount = (
+    selectedStack: NonNullable<ReturnType<typeof getSelectedStandalonePlayerInventoryStack>>
+  ): number => {
+    if (selectedStack.itemId !== ARROW_ITEM_ID) {
+      return selectedStack.amount;
+    }
+
+    return Math.min(selectedStack.amount, resolveAvailableBowArrowCount());
+  };
+  const removeSelectedStandalonePlayerHotbarStackAmount = (
+    selectedStack: NonNullable<ReturnType<typeof getSelectedStandalonePlayerInventoryStack>>,
+    removedAmount: number
+  ): boolean => {
+    if (
+      !Number.isInteger(removedAmount) ||
+      removedAmount <= 0 ||
+      removedAmount > selectedStack.amount
+    ) {
+      return false;
+    }
+
+    applyStandalonePlayerInventoryState(
+      removedAmount === selectedStack.amount
+        ? setPlayerInventoryHotbarSlot(
+            standalonePlayerInventoryState,
+            standalonePlayerInventoryState.selectedHotbarSlotIndex,
+            null
+          )
+        : setPlayerInventoryHotbarSlot(
+            standalonePlayerInventoryState,
+            standalonePlayerInventoryState.selectedHotbarSlotIndex,
+            {
+              itemId: selectedStack.itemId,
+              amount: selectedStack.amount - removedAmount
+            }
+          )
+    );
+    return true;
+  };
   const dropSelectedStandalonePlayerHotbarItem = (): boolean => {
     const standalonePlayerState = getStandalonePlayerState();
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
@@ -4223,15 +4262,12 @@ const bootstrap = async (): Promise<void> => {
       return false;
     }
 
-    const consumeResult = consumePlayerInventoryHotbarSlotItem(
-      standalonePlayerInventoryState,
-      standalonePlayerInventoryState.selectedHotbarSlotIndex
-    );
-    if (!consumeResult.consumed) {
+    if (resolveDroppableSelectedStandalonePlayerHotbarStackAmount(selectedStack) <= 0) {
       return false;
     }
-
-    applyStandalonePlayerInventoryState(consumeResult.state);
+    if (!removeSelectedStandalonePlayerHotbarStackAmount(selectedStack, 1)) {
+      return false;
+    }
     const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(
       createDroppedItemStateFromPlayerDrop(standalonePlayerState, selectedStack.itemId, 1)
     );
@@ -4247,17 +4283,17 @@ const bootstrap = async (): Promise<void> => {
       return false;
     }
 
+    const droppedAmount = resolveDroppableSelectedStandalonePlayerHotbarStackAmount(selectedStack);
+    if (droppedAmount <= 0) {
+      return false;
+    }
+    if (!removeSelectedStandalonePlayerHotbarStackAmount(selectedStack, droppedAmount)) {
+      return false;
+    }
     const droppedItemState = createDroppedItemStateFromPlayerDrop(
       standalonePlayerState,
       selectedStack.itemId,
-      selectedStack.amount
-    );
-    applyStandalonePlayerInventoryState(
-      setPlayerInventoryHotbarSlot(
-        standalonePlayerInventoryState,
-        standalonePlayerInventoryState.selectedHotbarSlotIndex,
-        null
-      )
+      droppedAmount
     );
     const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(droppedItemState);
     if (remainingDroppedItemState !== null) {

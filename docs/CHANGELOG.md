@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-30
+
+- Task: Prevent hotbar arrow drops from bypassing bow reservations.
+- Changes: Updated [src/main.ts](../src/main.ts) so `Drop 1` now blocks when every carried `Arrow` is still reserved by an in-flight projectile and `Drop` now sheds only the selected stack's unreserved arrow count while keeping the reserved remainder in inventory; updated [src/main.test.ts](../src/main.test.ts) with single-item blocked-drop and full-stack partial-drop regressions alongside non-arrow drop sanity coverage; removed completed task `623` from [docs/NEXT.md](docs/NEXT.md), added replacement task `708`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts -t "in-flight bow shot"`, `cmd /c npx vitest run src/main.test.ts -t "full arrow-stack drop"`, `cmd /c npx vitest run src/main.test.ts -t "drops the selected hotbar stack into a world pickup"`, `cmd /c npx vitest run src/main.test.ts -t "drops one item from the selected hotbar stack while keeping the remaining stack in inventory"`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-29
 
 - Task: Surface selected-bow available ammo after in-flight reservations.
