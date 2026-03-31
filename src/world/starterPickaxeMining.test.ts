@@ -8,6 +8,12 @@ import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
 import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
+import {
+  STARTER_DOOR_BOTTOM_TILE_ID,
+  STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+  STARTER_DOOR_OPEN_TOP_TILE_ID,
+  STARTER_DOOR_TOP_TILE_ID
+} from './starterDoorPlacement';
 import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './starterWallPlacement';
 import { PLACEABLE_WOOD_BLOCK_TILE_ID } from './starterBlockPlacement';
 import {
@@ -38,7 +44,7 @@ const createPlayer = (x = 8, y = 28) => ({
 });
 
 describe('evaluateStarterPickaxeMiningTarget', () => {
-  it('allows nearby solid terrain, platform, rope, torch, workbench, furnace, and anvil tiles and rejects empty or non-target tiles', () => {
+  it('allows nearby solid terrain and utility tiles and rejects empty or non-target tiles', () => {
     const player = createPlayer(48, 28);
     const world = createWorld({
       '0,0': 9,
@@ -147,6 +153,57 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
     });
   });
 
+  it('treats nearby closed and open door tiles as breakable gameplay targets', () => {
+    const player = createPlayer(40, 28);
+    const world = createWorld({
+      '0,0': STARTER_DOOR_BOTTOM_TILE_ID,
+      '1,0': STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+      '2,-1': STARTER_DOOR_TOP_TILE_ID,
+      '3,-1': STARTER_DOOR_OPEN_TOP_TILE_ID
+    });
+
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 0, 0)).toMatchObject({
+      tileId: STARTER_DOOR_BOTTOM_TILE_ID,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: STARTER_DOOR_BOTTOM_TILE_ID,
+      occupied: true,
+      breakableTarget: true,
+      withinRange: true,
+      canMine: true
+    });
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 1, 0)).toMatchObject({
+      tileId: STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
+      occupied: true,
+      breakableTarget: true,
+      withinRange: true,
+      canMine: true
+    });
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 2, -1)).toMatchObject({
+      tileId: STARTER_DOOR_TOP_TILE_ID,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: STARTER_DOOR_TOP_TILE_ID,
+      occupied: true,
+      breakableTarget: true,
+      withinRange: true,
+      canMine: true
+    });
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 3, -1)).toMatchObject({
+      tileId: STARTER_DOOR_OPEN_TOP_TILE_ID,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: STARTER_DOOR_OPEN_TOP_TILE_ID,
+      occupied: true,
+      breakableTarget: true,
+      withinRange: true,
+      canMine: true
+    });
+  });
+
   it('treats nearby dirt and wood walls on empty foreground cells as mineable and keeps foreground tiles as the removal target when present', () => {
     const player = createPlayer(48, 28);
     const world = createWorld(
@@ -237,6 +294,10 @@ describe('resolveStarterPickaxeBrokenTileDrop', () => {
     expect(resolveStarterPickaxeBrokenTileDrop(STARTER_WORKBENCH_TILE_ID)).toBeNull();
     expect(resolveStarterPickaxeBrokenTileDrop(STARTER_FURNACE_TILE_ID)).toBeNull();
     expect(resolveStarterPickaxeBrokenTileDrop(STARTER_ANVIL_TILE_ID)).toBeNull();
+    expect(resolveStarterPickaxeBrokenTileDrop(STARTER_DOOR_BOTTOM_TILE_ID)).toBeNull();
+    expect(resolveStarterPickaxeBrokenTileDrop(STARTER_DOOR_TOP_TILE_ID)).toBeNull();
+    expect(resolveStarterPickaxeBrokenTileDrop(STARTER_DOOR_OPEN_BOTTOM_TILE_ID)).toBeNull();
+    expect(resolveStarterPickaxeBrokenTileDrop(STARTER_DOOR_OPEN_TOP_TILE_ID)).toBeNull();
   });
 });
 

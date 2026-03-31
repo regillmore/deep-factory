@@ -4141,10 +4141,51 @@ const bootstrap = async (): Promise<void> => {
       spawnDroppedItemEntity(remainingDroppedItemState);
     }
   };
+  const destroyStarterDoorPairThroughGameplayRefundPaths = (
+    worldTileX: number,
+    worldTileY: number
+  ): boolean => {
+    const doorTarget = resolveStarterDoorToggleTarget(
+      {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+      },
+      worldTileX,
+      worldTileY
+    );
+    if (doorTarget === null) {
+      return false;
+    }
+
+    const topEditResult = applyWorldTileEdit(doorTarget.tileX, doorTarget.bottomTileY - 1, 0);
+    if (!topEditResult.changed) {
+      return false;
+    }
+
+    const bottomEditResult = applyWorldTileEdit(doorTarget.tileX, doorTarget.bottomTileY, 0);
+    if (!bottomEditResult.changed) {
+      applyWorldTileEdit(
+        doorTarget.tileX,
+        doorTarget.bottomTileY - 1,
+        topEditResult.previousTileId
+      );
+      return false;
+    }
+
+    refundRemovedPlacedTile(doorTarget.tileX, doorTarget.bottomTileY, STARTER_DOOR_ITEM_ID);
+    return true;
+  };
   const destroyWorldTileThroughGameplayRefundPaths = (
     worldTileX: number,
     worldTileY: number
   ): boolean => {
+    if (renderer.getTile(worldTileX, worldTileY) === DEBUG_TILE_BREAK_ID) {
+      return false;
+    }
+
+    if (destroyStarterDoorPairThroughGameplayRefundPaths(worldTileX, worldTileY)) {
+      return true;
+    }
+
     const editResult = applyWorldTileEdit(worldTileX, worldTileY, DEBUG_TILE_BREAK_ID);
     if (!editResult.changed) {
       return false;

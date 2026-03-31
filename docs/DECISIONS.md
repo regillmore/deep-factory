@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-30: Gameplay door refunds resolve from one paired removal seam
+
+- Decision: Starter-pickaxe and bomb-driven gameplay removal now resolve complete door pairs through one bottom-anchored pair-clear seam and refund exactly one `Door` pickup from that anchor.
+- Reason: Either half of a placed door can be targeted directly and bomb blasts can overlap both tiles at once, so per-tile removal would duplicate refunds or leave door cleanup behavior split across multiple paths.
+- Consequence: Future gameplay door-removal or refund work should call that shared pair-removal seam instead of removing individual door tiles or attaching refunds directly to generic per-tile edit notifications.
+
 ### 2026-03-30: Open-door blocking and cleanup follow the paired doorway support state
 
 - Decision: Closed door pairs stay solid and light-blocking, open door pairs become non-solid and non-light-blocking, and `TileWorld` clears complete door pairs only when their shared doorway framing or solid-or-platform floor support disappears.

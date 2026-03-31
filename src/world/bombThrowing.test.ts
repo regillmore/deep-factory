@@ -16,6 +16,10 @@ import {
   DEFAULT_HOSTILE_SLIME_HEALTH
 } from './hostileSlimeState';
 import { createPlayerState, getPlayerCameraFocusPoint } from './playerState';
+import {
+  STARTER_DOOR_BOTTOM_TILE_ID,
+  STARTER_DOOR_TOP_TILE_ID
+} from './starterDoorPlacement';
 import { STARTER_ROPE_TILE_ID } from './starterRopePlacement';
 import { STARTER_DIRT_WALL_ID } from './starterWallPlacement';
 
@@ -256,12 +260,13 @@ describe('bombThrowing', () => {
 
   it('collects deterministic blast break targets only for mineable and utility tiles', () => {
     const tileIds = new Map<string, number>([
+      ['0,-1', STARTER_DOOR_TOP_TILE_ID],
+      ['0,0', STARTER_DOOR_BOTTOM_TILE_ID],
       ['1,0', STARTER_ROPE_TILE_ID],
       ['2,0', 1],
       ['1,1', 1]
     ]);
     const wallIds = new Map<string, number>([
-      ['0,0', STARTER_DIRT_WALL_ID],
       ['1,1', STARTER_DIRT_WALL_ID],
       ['3,0', STARTER_DIRT_WALL_ID]
     ]);
@@ -285,6 +290,18 @@ describe('bombThrowing', () => {
         }
       )
     ).toEqual([
+      {
+        worldTileX: 0,
+        worldTileY: -1,
+        targetLayer: 'tile',
+        targetId: STARTER_DOOR_TOP_TILE_ID
+      },
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        targetLayer: 'tile',
+        targetId: STARTER_DOOR_BOTTOM_TILE_ID
+      },
       {
         worldTileX: 1,
         worldTileY: 0,

@@ -15764,6 +15764,120 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('clears a bomb-blasted door pair through the shared utility refund path and drops exactly one door', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 328, y: -582 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const bombUseTargetWorldY = playerFocusPoint.y - 120;
+    const bombUseTarget = {
+      worldTileX: 20,
+      worldTileY: Math.floor(bombUseTargetWorldY / 16),
+      worldX: playerFocusPoint.x,
+      worldY: bombUseTargetWorldY,
+      pointerType: 'mouse' as const
+    };
+    let predictedBombState = createThrownBombStateFromThrow(standalonePlayerState, {
+      x: bombUseTarget.worldX,
+      y: bombUseTarget.worldY
+    });
+    let predictedBlastPosition: { x: number; y: number } | null = null;
+    let stepsUntilBlast = 0;
+    for (let step = 0; step < 120; step += 1) {
+      const stepResult = stepThrownBombState(predictedBombState, {
+        fixedDtSeconds: 1 / 60
+      });
+      if (stepResult.blastEvent !== null) {
+        predictedBlastPosition = stepResult.blastEvent.position;
+        stepsUntilBlast = step + 1;
+        break;
+      }
+      if (stepResult.nextState === null) {
+        throw new Error('expected an in-flight bomb state before the predicted blast');
+      }
+      predictedBombState = stepResult.nextState;
+    }
+    if (predictedBlastPosition === null || stepsUntilBlast <= 0) {
+      throw new Error('expected a predicted bomb blast position');
+    }
+
+    const blastWorldTileX = Math.floor(predictedBlastPosition.x / 16);
+    const blastWorldTileY = Math.floor(predictedBlastPosition.y / 16);
+    const savedWorld = new TileWorld(0);
+    expect(
+      savedWorld.setTileState(blastWorldTileX, blastWorldTileY - 1, STARTER_DOOR_OPEN_TOP_TILE_ID, 0)
+    ).toBe(true);
+    expect(
+      savedWorld.setTileState(blastWorldTileX, blastWorldTileY, STARTER_DOOR_OPEN_BOTTOM_TILE_ID, 0)
+    ).toBe(true);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bomb', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererPersistentSetTileResult = true;
+    testRuntime.playerItemUseRequests = [bombUseTarget];
+    runFixedUpdate(1 / 60);
+    testRuntime.playerItemUseRequests = [];
+    for (let step = 0; step < stepsUntilBlast - 1; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: blastWorldTileX,
+        worldTileY: blastWorldTileY - 1,
+        tileId: 0
+      },
+      {
+        worldTileX: blastWorldTileX,
+        worldTileY: blastWorldTileY,
+        tileId: 0
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+
+    expect(restoredWorld.getTile(blastWorldTileX, blastWorldTileY - 1)).toBe(0);
+    expect(restoredWorld.getTile(blastWorldTileX, blastWorldTileY)).toBe(0);
+    expect(persistedEnvelope?.session.droppedItemStates).toEqual([
+      {
+        position: { x: (blastWorldTileX + 0.5) * 16, y: (blastWorldTileY + 0.5) * 16 },
+        itemId: 'door',
+        amount: 1
+      }
+    ]);
+  });
+
   it('shows a starter-spear preview line at fixed reach and flags clamped aim when the hovered world point is farther away', async () => {
     const standalonePlayerState = createPlayerState({
       position: { x: 8, y: 28 },
@@ -17027,6 +17141,72 @@ describe('main.ts shell state orchestration', () => {
       {
         position: { x: 24, y: 8 },
         itemId: 'workbench',
+        amount: 1
+      }
+    ]);
+  });
+
+  it('clears a nearby placed door pair and refunds exactly one door when the starter pickaxe mines a door tile', async () => {
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTileState(1, -1, STARTER_DOOR_TOP_TILE_ID, 0)).toBe(true);
+    expect(savedWorld.setTileState(1, 0, STARTER_DOOR_BOTTOM_TILE_ID, 0)).toBe(true);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right',
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createLegacyStarterInventoryState()
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererPersistentSetTileResult = true;
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        worldX: 24,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        tileId: 0
+      },
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        tileId: 0
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+
+    expect(restoredWorld.getTile(1, -1)).toBe(0);
+    expect(restoredWorld.getTile(1, 0)).toBe(0);
+    expect(persistedEnvelope?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: 8 },
+        itemId: 'door',
         amount: 1
       }
     ]);
