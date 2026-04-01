@@ -32,6 +32,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Save/load needs to preserve intentional checkpoint claims across browser resume or export/import, while still rejecting stale anchors from removed beds or malformed snapshot remnants before runtime respawn logic trusts them again.
 - Consequence: Future bed save/load or restore cleanup work should keep persisting raw claimed anchors, then validate them against the restored paired-bed footprint instead of silently dropping all saved claims or trusting malformed loaded bed tiles.
 
+### 2026-03-31: Selected bed slot feedback stays checkpoint-claim first
+
+- Decision: The selected `Bed` hotbar slot now shows ready or range-blocked feedback only when the hovered target resolves a complete placed bed pair for checkpoint claiming, and otherwise falls back to the ordinary carried-stack placement readout.
+- Reason: Selected-bed use prioritizes checkpoint claims on complete placed beds, but empty tiles are still placement targets, so the slot readout should distinguish real checkpoint interactions from ordinary placement previews.
+- Consequence: Future selected-bed slot verb, blocked-state, or checkpoint-copy work should extend that same complete-pair claim seam instead of deriving copy from generic occupied placement previews.
+
 ### 2026-03-31: Selected door interaction previews outline the full doorway pair
 
 - Decision: Selected `Door` toggle overlays now render from the resolved bottom-anchored pair across both top and bottom door tiles instead of outlining only the hovered half.

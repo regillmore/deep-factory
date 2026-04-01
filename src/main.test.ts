@@ -8921,6 +8921,73 @@ describe('main.ts shell state orchestration', () => {
     expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('0');
   });
 
+  it('shows selected-bed slot feedback only for placed-bed checkpoint claims', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'dirt-block', amount: 64 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'bed', amount: 4 },
+          ...Array.from({ length: 5 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 4
+      }),
+      createPlayerState({
+        position: { x: 56, y: 0 },
+        facing: 'right',
+        grounded: true
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('5', 'Digit5').prevented).toBe(true);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, -1), STARTER_BED_LEFT_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, -1), STARTER_BED_RIGHT_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(20, -1), STARTER_BED_LEFT_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(21, -1), STARTER_BED_RIGHT_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(8, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(9, 0), 1);
+
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 4, y: -1 }
+    };
+    runRenderFrame();
+
+    expect(getHotbarOverlaySlotButton(4).title).toContain('claim placed bed checkpoint in range');
+    expect(getHotbarOverlaySlotAmountLabel(4).textContent).toBe('READY');
+    expect(getHotbarOverlaySlotCooldownFill(4).style.height).toBe('100.0%');
+    expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('1');
+
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: 20, y: -1 }
+    };
+    runRenderFrame();
+
+    expect(getHotbarOverlaySlotButton(4).title).toContain(
+      'claim placed bed checkpoint beyond reach'
+    );
+    expect(getHotbarOverlaySlotAmountLabel(4).textContent).toBe('RANGE');
+    expect(getHotbarOverlaySlotCooldownFill(4).style.height).toBe('100.0%');
+    expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('1');
+
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 8, y: -1 }
+    };
+    runRenderFrame();
+
+    expect(getHotbarOverlaySlotButton(4).title).not.toContain('bed checkpoint');
+    expect(getHotbarOverlaySlotAmountLabel(4).textContent).toBe('4');
+    expect(getHotbarOverlaySlotCooldownFill(4).style.height).toBe('0.0%');
+    expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('0');
+  });
+
   it('shows a valid rope placement preview when the selected stack hangs below a solid anchor', async () => {
     setPersistedWorldSaveWithInventory();
     await import('./main');

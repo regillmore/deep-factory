@@ -4,6 +4,7 @@ import {
   type PlayerSpawnPoint,
   type PlayerSpawnWorldView
 } from './playerSpawn';
+import { evaluatePlayerHotbarTilePlacementRange } from './playerHotbarPlacementRange';
 import { TILE_SIZE } from './constants';
 import type { PlayerInventoryItemId } from './playerInventory';
 import type { PlayerState } from './playerState';
@@ -41,6 +42,11 @@ export interface StarterBedRespawnWorldView
 export interface StarterBedRespawnSize {
   width: number;
   height: number;
+}
+
+export interface StarterBedCheckpointClaimPreviewEvaluation {
+  claimAnchor: StarterBedAnchor;
+  withinRange: boolean;
 }
 
 const doesAabbOverlap = (aabb: WorldAabb, other: WorldAabb): boolean =>
@@ -157,6 +163,24 @@ export const findStarterBedRespawnPoint = (
     },
     registry
   );
+};
+
+export const evaluateStarterBedCheckpointClaimPreview = (
+  world: StarterBedPlacementWorldView,
+  playerState: Pick<PlayerState, 'position' | 'size'>,
+  worldTileX: number,
+  worldTileY: number
+): StarterBedCheckpointClaimPreviewEvaluation | null => {
+  const claimAnchor = resolvePlacedStarterBedAnchor(world, worldTileX, worldTileY);
+  if (claimAnchor === null) {
+    return null;
+  }
+
+  return {
+    claimAnchor,
+    withinRange: evaluatePlayerHotbarTilePlacementRange(playerState, worldTileX, worldTileY)
+      .withinRange
+  };
 };
 
 export const evaluateStarterBedPlacement = (

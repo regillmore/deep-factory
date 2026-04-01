@@ -18,6 +18,7 @@ export interface PlayerItemPlacementPreviewState {
   occupied: boolean;
   hasSolidFaceSupport: boolean;
   blockedByPlayer: boolean;
+  bedCheckpointStatus?: 'claim-ready' | 'claim-blocked';
   doorToggleStatus?: 'toggle-ready' | 'toggle-blocked';
   doorToggleVerb?: 'open' | 'close';
 }

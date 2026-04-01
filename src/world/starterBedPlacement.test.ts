@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createPlayerState } from './playerState';
 import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
 import {
+  evaluateStarterBedCheckpointClaimPreview,
   evaluateStarterBedPlacement,
   findStarterBedRespawnPoint,
   hasStarterBedGroundSupport,
@@ -187,6 +188,35 @@ describe('starterBedPlacement', () => {
     expect(findStarterBedRespawnPoint(floodedBedWorld, checkpoint, playerSize)).toBeNull();
     expect(findStarterBedRespawnPoint(unsupportedBedWorld, checkpoint, playerSize)).toBeNull();
     expect(findStarterBedRespawnPoint(orphanedBedWorld, checkpoint, playerSize)).toBeNull();
+  });
+
+  it('evaluates placed bed checkpoint claims only from complete pairs and marks out-of-range claims as blocked', () => {
+    const playerState = createPlayerState({
+      position: { x: 56, y: 0 }
+    });
+    const previewWorld = createWorld({
+      '3,-1': STARTER_BED_LEFT_TILE_ID,
+      '4,-1': STARTER_BED_RIGHT_TILE_ID,
+      '20,-1': STARTER_BED_LEFT_TILE_ID,
+      '21,-1': STARTER_BED_RIGHT_TILE_ID,
+      '9,-1': STARTER_BED_LEFT_TILE_ID
+    });
+
+    expect(evaluateStarterBedCheckpointClaimPreview(previewWorld, playerState, 4, -1)).toEqual({
+      claimAnchor: {
+        leftTileX: 3,
+        tileY: -1
+      },
+      withinRange: true
+    });
+    expect(evaluateStarterBedCheckpointClaimPreview(previewWorld, playerState, 20, -1)).toEqual({
+      claimAnchor: {
+        leftTileX: 20,
+        tileY: -1
+      },
+      withinRange: false
+    });
+    expect(evaluateStarterBedCheckpointClaimPreview(previewWorld, playerState, 9, -1)).toBeNull();
   });
 
   it('allows empty grounded footprints and rejects occupied, unsupported, or player-overlapping placements', () => {

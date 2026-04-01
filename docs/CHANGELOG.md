@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-31
 
+- Task: Add selected-bed checkpoint slot feedback.
+- Changes: Updated [src/world/starterBedPlacement.ts](../src/world/starterBedPlacement.ts) plus [src/world/starterBedPlacement.test.ts](../src/world/starterBedPlacement.test.ts) with a shared placed-bed checkpoint preview helper that resolves complete bed-pair claim targets and marks out-of-range claims; updated [src/main.ts](../src/main.ts), [src/main.test.ts](../src/main.test.ts), [src/ui/playerItemPlacementPreviewOverlay.ts](../src/ui/playerItemPlacementPreviewOverlay.ts), [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts), and [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts) so selected `Bed` stacks now surface `READY` or `RANGE` readouts for complete placed-bed checkpoint claims without replacing ordinary placement copy; removed completed task `723` from [docs/NEXT.md](docs/NEXT.md), added replacement task `727`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/starterBedPlacement.test.ts src/ui/hotbarOverlay.test.ts src/main.test.ts -t bed` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Fix left-half starter-pickaxe bed removal so paired cleanup cannot recreate the mate.
 - Changes: Updated [src/main.ts](../src/main.ts) so gameplay bed-pair removal now clears the targeted half first and treats world-owned mate cleanup as success instead of rolling the pair back when the second explicit edit sees an already-cleared tile; expanded [src/main.test.ts](../src/main.test.ts) with a regression that simulates the real tile-edit event order from world-owned paired cleanup when mining the left bed half.
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts -t bed` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

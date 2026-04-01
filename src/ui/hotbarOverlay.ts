@@ -32,6 +32,7 @@ type SelectedGrapplingHookReadoutStatus =
   | 'dead'
   | 'latch-ready'
   | 'range-blocked';
+type SelectedBedReadoutStatus = 'claim-ready' | 'claim-blocked';
 type SelectedDoorReadoutStatus = 'toggle-ready' | 'toggle-blocked';
 type SelectedDoorReadoutVerb = 'open' | 'close';
 
@@ -58,6 +59,11 @@ interface HotbarOverlayUpdateOptions {
   selectedGrapplingHookReadout?:
     | {
         status: SelectedGrapplingHookReadoutStatus;
+      }
+    | null;
+  selectedBedReadout?:
+    | {
+        status: SelectedBedReadoutStatus;
       }
     | null;
   selectedDoorReadout?:
@@ -190,6 +196,33 @@ const SELECTED_GRAPPLING_HOOK_FILL_BACKGROUND: Record<
   dead: SELECTED_GRAPPLING_HOOK_DEAD_FILL_BACKGROUND,
   'latch-ready': SELECTED_GRAPPLING_HOOK_LATCH_READY_FILL_BACKGROUND,
   'range-blocked': SELECTED_GRAPPLING_HOOK_RANGE_BLOCK_FILL_BACKGROUND
+};
+const SELECTED_BED_CLAIM_READY_FILL_BACKGROUND =
+  'linear-gradient(180deg, rgba(176, 255, 247, 0.05) 0%, rgba(102, 231, 222, 0.24) 35%, rgba(37, 176, 166, 0.62) 100%)';
+const SELECTED_BED_CLAIM_READY_TITLE_TEXT = 'ready: claim placed bed checkpoint in range';
+const SELECTED_BED_CLAIM_READY_AMOUNT_TEXT = 'READY';
+const SELECTED_BED_CLAIM_READY_AMOUNT_COLOR = '#c9fff8';
+const SELECTED_BED_CLAIM_BLOCKED_FILL_BACKGROUND =
+  'linear-gradient(180deg, rgba(255, 212, 196, 0.08) 0%, rgba(255, 146, 122, 0.3) 35%, rgba(212, 88, 62, 0.66) 100%)';
+const SELECTED_BED_CLAIM_BLOCKED_TITLE_TEXT =
+  'blocked: claim placed bed checkpoint beyond reach';
+const SELECTED_BED_CLAIM_BLOCKED_AMOUNT_TEXT = 'RANGE';
+const SELECTED_BED_CLAIM_BLOCKED_AMOUNT_COLOR = '#ffd0c8';
+const SELECTED_BED_TITLE_TEXT: Record<SelectedBedReadoutStatus, string> = {
+  'claim-ready': SELECTED_BED_CLAIM_READY_TITLE_TEXT,
+  'claim-blocked': SELECTED_BED_CLAIM_BLOCKED_TITLE_TEXT
+};
+const SELECTED_BED_AMOUNT_TEXT: Record<SelectedBedReadoutStatus, string> = {
+  'claim-ready': SELECTED_BED_CLAIM_READY_AMOUNT_TEXT,
+  'claim-blocked': SELECTED_BED_CLAIM_BLOCKED_AMOUNT_TEXT
+};
+const SELECTED_BED_AMOUNT_COLOR: Record<SelectedBedReadoutStatus, string> = {
+  'claim-ready': SELECTED_BED_CLAIM_READY_AMOUNT_COLOR,
+  'claim-blocked': SELECTED_BED_CLAIM_BLOCKED_AMOUNT_COLOR
+};
+const SELECTED_BED_FILL_BACKGROUND: Record<SelectedBedReadoutStatus, string> = {
+  'claim-ready': SELECTED_BED_CLAIM_READY_FILL_BACKGROUND,
+  'claim-blocked': SELECTED_BED_CLAIM_BLOCKED_FILL_BACKGROUND
 };
 const SELECTED_DOOR_TOGGLE_READY_FILL_BACKGROUND =
   'linear-gradient(180deg, rgba(176, 255, 247, 0.05) 0%, rgba(102, 231, 222, 0.24) 35%, rgba(37, 176, 166, 0.62) 100%)';
@@ -606,6 +639,7 @@ export class HotbarOverlay {
     const selectedBowAmmoReadout = options.selectedBowAmmoReadout ?? null;
     const selectedArrowDropReadout = options.selectedArrowDropReadout ?? null;
     const selectedGrapplingHookReadout = options.selectedGrapplingHookReadout ?? null;
+    const selectedBedReadout = options.selectedBedReadout ?? null;
     const selectedDoorReadout = options.selectedDoorReadout ?? null;
     const healingPotionCooldownFillNormalized =
       typeof options.healingPotionCooldownFillNormalized === 'number'
@@ -702,6 +736,10 @@ export class HotbarOverlay {
         selected && stack.itemId === 'grappling-hook' && selectedGrapplingHookReadout !== null
           ? selectedGrapplingHookReadout
           : null;
+      const selectedBedState =
+        selected && stack.itemId === 'bed' && selectedBedReadout !== null
+          ? selectedBedReadout
+          : null;
       const selectedDoorState =
         selected && stack.itemId === 'door' && selectedDoorReadout !== null
           ? selectedDoorReadout
@@ -766,6 +804,8 @@ export class HotbarOverlay {
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${selectedTimedItemFeedback.titleText})`
         : selectedGrapplingHookState !== null
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${SELECTED_GRAPPLING_HOOK_TITLE_TEXT[selectedGrapplingHookState.status]})`
+        : selectedBedState !== null
+          ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${SELECTED_BED_TITLE_TEXT[selectedBedState.status]})`
         : selectedDoorState !== null
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${formatSelectedDoorTitleText(
               selectedDoorState.status,
@@ -800,8 +840,10 @@ export class HotbarOverlay {
         ? blockedConsumable.amountText
         : selectedTimedItemFeedback !== null
           ? HOTBAR_TIMED_ITEM_AMOUNT_TEXT[selectedTimedItemFeedback.phase]
-          : selectedGrapplingHookState !== null
+        : selectedGrapplingHookState !== null
             ? SELECTED_GRAPPLING_HOOK_AMOUNT_TEXT[selectedGrapplingHookState.status]
+          : selectedBedState !== null
+            ? SELECTED_BED_AMOUNT_TEXT[selectedBedState.status]
           : selectedDoorState !== null
             ? SELECTED_DOOR_AMOUNT_TEXT[selectedDoorState.status]
           : selectedBowCoolingDown
@@ -821,8 +863,10 @@ export class HotbarOverlay {
         ? blockedConsumable.amountColor
         : selectedTimedItemFeedback !== null
           ? HOTBAR_TIMED_ITEM_AMOUNT_COLOR[selectedTimedItemFeedback.phase]
-          : selectedGrapplingHookState !== null
+        : selectedGrapplingHookState !== null
             ? SELECTED_GRAPPLING_HOOK_AMOUNT_COLOR[selectedGrapplingHookState.status]
+          : selectedBedState !== null
+            ? SELECTED_BED_AMOUNT_COLOR[selectedBedState.status]
           : selectedDoorState !== null
             ? SELECTED_DOOR_AMOUNT_COLOR[selectedDoorState.status]
           : selectedBowCoolingDown
@@ -842,6 +886,8 @@ export class HotbarOverlay {
             ? selectedTimedItemFeedback.timingFillNormalized
             : selectedGrapplingHookState !== null
               ? 1
+            : selectedBedState !== null
+              ? 1
             : selectedDoorState !== null
               ? 1
             : selectedBowCoolingDown
@@ -859,6 +905,8 @@ export class HotbarOverlay {
             ? HOTBAR_TIMED_ITEM_FILL_BACKGROUND[selectedTimedItemFeedback.phase]
             : selectedGrapplingHookState !== null
               ? SELECTED_GRAPPLING_HOOK_FILL_BACKGROUND[selectedGrapplingHookState.status]
+            : selectedBedState !== null
+              ? SELECTED_BED_FILL_BACKGROUND[selectedBedState.status]
             : selectedDoorState !== null
               ? SELECTED_DOOR_FILL_BACKGROUND[selectedDoorState.status]
             : selectedBowCoolingDown

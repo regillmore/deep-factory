@@ -390,6 +390,7 @@ import {
   STARTER_PLATFORM_TILE_ID
 } from './world/starterPlatformPlacement';
 import {
+  evaluateStarterBedCheckpointClaimPreview,
   evaluateStarterBedPlacement,
   findStarterBedRespawnPoint,
   resolvePlacedStarterBedAnchor,
@@ -2287,6 +2288,28 @@ const bootstrap = async (): Promise<void> => {
     }
     return null;
   };
+  const resolveHotbarOverlaySelectedBedReadout = (
+    selectedPlacementPreview: PlayerItemPlacementPreviewState | null = null
+  ): {
+    status: 'claim-ready' | 'claim-blocked';
+  } | null => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== STARTER_BED_ITEM_ID) {
+      return null;
+    }
+
+    if (selectedPlacementPreview?.bedCheckpointStatus === 'claim-ready') {
+      return {
+        status: 'claim-ready'
+      };
+    }
+    if (selectedPlacementPreview?.bedCheckpointStatus === 'claim-blocked') {
+      return {
+        status: 'claim-blocked'
+      };
+    }
+    return null;
+  };
   const resolveHotbarOverlayHeartCrystalBlockedReason = (): 'dead' | 'max-health-cap' | null => {
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
     if (selectedStack?.itemId !== HEART_CRYSTAL_ITEM_ID) {
@@ -2494,6 +2517,7 @@ const bootstrap = async (): Promise<void> => {
         resolveHotbarOverlaySelectedBowDrawCooldownFillNormalized(),
       selectedBowAmmoReadout: resolveHotbarOverlaySelectedBowAmmoReadout(),
       selectedArrowDropReadout: resolveHotbarOverlaySelectedArrowDropReadout(),
+      selectedBedReadout: resolveHotbarOverlaySelectedBedReadout(selectedPlacementPreview),
       selectedDoorReadout: resolveHotbarOverlaySelectedDoorReadout(selectedPlacementPreview),
       selectedGrapplingHookReadout:
         resolveHotbarOverlaySelectedGrapplingHookReadout(selectedGrapplingHookPreview),
@@ -6028,27 +6052,19 @@ const bootstrap = async (): Promise<void> => {
       return false;
     }
 
-    const claimedAnchor = resolvePlacedStarterBedAnchor(
+    const claimPreview = evaluateStarterBedCheckpointClaimPreview(
       {
         getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
       },
-      request.worldTileX,
-      request.worldTileY
-    );
-    if (claimedAnchor === null) {
-      return false;
-    }
-
-    const placementRange = evaluatePlayerHotbarTilePlacementRange(
       standalonePlayerState,
       request.worldTileX,
       request.worldTileY
     );
-    if (!placementRange.withinRange) {
+    if (claimPreview === null || !claimPreview.withinRange) {
       return false;
     }
 
-    setClaimedBedCheckpoint(claimedAnchor);
+    setClaimedBedCheckpoint(claimPreview.claimAnchor);
     resolveCurrentWorldPlayerSpawn();
     return true;
   };
@@ -6305,6 +6321,7 @@ const bootstrap = async (): Promise<void> => {
       PlayerItemPlacementPreviewState,
       'tileX' | 'tileY' | 'placementTileX' | 'placementTileY'
     > | null = null;
+    let bedCheckpointStatus: 'claim-ready' | 'claim-blocked' | undefined;
     let placementTileX = worldTileX;
     let placementTileY = worldTileY;
     if (isPlaceableSolidBlockItemId(selectedStack.itemId)) {
@@ -6420,7 +6437,21 @@ const bootstrap = async (): Promise<void> => {
             worldTileY
           );
           break;
-        case STARTER_BED_ITEM_ID:
+        case STARTER_BED_ITEM_ID: {
+          const bedCheckpointPreview = evaluateStarterBedCheckpointClaimPreview(
+            {
+              getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+            },
+            standalonePlayerState,
+            worldTileX,
+            worldTileY
+          );
+          bedCheckpointStatus =
+            bedCheckpointPreview === null
+              ? undefined
+              : bedCheckpointPreview.withinRange
+                ? 'claim-ready'
+                : 'claim-blocked';
           placement = evaluateStarterBedPlacement(
             {
               getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
@@ -6430,6 +6461,7 @@ const bootstrap = async (): Promise<void> => {
             worldTileY
           );
           break;
+        }
         case STARTER_DOOR_ITEM_ID: {
           const doorPreview = evaluateStarterDoorItemPreview(
             {
@@ -6489,6 +6521,7 @@ const bootstrap = async (): Promise<void> => {
             }
           }
         : {}),
+      ...(bedCheckpointStatus === undefined ? {} : { bedCheckpointStatus }),
       ...placement,
       canPlace: placement.canPlace && placementRange.withinRange
     };
