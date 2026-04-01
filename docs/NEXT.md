@@ -4,10 +4,10 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bed checkpoint respawn
 
-722. Add bed pair removal-and-refund handling after task 578: let gameplay tile clears or starter-pickaxe removal clear both halves of a placed bed together, refund exactly one `Bed` on gameplay removals, and cover paired-removal regressions.
 723. Add selected-bed checkpoint slot feedback after task 579: surface `READY` or `RANGE` on the selected hotbar slot for nearby placed-bed checkpoint claims while preserving ordinary bed placement readouts, and cover selected-slot precedence regressions.
 724. Clear live claimed bed checkpoints after tasks 580 and 722 when tile edits remove or mismatch the recorded bed pair: drop the raw runtime checkpoint on live invalidation and cover checkpoint-cleanup regressions.
 725. Add claimed-bed checkpoint world markers after tasks 581 and 724: render the currently claimed bed pair as a checkpoint marker that survives save/load, disappears when the live claim clears, and covers marker restore or cleanup regressions.
+726. Strip malformed bed remnants during save/load after task 722: normalize orphaned or mismatched placed-bed halves out of restored world snapshots and cover bed-snapshot cleanup regressions.
 
 ## Chest storage
 

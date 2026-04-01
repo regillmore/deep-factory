@@ -9,6 +9,10 @@ import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
 import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
 import {
+  STARTER_BED_LEFT_TILE_ID,
+  STARTER_BED_RIGHT_TILE_ID
+} from './starterBedPlacement';
+import {
   STARTER_DOOR_BOTTOM_TILE_ID,
   STARTER_DOOR_OPEN_BOTTOM_TILE_ID,
   STARTER_DOOR_OPEN_TOP_TILE_ID,
@@ -197,6 +201,35 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
       wallId: 0,
       targetLayer: 'tile',
       targetId: STARTER_DOOR_OPEN_TOP_TILE_ID,
+      occupied: true,
+      breakableTarget: true,
+      withinRange: true,
+      canMine: true
+    });
+  });
+
+  it('treats nearby placed bed halves as breakable gameplay targets', () => {
+    const player = createPlayer(40, 28);
+    const world = createWorld({
+      '0,0': STARTER_BED_LEFT_TILE_ID,
+      '1,0': STARTER_BED_RIGHT_TILE_ID
+    });
+
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 0, 0)).toMatchObject({
+      tileId: STARTER_BED_LEFT_TILE_ID,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: STARTER_BED_LEFT_TILE_ID,
+      occupied: true,
+      breakableTarget: true,
+      withinRange: true,
+      canMine: true
+    });
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 1, 0)).toMatchObject({
+      tileId: STARTER_BED_RIGHT_TILE_ID,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: STARTER_BED_RIGHT_TILE_ID,
       occupied: true,
       breakableTarget: true,
       withinRange: true,

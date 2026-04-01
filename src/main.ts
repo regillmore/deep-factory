@@ -4199,6 +4199,42 @@ const bootstrap = async (): Promise<void> => {
       spawnDroppedItemEntity(remainingDroppedItemState);
     }
   };
+  const destroyStarterBedPairThroughGameplayRefundPaths = (
+    worldTileX: number,
+    worldTileY: number
+  ): boolean => {
+    const bedAnchor = resolvePlacedStarterBedAnchor(
+      {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+      },
+      worldTileX,
+      worldTileY
+    );
+    if (bedAnchor === null) {
+      return false;
+    }
+
+    const targetedIsLeftHalf = worldTileX === bedAnchor.leftTileX && worldTileY === bedAnchor.tileY;
+    const primaryTileX = targetedIsLeftHalf ? bedAnchor.leftTileX : bedAnchor.leftTileX + 1;
+    const secondaryTileX = targetedIsLeftHalf ? bedAnchor.leftTileX + 1 : bedAnchor.leftTileX;
+
+    const primaryEditResult = applyWorldTileEdit(primaryTileX, bedAnchor.tileY, 0);
+    if (!primaryEditResult.changed) {
+      return false;
+    }
+
+    if (renderer.getTile(secondaryTileX, bedAnchor.tileY) === 0) {
+      return true;
+    }
+
+    const secondaryEditResult = applyWorldTileEdit(secondaryTileX, bedAnchor.tileY, 0);
+    if (!secondaryEditResult.changed) {
+      applyWorldTileEdit(primaryTileX, bedAnchor.tileY, primaryEditResult.previousTileId);
+      return false;
+    }
+
+    return true;
+  };
   const destroyStarterDoorPairThroughGameplayRefundPaths = (
     worldTileX: number,
     worldTileY: number
@@ -4237,6 +4273,10 @@ const bootstrap = async (): Promise<void> => {
   ): boolean => {
     if (renderer.getTile(worldTileX, worldTileY) === DEBUG_TILE_BREAK_ID) {
       return false;
+    }
+
+    if (destroyStarterBedPairThroughGameplayRefundPaths(worldTileX, worldTileY)) {
+      return true;
     }
 
     if (destroyStarterDoorPairThroughGameplayRefundPaths(worldTileX, worldTileY)) {
@@ -4296,6 +4336,11 @@ const bootstrap = async (): Promise<void> => {
       event.tileId !== STARTER_PLATFORM_TILE_ID
     ) {
       refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_PLATFORM_ITEM_ID);
+      return;
+    }
+
+    if (event.previousTileId === STARTER_BED_LEFT_TILE_ID && event.tileId !== STARTER_BED_LEFT_TILE_ID) {
+      refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_BED_ITEM_ID);
       return;
     }
 

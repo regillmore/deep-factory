@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-31: Gameplay bed removal refunds are anchored to the left half
+
+- Decision: Placed `Bed` pairs now clear both halves whenever live edits remove either half or remove one of the pair's floor supports, and gameplay-origin refunds spawn exactly one `Bed` from the left-half tile-edit removal.
+- Reason: Bed placement, checkpoint anchors, and later cleanup work all rely on complete left-anchored pairs, while a single anchor-owned refund event avoids double drops across direct breaks and support-collapse cleanup.
+- Consequence: Future bed removal, refund, or checkpoint invalidation work should treat left-half removal as the single gameplay refund signal and use paired cleanup helpers instead of clearing or refunding halves independently.
+
 ### 2026-03-31: Beds use a fixed left-anchored two-tile footprint
 
 - Decision: Placeable `Bed` items now occupy a non-solid horizontal 1x2 pair anchored from the targeted left tile, require solid-or-platform support beneath both halves, and reject placements that overlap the player.

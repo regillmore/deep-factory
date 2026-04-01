@@ -20,6 +20,12 @@ import type {
 } from './chunkSnapshot';
 import { hasStarterTorchFaceSupport, STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import {
+  hasStarterBedGroundSupport,
+  isStarterBedTileId,
+  resolvePlacedStarterBedAnchor,
+  resolveStarterBedAnchor
+} from './starterBedPlacement';
+import {
   hasStarterDoorDoorwaySupport,
   isStarterDoorTileId,
   resolveStarterDoorPairAnchor,
@@ -960,6 +966,59 @@ export class TileWorld {
     );
   }
 
+  private clearUnsupportedAdjacentStarterBeds(
+    worldTileX: number,
+    worldTileY: number,
+    emitTileEditEvent: boolean,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): void {
+    const bedWorldView = {
+      getTile: (tileX: number, tileY: number) => this.getResolvedTileIdWithoutEnsuringChunk(tileX, tileY)
+    };
+    const candidateAnchors = [
+      { leftTileX: worldTileX, tileY: worldTileY - 1 },
+      { leftTileX: worldTileX - 1, tileY: worldTileY - 1 }
+    ];
+    const visitedAnchors = new Set<string>();
+
+    for (const candidate of candidateAnchors) {
+      const anchorKey = `${candidate.leftTileX},${candidate.tileY}`;
+      if (visitedAnchors.has(anchorKey)) {
+        continue;
+      }
+      visitedAnchors.add(anchorKey);
+
+      const bedAnchor = resolvePlacedStarterBedAnchor(
+        bedWorldView,
+        candidate.leftTileX,
+        candidate.tileY
+      );
+      if (bedAnchor === null) {
+        continue;
+      }
+      if (hasStarterBedGroundSupport(bedWorldView, bedAnchor.leftTileX, bedAnchor.tileY)) {
+        continue;
+      }
+
+      this.commitTileState(
+        bedAnchor.leftTileX + 1,
+        bedAnchor.tileY,
+        0,
+        0,
+        emitTileEditEvent,
+        editOrigin
+      );
+      this.commitTileState(
+        bedAnchor.leftTileX,
+        bedAnchor.tileY,
+        0,
+        0,
+        emitTileEditEvent,
+        editOrigin
+      );
+    }
+  }
+
   private clearUnsupportedAdjacentStarterDoors(
     worldTileX: number,
     worldTileY: number,
@@ -1016,6 +1075,31 @@ export class TileWorld {
         editOrigin
       );
     }
+  }
+
+  private clearOrphanedStarterBedMateIfNeeded(
+    worldTileX: number,
+    worldTileY: number,
+    previousTileId: number,
+    nextTileId: number,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): void {
+    if (!isStarterBedTileId(previousTileId) || isStarterBedTileId(nextTileId)) {
+      return;
+    }
+
+    const bedAnchor = resolveStarterBedAnchor(worldTileX, worldTileY, previousTileId);
+    if (bedAnchor === null) {
+      return;
+    }
+
+    const mateTileX =
+      bedAnchor.leftTileX === worldTileX ? bedAnchor.leftTileX + 1 : bedAnchor.leftTileX;
+    if (!isStarterBedTileId(this.getResolvedTileIdWithoutEnsuringChunk(mateTileX, bedAnchor.tileY))) {
+      return;
+    }
+
+    this.setTile(mateTileX, bedAnchor.tileY, 0, editOrigin);
   }
 
   private clearOrphanedStarterDoorMateIfNeeded(
@@ -1587,6 +1671,11 @@ export class TileWorld {
         result.tileIdChanged &&
         (tileSolidnessChanged ||
           isTileOneWayPlatform(result.previousTileId) !== isTileOneWayPlatform(tileId));
+      const tileBedGroundSupportRemoved =
+        result.tileIdChanged &&
+        (isTileSolid(result.previousTileId) || isTileOneWayPlatform(result.previousTileId)) &&
+        !isTileSolid(tileId) &&
+        !isTileOneWayPlatform(tileId);
 
       if (
         result.previousTileId === PROCEDURAL_GRASS_SURFACE_TILE_ID &&
@@ -1595,6 +1684,13 @@ export class TileWorld {
         this.clearUnsupportedSurfaceDecorationAtAnchor(worldTileX, worldTileY, editOrigin);
         this.clearUnsupportedSmallTreeAtAnchor(worldTileX, worldTileY, true, editOrigin);
       }
+      this.clearOrphanedStarterBedMateIfNeeded(
+        worldTileX,
+        worldTileY,
+        result.previousTileId,
+        tileId,
+        editOrigin
+      );
       this.clearOrphanedStarterDoorMateIfNeeded(
         worldTileX,
         worldTileY,
@@ -1607,6 +1703,9 @@ export class TileWorld {
         this.clearUnsupportedAdjacentStarterWorkbenches(worldTileX, worldTileY, true, editOrigin);
         this.clearUnsupportedAdjacentStarterFurnaces(worldTileX, worldTileY, true, editOrigin);
         this.clearUnsupportedAdjacentStarterAnvils(worldTileX, worldTileY, true, editOrigin);
+      }
+      if (tileBedGroundSupportRemoved) {
+        this.clearUnsupportedAdjacentStarterBeds(worldTileX, worldTileY, true, editOrigin);
       }
       if (tileDoorwaySupportChanged) {
         this.clearUnsupportedAdjacentStarterDoors(worldTileX, worldTileY, true, editOrigin);

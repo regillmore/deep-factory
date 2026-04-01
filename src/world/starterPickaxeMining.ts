@@ -18,6 +18,7 @@ import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
 import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
+import { isStarterBedTileId } from './starterBedPlacement';
 import { isStarterDoorTileId } from './starterDoorPlacement';
 import {
   hasTerrainAutotileMetadata,
@@ -166,6 +167,7 @@ const isBreakableStarterPickaxeTargetTile = (
   tileId: number,
   registry: TileMetadataRegistry
 ): boolean =>
+  isStarterBedTileId(tileId) ||
   isStarterDoorTileId(tileId) ||
   tileId === STARTER_ROPE_TILE_ID ||
   tileId === STARTER_PLATFORM_TILE_ID ||
