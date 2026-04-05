@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-04-05: Live bed-pair edits clear the raw claimed checkpoint
+
+- Decision: Claimed `Bed` checkpoints now clear immediately when live gameplay or debug tile edits leave the recorded left-plus-right bed pair incomplete or mismatched, while stand-area obstruction alone still falls back to world spawn without discarding the raw claim.
+- Reason: Removing or half-editing the claimed bed should not leave a stale raw checkpoint anchor behind, but temporary standing-area obstruction should still preserve the player's intended checkpoint.
+- Consequence: Future bed-checkpoint invalidation work should clear claims from live pair-integrity changes instead of clearing them for every temporary respawn fallback condition.
+
 ### 2026-03-31: Gameplay bed removal refunds are anchored to the left half
 
 - Decision: Placed `Bed` pairs now clear both halves whenever live edits remove either half or remove one of the pair's floor supports, and gameplay-origin refunds spawn exactly one `Bed` from the left-half tile-edit removal.

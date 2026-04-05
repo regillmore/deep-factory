@@ -393,6 +393,7 @@ import {
   evaluateStarterBedCheckpointClaimPreview,
   evaluateStarterBedPlacement,
   findStarterBedRespawnPoint,
+  isCompleteStarterBedAtAnchor,
   resolvePlacedStarterBedAnchor,
   STARTER_BED_ITEM_ID,
   STARTER_BED_LEFT_TILE_ID,
@@ -1983,6 +1984,25 @@ const bootstrap = async (): Promise<void> => {
         };
   const setClaimedBedCheckpoint = (nextCheckpoint: StarterBedAnchor | null): void => {
     claimedBedCheckpoint = cloneClaimedBedCheckpoint(nextCheckpoint);
+  };
+  const clearClaimedBedCheckpointIfLivePairInvalidated = (): void => {
+    if (claimedBedCheckpoint === null) {
+      return;
+    }
+
+    if (
+      isCompleteStarterBedAtAnchor(
+        {
+          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+        },
+        claimedBedCheckpoint.leftTileX,
+        claimedBedCheckpoint.tileY
+      )
+    ) {
+      return;
+    }
+
+    setClaimedBedCheckpoint(null);
   };
 
   const createSmallTreeGrowthAnchorKey = (anchorTileX: number, anchorTileY: number): string =>
@@ -4341,6 +4361,7 @@ const bootstrap = async (): Promise<void> => {
     if (shouldDetachLatchedGrapplingHookForTileEdit(grapplingHookState, event)) {
       clearActiveGrapplingHookTraversal();
     }
+    clearClaimedBedCheckpointIfLivePairInvalidated();
     if (event.editOrigin !== 'gameplay') {
       return;
     }

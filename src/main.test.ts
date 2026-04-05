@@ -12562,6 +12562,88 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('clears a claimed bed checkpoint when a live debug tile edit mismatches that recorded pair', async () => {
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -4, 12, -4, 4);
+    savedWorld.setTile(3, -1, STARTER_BED_LEFT_TILE_ID);
+    savedWorld.setTile(4, -1, STARTER_BED_RIGHT_TILE_ID);
+    savedWorld.setTile(3, 0, 1);
+    savedWorld.setTile(4, 0, 1);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 56, y: 0 },
+            facing: 'right',
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'bed', amount: 1 },
+              ...Array.from({ length: 5 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 4
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 3,
+        worldTileY: -1,
+        worldX: 56,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+    runFixedUpdate();
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.claimedBedCheckpoint).toEqual({
+      leftTileX: 3,
+      tileY: -1
+    });
+
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererNextSetTileEditEvents = [
+      createTileEditEvent(3, -1, STARTER_BED_LEFT_TILE_ID, 0, 0, 0, 'debug-break'),
+      createTileEditEvent(4, -1, STARTER_BED_RIGHT_TILE_ID, 0, 0, 0, 'debug-break')
+    ];
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: 3,
+        worldTileY: -1,
+        kind: 'break'
+      }
+    ];
+
+    runFixedUpdate();
+    runRenderFrame(200 + 1000 / 60, 1);
+
+    expect(testRuntime.rendererSetTileCalls).toContainEqual({
+      worldTileX: 3,
+      worldTileY: -1,
+      tileId: 0,
+      editOrigin: 'debug-break'
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.claimedBedCheckpoint ?? null).toBeNull();
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.claimedBedCheckpoint ?? null).toBeNull();
+  });
+
   it('toggles a nearby closed door pair open from the selected hotbar slot without consuming the door stack', async () => {
     setPersistedWorldSaveWithInventory(
       createPlayerInventoryState({

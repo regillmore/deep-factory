@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-04-05
+
+- Task: Clear live claimed bed checkpoints when tile edits invalidate the recorded pair.
+- Changes: Updated [src/main.ts](../src/main.ts) so renderer tile-edit notifications now clear the raw claimed bed checkpoint as soon as the recorded bed anchor no longer resolves a complete pair, even for debug-origin live edits; expanded [src/main.test.ts](../src/main.test.ts) with a regression that claims a bed, invalidates that pair through live debug tile edits, and verifies the checkpoint clears in runtime and the next persisted save; removed completed task `724` from [docs/NEXT.md](docs/NEXT.md), added replacement task `728`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts -t bed` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-31
 
 - Task: Add selected-bed checkpoint slot feedback.
